@@ -11,7 +11,7 @@ import {
 } from '@/lib/utils'
 import type {
   Order, AthleteProfile, VideoSubmission, Drill,
-  AssignedDrill, ScorecardCategory, PositionScreenshot, OrderStatus,,
+  AssignedDrill, ScorecardCategory, PositionScreenshot, OrderStatus,
   PlayingLevel,
   DrillCategory
 } from '@/types/database'

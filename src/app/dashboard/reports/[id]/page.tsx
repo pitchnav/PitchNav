@@ -16,7 +16,7 @@ import type {
   ScorecardCategory,
   PositionScreenshot,
   AssignedDrill,
-  Drill,,
+  Drill,
   PlayingLevel,
   PitchPosition
 } from '@/types/database'
