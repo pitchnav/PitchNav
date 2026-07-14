@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { Suspense, useState, useEffect, useMemo } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { CheckCircle, Shield, Lock } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
@@ -21,7 +21,7 @@ const PACKAGE_ITEMS = [
   'Downloadable PDF report',
 ]
 
-export default function CheckoutPage() {
+function CheckoutContent() {
   const searchParams = useSearchParams()
   const orderId = searchParams.get('orderId')
   const router = useRouter()
@@ -234,5 +234,19 @@ export default function CheckoutPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function CheckoutPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-navy-950 pt-24 flex items-center justify-center">
+          <p className="text-slate-400">Loading checkout...</p>
+        </div>
+      }
+    >
+      <CheckoutContent />
+    </Suspense>
   )
 }

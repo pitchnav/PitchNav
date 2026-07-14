@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useMemo } from 'react'
+import { Suspense, useState, useEffect, useRef, useMemo } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { Upload, Video, CheckCircle, X, AlertCircle, Camera } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
@@ -30,7 +30,7 @@ const CHECKLIST = [
   'Angle matches the selected guide',
 ]
 
-export default function UploadPage() {
+function UploadContent() {
   const searchParams = useSearchParams()
   const profileId = searchParams.get('profileId')
   const router = useRouter()
@@ -426,5 +426,13 @@ export default function UploadPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function UploadPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-navy-950 pt-24 flex items-center justify-center"><p className="text-slate-400">Loading upload...</p></div>}>
+      <UploadContent />
+    </Suspense>
   )
 }
