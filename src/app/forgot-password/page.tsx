@@ -45,7 +45,7 @@ export default function ForgotPasswordPage() {
         <div className="text-center mb-10">
           <Link href="/" className="inline-block mb-6">
             <span className="text-3xl font-black text-white">Pitch</span>
-            <span className="text-3xl font-black text-accent-green">Frame</span>
+            <span className="text-3xl font-black italic text-electric-blue-light">Nav</span>
           </Link>
           <h1 className="text-3xl font-black text-white">Reset Password</h1>
           <p className="mt-2 text-slate-400">

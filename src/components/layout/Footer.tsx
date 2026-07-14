@@ -32,7 +32,7 @@ export function Footer() {
           <div className="lg:col-span-2">
             <Link href="/" className="inline-flex items-center mb-4">
               <span className="text-2xl font-black tracking-tight text-white">Pitch</span>
-              <span className="text-2xl font-black tracking-tight text-accent-green">Frame</span>
+              <span className="text-2xl font-black italic tracking-tight text-electric-blue-light">Nav</span>
             </Link>
             <p className="text-sm text-slate-400 max-w-xs leading-relaxed">
               Remote pitching mechanics analysis for baseball pitchers at every level.

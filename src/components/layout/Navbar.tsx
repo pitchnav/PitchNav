@@ -78,8 +78,8 @@ export function Navbar() {
               <span className="text-2xl font-black tracking-tight text-white group-hover:text-electric-blue-light transition-colors">
                 Pitch
               </span>
-              <span className="text-2xl font-black tracking-tight text-accent-green">
-                Frame
+              <span className="text-2xl font-black italic tracking-tight text-electric-blue-light">
+                Nav
               </span>
             </div>
           </Link>
