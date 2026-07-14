@@ -12,11 +12,13 @@ const EMPTY_DRILL: Partial<Drill> = {
   name: '',
   category: 'direction',
   description: '',
-  setup_instructions: '',
-  common_mistakes: [],
+  what_it_trains: '',
   coaching_cues: [],
-  reps_sets: '',
-  video_url: '',
+  common_mistakes: [],
+  reps: '',
+  sets: null,
+  demo_video_url: '',
+  contraindications: '',
   is_active: true,
   is_demo: false,
 }
@@ -56,10 +58,19 @@ export default function AdminDrillsPage() {
 
   async function save() {
     setSaving(true)
+    const payload = {
+      ...formData,
+      coaching_cues: typeof formData.coaching_cues === 'string'
+        ? (formData.coaching_cues as string).split('\n').map((s) => s.trim()).filter(Boolean)
+        : formData.coaching_cues,
+      common_mistakes: typeof formData.common_mistakes === 'string'
+        ? (formData.common_mistakes as string).split('\n').map((s) => s.trim()).filter(Boolean)
+        : formData.common_mistakes,
+    }
     if (creating) {
-      await supabase.from('drills').insert(formData)
+      await supabase.from('drills').insert(payload)
     } else if (editing) {
-      await supabase.from('drills').update(formData).eq('id', editing.id)
+      await supabase.from('drills').update(payload).eq('id', editing.id)
     }
     setSaving(false)
     cancel()
@@ -80,11 +91,12 @@ export default function AdminDrillsPage() {
   const formFields: Array<{ key: keyof Drill; label: string; type?: string; rows?: number }> = [
     { key: 'name', label: 'Drill Name', type: 'text' },
     { key: 'description', label: 'Description', rows: 2 },
-    { key: 'setup_instructions', label: 'Setup Instructions', rows: 3 },
-    { key: 'coaching_cues', label: 'Coaching Cues', rows: 2 },
-    { key: 'common_mistakes', label: 'Common Mistakes', rows: 2 },
-    { key: 'reps_sets', label: 'Reps / Sets', type: 'text' },
-    { key: 'video_url', label: 'Video URL (optional)', type: 'url' },
+    { key: 'what_it_trains', label: 'What It Trains', rows: 2 },
+    { key: 'coaching_cues', label: 'Coaching Cues (one per line)', rows: 3 },
+    { key: 'common_mistakes', label: 'Common Mistakes (one per line)', rows: 3 },
+    { key: 'contraindications', label: 'Contraindications / Cautions', rows: 2 },
+    { key: 'reps', label: 'Reps', type: 'text' },
+    { key: 'demo_video_url', label: 'Demo Video URL (optional)', type: 'url' },
   ]
 
   return (
@@ -110,7 +122,11 @@ export default function AdminDrillsPage() {
                 <label className="label">{label}</label>
                 {rows ? (
                   <textarea
-                    value={(formData[key] as string) ?? ''}
+                    value={
+                      Array.isArray(formData[key])
+                        ? (formData[key] as string[]).join('\n')
+                        : (formData[key] as string) ?? ''
+                    }
                     onChange={(e) => setFormData((f) => ({ ...f, [key]: e.target.value }))}
                     rows={rows}
                     className="input"
