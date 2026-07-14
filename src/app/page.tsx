@@ -9,69 +9,90 @@ import { SafetyDisclaimer } from '@/components/ui/SafetyDisclaimer'
 
 function Hero() {
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-hero-gradient pt-16">
-      {/* Background glow */}
-      <div className="absolute inset-0 bg-glow-blue opacity-60 pointer-events-none" aria-hidden />
-      <div
-        className="absolute -top-40 -right-40 h-96 w-96 rounded-full bg-electric-blue opacity-5 blur-3xl pointer-events-none"
-        aria-hidden
-      />
-      <div
-        className="absolute -bottom-40 -left-40 h-96 w-96 rounded-full bg-accent-green opacity-5 blur-3xl pointer-events-none"
-        aria-hidden
-      />
-
-      <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-24 text-center">
+    <section className="relative min-h-screen flex items-center overflow-hidden bg-navy-950 pt-16">
+      {/* Left side content */}
+      <div className="relative z-10 w-full lg:w-1/2 px-6 sm:px-12 lg:px-16 xl:px-24 py-20">
         {/* Tag */}
-        <div className="inline-flex items-center gap-2 rounded-full border border-electric-blue/30 bg-electric-blue/10 px-4 py-1.5 text-sm font-medium text-electric-blue-light mb-8">
-          <Zap className="h-3.5 w-3.5" />
+        <div className="inline-flex items-center gap-2 rounded-full border border-electric-blue/30 bg-electric-blue/10 px-4 py-1.5 text-xs font-semibold text-electric-blue-light uppercase tracking-widest mb-8">
+          <Zap className="h-3 w-3" />
           Expert-Reviewed Pitching Analysis
         </div>
 
         {/* Headline */}
-        <h1 className="text-5xl font-black tracking-tight text-white sm:text-6xl lg:text-7xl text-balance">
-          Understand Your Delivery.{' '}
-          <span className="gradient-text">Build Better Velocity.</span>
+        <h1 className="text-5xl font-black tracking-tight text-white sm:text-6xl xl:text-7xl leading-[1.05] uppercase">
+          UNDERSTAND<br />
+          YOUR DELIVERY.<br />
+          <span className="text-electric-blue">BUILD BETTER<br />VELOCITY.</span>
         </h1>
 
         {/* Subtext */}
-        <p className="mx-auto mt-6 max-w-2xl text-lg text-slate-400 leading-relaxed">
-          Upload your pitching videos and receive an easy-to-understand breakdown of your mechanics,
-          velocity-development opportunities, personalized drills, and training priorities.
+        <p className="mt-6 max-w-md text-base text-slate-400 leading-relaxed">
+          Data-driven biomechanics analysis that shows you what's working, what's not, and how to throw better.
         </p>
 
         {/* CTAs */}
-        <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
-          <Link href="/start-analysis" className="btn-primary text-base px-8 py-4">
-            Start My Analysis
-            <ArrowRight className="h-5 w-5" />
+        <div className="mt-10 flex flex-col sm:flex-row gap-4">
+          <Link href="/start-analysis" className="btn-primary text-base px-8 py-4 uppercase tracking-wide font-bold">
+            START MY ANALYSIS
           </Link>
-          <Link href="/sample-report" className="btn-secondary text-base px-8 py-4">
-            <Play className="h-5 w-5" />
-            View Sample Report
+          <Link href="/sample-report" className="btn-secondary text-base px-8 py-4 uppercase tracking-wide font-bold">
+            VIEW SAMPLE REPORT
           </Link>
         </div>
 
-        {/* Social proof */}
-        <div className="mt-12 flex flex-col sm:flex-row items-center justify-center gap-8 text-sm text-slate-400">
-          <div className="flex items-center gap-2">
-            <CheckCircle className="h-4 w-4 text-accent-green" />
-            Expert-reviewed by experienced pitching coaches
-          </div>
-          <div className="flex items-center gap-2">
-            <CheckCircle className="h-4 w-4 text-accent-green" />
-            Delivered within 5–7 business days
-          </div>
-          <div className="flex items-center gap-2">
-            <CheckCircle className="h-4 w-4 text-accent-green" />
-            No in-person visit required
-          </div>
+        {/* Feature badges */}
+        <div className="mt-14 flex flex-wrap gap-6">
+          {[
+            { icon: <TrendingUp className="h-4 w-4" />, label: 'DATA-DRIVEN', sub: 'Objective insights' },
+            { icon: <Target className="h-4 w-4" />, label: 'BIOMECHANICS', sub: 'Deeper understanding' },
+            { icon: <Zap className="h-4 w-4" />, label: 'PERFORMANCE', sub: 'Better results' },
+          ].map(({ icon, label, sub }) => (
+            <div key={label} className="flex items-center gap-2.5">
+              <div className="text-electric-blue-light">{icon}</div>
+              <div>
+                <p className="text-xs font-bold text-white tracking-widest">{label}</p>
+                <p className="text-xs text-slate-500">{sub}</p>
+              </div>
+            </div>
+          ))}
         </div>
+      </div>
 
-        {/* Scroll indicator */}
-        <div className="mt-20 flex justify-center animate-bounce">
-          <ChevronDown className="h-6 w-6 text-slate-600" aria-hidden />
+      {/* Right side — hero image */}
+      <div className="hidden lg:block absolute right-0 top-0 h-full w-1/2">
+        {/* Dark gradient blending left edge into page */}
+        <div className="absolute inset-y-0 left-0 w-32 bg-gradient-to-r from-navy-950 to-transparent z-10" />
+
+        <img
+          src="/pitcher-hero.jpg"
+          alt="Pitcher in Pitch Nav jersey throwing from the mound"
+          className="h-full w-full object-cover object-center"
+        />
+
+        {/* Stat overlay cards */}
+        <div className="absolute top-1/4 right-6 z-20 space-y-3">
+          {[
+            { label: 'MECHANICS SCORE', value: '23/30', color: 'text-accent-green' },
+            { label: 'DEVELOPMENT AREAS', value: '3 FOUND', color: 'text-electric-blue-light' },
+            { label: 'DRILLS ASSIGNED', value: '3 DRILLS', color: 'text-white' },
+            { label: 'TURNAROUND', value: '5–7 DAYS', color: 'text-yellow-400' },
+          ].map(({ label, value, color }) => (
+            <div key={label} className="rounded-lg bg-navy-950/85 backdrop-blur border border-white/10 px-4 py-2.5 text-right min-w-[140px]">
+              <p className="text-[10px] text-slate-500 uppercase tracking-widest">{label}</p>
+              <p className={`text-base font-black ${color}`}>{value}</p>
+            </div>
+          ))}
         </div>
+      </div>
+
+      {/* Mobile: show image below text */}
+      <div className="lg:hidden absolute inset-0 z-0">
+        <img
+          src="/pitcher-hero.jpg"
+          alt="Pitcher in Pitch Nav jersey"
+          className="h-full w-full object-cover object-center opacity-20"
+        />
+        <div className="absolute inset-0 bg-navy-950/70" />
       </div>
     </section>
   )
