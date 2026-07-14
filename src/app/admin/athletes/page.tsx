@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { formatDateShort, PLAYING_LEVEL_LABELS } from '@/lib/utils'
+import type { PlayingLevel } from '@/types/database'
 
 interface SearchParams { filter?: string; q?: string }
 
@@ -85,7 +86,7 @@ export default async function AdminAthletesPage({
                   <p className="text-sm text-slate-400">{profile?.email ?? '—'}</p>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3 text-xs">
                     {[
-                      ['Level', athlete.playing_level ? PLAYING_LEVEL_LABELS[athlete.playing_level] : '—'],
+                      ['Level', athlete.playing_level ? PLAYING_LEVEL_LABELS[athlete.playing_level as PlayingLevel] : '—'],
                       ['Throws', athlete.throwing_hand ?? '—'],
                       ['Velocity', athlete.current_avg_velocity ? `${athlete.current_avg_velocity} mph` : '—'],
                       ['DOB', athlete.date_of_birth ?? '—'],

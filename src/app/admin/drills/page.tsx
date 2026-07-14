@@ -178,7 +178,7 @@ export default function AdminDrillsPage() {
                 <div className="flex items-center gap-2 flex-wrap mb-1">
                   <h3 className="font-semibold text-white truncate">{drill.name}</h3>
                   <span className="text-xs px-2 py-0.5 rounded-full bg-electric-blue/10 text-electric-blue-light">
-                    {DRILL_CATEGORY_LABELS[drill.category]}
+                    {DRILL_CATEGORY_LABELS[drill.category as DrillCategory]}
                   </span>
                   {drill.is_demo && (
                     <span className="text-xs px-2 py-0.5 rounded-full bg-slate-700/50 text-slate-400">Demo</span>

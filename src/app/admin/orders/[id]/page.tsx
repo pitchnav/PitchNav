@@ -11,7 +11,9 @@ import {
 } from '@/lib/utils'
 import type {
   Order, AthleteProfile, VideoSubmission, Drill,
-  AssignedDrill, ScorecardCategory, PositionScreenshot, OrderStatus,
+  AssignedDrill, ScorecardCategory, PositionScreenshot, OrderStatus,,
+  PlayingLevel,
+  DrillCategory
 } from '@/types/database'
 import { Video, CheckCircle, XCircle, Upload, Plus, Trash2, Save, Send } from 'lucide-react'
 
@@ -215,7 +217,7 @@ export default function AdminOrderDetailPage() {
                 {[
                   ['Name', profile.athlete_full_name],
                   ['DOB', profile.date_of_birth ?? '—'],
-                  ['Level', profile.playing_level ? PLAYING_LEVEL_LABELS[profile.playing_level] : '—'],
+                  ['Level', profile.playing_level ? PLAYING_LEVEL_LABELS[profile.playing_level as PlayingLevel] : '—'],
                   ['Throws', profile.throwing_hand],
                   ['Height', profile.height_feet ? `${profile.height_feet}'${profile.height_inches ?? 0}"` : '—'],
                   ['Weight', profile.weight_lbs ? `${profile.weight_lbs} lbs` : '—'],
@@ -484,7 +486,7 @@ export default function AdminOrderDetailPage() {
                     <li key={a.id} className="flex items-start justify-between gap-3 rounded-lg border border-surface-border p-3">
                       <div>
                         <p className="text-sm font-medium text-white">{drill?.name}</p>
-                        <p className="text-xs text-slate-500 mt-0.5">{drill?.category ? DRILL_CATEGORY_LABELS[drill.category] : ''}</p>
+                        <p className="text-xs text-slate-500 mt-0.5">{drill?.category ? DRILL_CATEGORY_LABELS[drill.category as DrillCategory] : ''}</p>
                       </div>
                       <button
                         onClick={() => removeDrill(a.id)}
@@ -509,7 +511,7 @@ export default function AdminOrderDetailPage() {
                   <li key={drill.id} className="flex items-center justify-between gap-3 rounded-lg border border-surface-border px-3 py-2">
                     <div>
                       <p className="text-sm text-white">{drill.name}</p>
-                      <p className="text-xs text-slate-500">{DRILL_CATEGORY_LABELS[drill.category]}</p>
+                      <p className="text-xs text-slate-500">{DRILL_CATEGORY_LABELS[drill.category as DrillCategory]}</p>
                     </div>
                     <button
                       onClick={() => addDrill(drill.id)}

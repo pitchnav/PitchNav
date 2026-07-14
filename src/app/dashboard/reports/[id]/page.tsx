@@ -16,7 +16,9 @@ import type {
   ScorecardCategory,
   PositionScreenshot,
   AssignedDrill,
-  Drill,
+  Drill,,
+  PlayingLevel,
+  PitchPosition
 } from '@/types/database'
 
 export default async function ReportPage({ params }: { params: Promise<{ id: string }> }) {
@@ -96,7 +98,7 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
               ['Athlete', profile.athlete_full_name],
               ['Height / Weight', `${formatHeight(profile.height_feet, profile.height_inches)} / ${profile.weight_lbs ?? '—'} lbs`],
               ['Throws', `${profile.throwing_hand}-handed`],
-              ['Level', profile.playing_level ? PLAYING_LEVEL_LABELS[profile.playing_level] : '—'],
+              ['Level', profile.playing_level ? PLAYING_LEVEL_LABELS[profile.playing_level as PlayingLevel] : '—'],
               ['Current Velocity (Athlete-Provided)', profile.current_avg_velocity ? `${profile.current_avg_velocity} mph avg / ${profile.current_max_velocity ?? '—'} mph max` : '—'],
               ['Goal Velocity', profile.goal_velocity ? `${profile.goal_velocity} mph` : '—'],
             ].map(([label, value]) => (
@@ -181,16 +183,16 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
                 {pos.image_url ? (
                   <img
                     src={pos.image_url}
-                    alt={`Annotated screenshot — ${PITCH_POSITION_LABELS[pos.position]}`}
+                    alt={`Annotated screenshot — ${PITCH_POSITION_LABELS[pos.position as PitchPosition]}`}
                     className="w-full h-48 object-cover rounded-lg mb-4"
                   />
                 ) : (
                   <div className="h-40 rounded-lg bg-navy-800 border border-surface-border flex items-center justify-center mb-4">
-                    <p className="text-xs text-slate-600">[{PITCH_POSITION_LABELS[pos.position]}]</p>
+                    <p className="text-xs text-slate-600">[{PITCH_POSITION_LABELS[pos.position as PitchPosition]}]</p>
                   </div>
                 )}
                 <h3 className="text-base font-bold text-white mb-2">
-                  {PITCH_POSITION_LABELS[pos.position]}
+                  {PITCH_POSITION_LABELS[pos.position as PitchPosition]}
                 </h3>
                 {pos.reviewer_notes && <p className="text-xs text-slate-400 mb-4">{pos.reviewer_notes}</p>}
                 <div className="space-y-3">

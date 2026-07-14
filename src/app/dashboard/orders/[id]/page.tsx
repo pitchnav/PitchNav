@@ -6,7 +6,9 @@ import { OrderStatusBadge } from '@/components/ui/Badge'
 import { StatusTimeline } from '@/components/ui/StatusTimeline'
 import { SafetyDisclaimer } from '@/components/ui/SafetyDisclaimer'
 import { formatDateShort, formatFileSize, PLAYING_LEVEL_LABELS } from '@/lib/utils'
-import type { AthleteProfile, VideoSubmission, OrderStatusHistory } from '@/types/database'
+import type { AthleteProfile, VideoSubmission, OrderStatusHistory,
+  PlayingLevel
+} from '@/types/database'
 
 export default async function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -64,7 +66,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
             <div className="grid grid-cols-2 gap-4 text-sm">
               {[
                 ['Name', profile.athlete_full_name],
-                ['Playing Level', profile.playing_level ? PLAYING_LEVEL_LABELS[profile.playing_level] : '—'],
+                ['Playing Level', profile.playing_level ? PLAYING_LEVEL_LABELS[profile.playing_level as PlayingLevel] : '—'],
                 ['Throws', profile.throwing_hand],
                 ['Current Velocity', profile.current_avg_velocity ? `${profile.current_avg_velocity} mph` : '—'],
                 ['Goal Velocity', profile.goal_velocity ? `${profile.goal_velocity} mph` : '—'],
