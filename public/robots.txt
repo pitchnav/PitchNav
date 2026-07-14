@@ -1,0 +1,23 @@
+User-agent: *
+Disallow: /admin/
+Disallow: /dashboard/
+Disallow: /api/
+Disallow: /checkout
+Disallow: /success
+Disallow: /login
+Disallow: /signup
+Disallow: /forgot-password
+Disallow: /auth/
+
+Allow: /
+Allow: /how-it-works
+Allow: /camera-setup
+Allow: /pricing
+Allow: /sample-report
+Allow: /faq
+Allow: /contact
+Allow: /privacy
+Allow: /terms
+Allow: /disclaimer
+
+Sitemap: https://pitchframe.com/sitemap.xml

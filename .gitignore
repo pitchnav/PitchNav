@@ -1,0 +1,41 @@
+# ── Dependencies ─────────────────────────────────────────────
+node_modules/
+.pnp
+.pnp.js
+.yarn/install-state.gz
+
+# ── Next.js ──────────────────────────────────────────────────
+.next/
+out/
+build/
+
+# ── Environment variables — NEVER commit these ────────────────
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# ── Vercel ───────────────────────────────────────────────────
+.vercel
+
+# ── TypeScript ───────────────────────────────────────────────
+*.tsbuildinfo
+next-env.d.ts
+
+# ── Testing ──────────────────────────────────────────────────
+coverage/
+playwright-report/
+test-results/
+
+# ── OS / Editor ──────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.idea/
+.vscode/settings.json
+
+# ── Supabase local dev (if used) ─────────────────────────────
+supabase/.branches
+supabase/.temp
