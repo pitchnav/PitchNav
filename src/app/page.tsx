@@ -9,11 +9,13 @@ import { SafetyDisclaimer } from '@/components/ui/SafetyDisclaimer'
 
 function Hero() {
   return (
-    <section className="relative min-h-screen flex items-center overflow-hidden bg-navy-950 pt-16">
-      {/* Left side content */}
-      <div className="relative z-10 w-full lg:w-1/2 px-6 sm:px-12 lg:px-16 xl:px-24 py-20">
+    <section className="flex flex-col lg:flex-row overflow-hidden bg-navy-950" style={{ minHeight: '100vh' }}>
+
+      {/* ── Left panel ── */}
+      <div className="relative z-10 flex flex-col justify-center w-full lg:w-1/2 px-6 sm:px-12 lg:px-16 xl:px-24 pt-28 pb-16 lg:py-0">
+
         {/* Tag */}
-        <div className="inline-flex items-center gap-2 rounded-full border border-electric-blue/30 bg-electric-blue/10 px-4 py-1.5 text-xs font-semibold text-electric-blue-light uppercase tracking-widest mb-8">
+        <div className="inline-flex w-fit items-center gap-2 rounded-full border border-electric-blue/30 bg-electric-blue/10 px-4 py-1.5 text-xs font-semibold text-electric-blue-light uppercase tracking-widest mb-8">
           <Zap className="h-3 w-3" />
           Expert-Reviewed Pitching Analysis
         </div>
@@ -58,26 +60,33 @@ function Hero() {
         </div>
       </div>
 
-      {/* Right side — hero image */}
-      <div className="hidden lg:block absolute right-0 top-0 h-full w-1/2">
-        {/* Dark gradient blending left edge into page */}
-        <div className="absolute inset-y-0 left-0 w-32 bg-gradient-to-r from-navy-950 to-transparent z-10" />
+      {/* ── Right panel — hero image ── */}
+      <div className="relative w-full lg:w-1/2" style={{ minHeight: '50vh' }}>
+        {/* Left-edge gradient blending into the navy left panel */}
+        <div
+          className="absolute inset-y-0 left-0 z-10 w-32 pointer-events-none hidden lg:block"
+          style={{ background: 'linear-gradient(to right, #020817, transparent)' }}
+        />
 
         <img
           src="/pitcher-hero.jpg"
           alt="Pitcher in Pitch Nav jersey throwing from the mound"
-          className="h-full w-full object-cover object-center"
+          className="absolute inset-0 h-full w-full object-cover object-center"
         />
 
         {/* Stat overlay cards */}
-        <div className="absolute top-1/4 right-6 z-20 space-y-3">
+        <div className="absolute top-1/4 right-4 lg:right-6 z-20 space-y-3">
           {[
             { label: 'MECHANICS SCORE', value: '23/30', color: 'text-accent-green' },
             { label: 'DEVELOPMENT AREAS', value: '3 FOUND', color: 'text-electric-blue-light' },
             { label: 'DRILLS ASSIGNED', value: '3 DRILLS', color: 'text-white' },
             { label: 'TURNAROUND', value: '5–7 DAYS', color: 'text-yellow-400' },
           ].map(({ label, value, color }) => (
-            <div key={label} className="rounded-lg bg-navy-950/85 backdrop-blur border border-white/10 px-4 py-2.5 text-right min-w-[140px]">
+            <div
+              key={label}
+              className="rounded-lg border border-white/10 px-4 py-2.5 text-right min-w-[140px]"
+              style={{ backgroundColor: 'rgba(2,8,23,0.85)', backdropFilter: 'blur(8px)' }}
+            >
               <p className="text-[10px] text-slate-500 uppercase tracking-widest">{label}</p>
               <p className={`text-base font-black ${color}`}>{value}</p>
             </div>
@@ -85,15 +94,6 @@ function Hero() {
         </div>
       </div>
 
-      {/* Mobile: show image below text */}
-      <div className="lg:hidden absolute inset-0 z-0">
-        <img
-          src="/pitcher-hero.jpg"
-          alt="Pitcher in Pitch Nav jersey"
-          className="h-full w-full object-cover object-center opacity-20"
-        />
-        <div className="absolute inset-0 bg-navy-950/70" />
-      </div>
     </section>
   )
 }
