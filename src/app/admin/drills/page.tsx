@@ -206,8 +206,8 @@ export default function AdminDrillsPage() {
                 {drill.description && (
                   <p className="text-sm text-slate-400 line-clamp-2">{drill.description}</p>
                 )}
-                {drill.reps_sets && (
-                  <p className="text-xs text-slate-500 mt-1">{drill.reps_sets}</p>
+                {drill.reps && (
+                  <p className="text-xs text-slate-500 mt-1">{drill.reps}</p>
                 )}
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
