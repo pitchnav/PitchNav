@@ -75,7 +75,7 @@ export default function AdminOrderDetailPage() {
     if (report) {
       setReportNotes(report.overall_assessment ?? '')
       setVelocityNotes(report.velocity_notes ?? '')
-      setOverallNotes(report.coach_notes ?? '')
+      setOverallNotes(report.notess ?? '')
       setFollowUp(report.follow_up_recommendation ?? '')
     }
 
@@ -124,7 +124,7 @@ export default function AdminOrderDetailPage() {
       order_id: id,
       overall_assessment: reportNotes,
       velocity_notes: velocityNotes,
-      coach_notes: overallNotes,
+      notess: overallNotes,
       follow_up_recommendation: followUp,
     }, { onConflict: 'order_id' })
     setSaving(false)
@@ -135,7 +135,7 @@ export default function AdminOrderDetailPage() {
       order_id: id,
       category,
       score,
-      coach_note: note,
+      notes: note,
     }, { onConflict: 'order_id,category' })
   }
 
@@ -396,7 +396,7 @@ export default function AdminOrderDetailPage() {
                     <input
                       id={`note-${key}`}
                       type="text"
-                      defaultValue={existing?.coach_note ?? ''}
+                      defaultValue={existing?.notes ?? ''}
                       placeholder="Coach note…"
                       onBlur={(e) => {
                         const score = parseInt(
