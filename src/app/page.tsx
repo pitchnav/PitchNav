@@ -69,7 +69,7 @@ function Hero() {
         />
 
         <img
-          src="/pitcher-hero.jpg"
+          src="/pitcher-hero-v2.jpg"
           alt="Pitcher in Pitch Nav jersey throwing from the mound"
           className="absolute inset-0 h-full w-full object-cover object-center"
         />
