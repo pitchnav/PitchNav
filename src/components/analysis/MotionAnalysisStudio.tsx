@@ -5,6 +5,8 @@ import { Activity, AlertTriangle, Download, Pause, Play, RotateCcw, Upload, Vide
 import type { NormalizedLandmark, PoseLandmarker } from '@mediapipe/tasks-vision'
 
 type Handedness = 'right' | 'left'
+type SelectionMode = 'calibrationA' | 'calibrationB' | 'ballStart' | 'ballEnd' | null
+type VideoPoint = { x: number; y: number; time: number }
 
 type FrameMetrics = {
   time: number
@@ -304,6 +306,14 @@ export function MotionAnalysisStudio() {
   const [summary, setSummary] = useState<ClipSummary | null>(null)
   const [progress, setProgress] = useState(0)
   const [error, setError] = useState('')
+  const [selectionMode, setSelectionMode] = useState<SelectionMode>(null)
+  const [calibrationA, setCalibrationA] = useState<VideoPoint | null>(null)
+  const [calibrationB, setCalibrationB] = useState<VideoPoint | null>(null)
+  const [ballStart, setBallStart] = useState<VideoPoint | null>(null)
+  const [ballEnd, setBallEnd] = useState<VideoPoint | null>(null)
+  const [calibrationFeet, setCalibrationFeet] = useState(6)
+  const [captureFps, setCaptureFps] = useState(240)
+  const [setupConfirmed, setSetupConfirmed] = useState(false)
 
   const initializeModel = useCallback(async () => {
     if (landmarkerRef.current) return landmarkerRef.current
@@ -430,8 +440,28 @@ export function MotionAnalysisStudio() {
       context.shadowBlur = 0
     }
 
+    const markers: Array<{ point: VideoPoint | null; color: string; label: string }> = [
+      { point: calibrationA, color: '#22c55e', label: 'CAL A' },
+      { point: calibrationB, color: '#22c55e', label: 'CAL B' },
+      { point: ballStart, color: '#f97316', label: 'BALL 1' },
+      { point: ballEnd, color: '#ef4444', label: 'BALL 2' },
+    ]
+    for (const marker of markers) {
+      if (!marker.point || exportStyleRef.current) continue
+      context.save()
+      context.strokeStyle = marker.color
+      context.fillStyle = marker.color
+      context.lineWidth = Math.max(2, width / 500)
+      context.beginPath()
+      context.arc(marker.point.x, marker.point.y, Math.max(8, width / 100), 0, Math.PI * 2)
+      context.stroke()
+      context.font = `700 ${Math.max(12, width / 70)}px sans-serif`
+      context.fillText(marker.label, marker.point.x + 12, marker.point.y - 12)
+      context.restore()
+    }
+
     setProgress(video.duration ? video.currentTime / video.duration : 0)
-  }, [handedness])
+  }, [handedness, calibrationA, calibrationB, ballStart, ballEnd])
 
   const renderLoop = useCallback(() => {
     drawFrame()
@@ -467,6 +497,11 @@ export function MotionAnalysisStudio() {
     setSummary(null)
     setMetrics(null)
     setProgress(0)
+    setSelectionMode(null)
+    setCalibrationA(null)
+    setCalibrationB(null)
+    setBallStart(null)
+    setBallEnd(null)
     setError('')
     await initializeModel()
   }
@@ -599,6 +634,41 @@ export function MotionAnalysisStudio() {
     }
   }
 
+  function selectVideoPoint(event: React.MouseEvent<HTMLCanvasElement>) {
+    if (!selectionMode || !canvasRef.current || !videoRef.current) return
+    const canvas = canvasRef.current
+    const bounds = canvas.getBoundingClientRect()
+    const x = ((event.clientX - bounds.left) / bounds.width) * canvas.width
+    const y = ((event.clientY - bounds.top) / bounds.height) * canvas.height
+    const selected = { x, y, time: videoRef.current.currentTime }
+    if (selectionMode === 'calibrationA') setCalibrationA(selected)
+    if (selectionMode === 'calibrationB') setCalibrationB(selected)
+    if (selectionMode === 'ballStart') setBallStart(selected)
+    if (selectionMode === 'ballEnd') setBallEnd(selected)
+    setSelectionMode(null)
+    requestAnimationFrame(drawFrame)
+  }
+
+  const velocityEstimate = useMemo(() => {
+    if (!calibrationA || !calibrationB || !ballStart || !ballEnd || calibrationFeet <= 0) return null
+    const calibrationPixels = Math.hypot(calibrationB.x - calibrationA.x, calibrationB.y - calibrationA.y)
+    const ballPixels = Math.hypot(ballEnd.x - ballStart.x, ballEnd.y - ballStart.y)
+    const measuredFrames = Math.max(1, Math.round(Math.abs(ballEnd.time - ballStart.time) * captureFps))
+    if (calibrationPixels < 10 || ballPixels < 2) return null
+    const feetTravelled = (ballPixels / calibrationPixels) * calibrationFeet
+    const seconds = measuredFrames / captureFps
+    const mph = (feetTravelled / seconds) * 0.681818
+    if (!Number.isFinite(mph) || mph < 20 || mph > 130) return null
+    const margin = Math.max(2, mph * (setupConfirmed ? 0.05 : 0.1))
+    return {
+      mph,
+      low: Math.max(0, mph - margin),
+      high: mph + margin,
+      frames: measuredFrames,
+      confidence: setupConfirmed && measuredFrames >= 4 ? 'Moderate' : 'Low',
+    }
+  }, [calibrationA, calibrationB, ballStart, ballEnd, calibrationFeet, captureFps, setupConfirmed])
+
   const metricCards = useMemo(() => [
     { label: 'Throwing elbow', value: formatAngle(metrics?.throwingElbow ?? null) },
     { label: 'Lead knee', value: formatAngle(metrics?.leadKnee ?? null) },
@@ -626,6 +696,34 @@ export function MotionAnalysisStudio() {
           </p>
         </div>
       </div>
+
+      <section className="card">
+        <div className="flex items-start gap-3">
+          <Video className="mt-1 h-6 w-6 flex-none text-electric-blue-light" />
+          <div>
+            <h2 className="text-xl font-bold text-white">Calibrated side-view setup</h2>
+            <p className="mt-1 text-sm text-slate-400">Required before using the experimental video velocity estimator.</p>
+          </div>
+        </div>
+        <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {[
+            'Place the camera exactly 15 ft from the marked reference point.',
+            'Set the center of the phone lens exactly 6 ft above the ground.',
+            'Aim perpendicular to the target line; keep the phone level and stationary.',
+            'Use landscape orientation, no digital zoom, and strong lighting.',
+            'Record at 240 FPS when supported; 120 FPS is the minimum.',
+            'Place a known-length calibration marker in the ball-travel plane.',
+          ].map((instruction, index) => (
+            <div key={instruction} className="rounded-xl border border-surface-border bg-navy-900 p-4 text-sm text-slate-300">
+              <span className="mr-2 font-black text-electric-blue-light">{index + 1}.</span>{instruction}
+            </div>
+          ))}
+        </div>
+        <label className="mt-5 flex cursor-pointer items-start gap-3 rounded-xl border border-surface-border bg-navy-950 p-4">
+          <input type="checkbox" checked={setupConfirmed} onChange={(event) => setSetupConfirmed(event.target.checked)} className="mt-1 h-5 w-5 accent-electric-blue" />
+          <span className="text-sm text-slate-300">I confirm this clip follows the 15-ft distance, 6-ft lens-height, perpendicular alignment, no-zoom, frame-rate, and in-plane calibration-marker requirements.</span>
+        </label>
+      </section>
 
       {!fileUrl ? (
         <label className="flex min-h-80 cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-surface-border bg-surface-card p-8 text-center transition hover:border-electric-blue hover:bg-surface-hover">
@@ -659,7 +757,12 @@ export function MotionAnalysisStudio() {
                   if (exportingRef.current) recorderRef.current?.stop()
                 }}
               />
-              <canvas ref={canvasRef} className="h-full w-full object-contain" />
+              <canvas
+                ref={canvasRef}
+                onClick={selectVideoPoint}
+                className={`h-full w-full object-contain ${selectionMode ? 'cursor-crosshair' : ''}`}
+                aria-label="Video analysis canvas"
+              />
               {modelStatus === 'loading' && (
                 <div className="absolute inset-0 flex items-center justify-center bg-navy-950/80 text-sm text-white">
                   Loading pose model…
@@ -727,6 +830,56 @@ export function MotionAnalysisStudio() {
 
       {error && <div role="alert" className="rounded-xl border border-red-500/25 bg-red-500/10 p-4 text-sm text-red-300">{error}</div>}
 
+      {fileUrl && (
+        <section className="card">
+          <div className="flex flex-col justify-between gap-3 md:flex-row md:items-start">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-electric-blue-light">Experimental</p>
+              <h2 className="mt-1 text-xl font-bold text-white">Calibrated video velocity estimator</h2>
+              <p className="mt-2 max-w-3xl text-sm text-slate-400">
+                Pause the video and select two ends of the known calibration marker. Then select the baseball center on one frame, advance several frames, and select it again.
+              </p>
+            </div>
+            <div className="rounded-lg border border-yellow-400/25 bg-yellow-400/10 px-3 py-2 text-xs text-yellow-100">Estimated range—not radar verified</div>
+          </div>
+
+          <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <label>
+              <span className="label">Recorded frame rate</span>
+              <select className="input" value={captureFps} onChange={(event) => setCaptureFps(Number(event.target.value))}>
+                <option value={240}>240 FPS</option>
+                <option value={120}>120 FPS</option>
+                <option value={60}>60 FPS (low confidence)</option>
+              </select>
+            </label>
+            <label>
+              <span className="label">Calibration-marker length</span>
+              <div className="flex items-center gap-2">
+                <input className="input" type="number" min={1} step={0.25} value={calibrationFeet} onChange={(event) => setCalibrationFeet(Number(event.target.value))} />
+                <span className="text-sm text-slate-400">ft</span>
+              </div>
+            </label>
+            <PointButton label="Set calibration point A" complete={!!calibrationA} active={selectionMode === 'calibrationA'} onClick={() => setSelectionMode('calibrationA')} />
+            <PointButton label="Set calibration point B" complete={!!calibrationB} active={selectionMode === 'calibrationB'} onClick={() => setSelectionMode('calibrationB')} />
+            <PointButton label="Set ball position 1" complete={!!ballStart} active={selectionMode === 'ballStart'} onClick={() => setSelectionMode('ballStart')} detail={ballStart ? `${ballStart.time.toFixed(3)}s` : 'Pause on first clear frame'} />
+            <PointButton label="Set ball position 2" complete={!!ballEnd} active={selectionMode === 'ballEnd'} onClick={() => setSelectionMode('ballEnd')} detail={ballEnd ? `${ballEnd.time.toFixed(3)}s` : 'Advance at least 4 frames'} />
+            <div className="rounded-xl border border-surface-border bg-navy-900 p-4 sm:col-span-2">
+              <p className="text-xs uppercase tracking-wider text-slate-500">Video-estimated velocity</p>
+              {velocityEstimate ? (
+                <>
+                  <p className="mt-1 text-3xl font-black text-white">{Math.round(velocityEstimate.low)}–{Math.round(velocityEstimate.high)} mph</p>
+                  <p className="mt-1 text-xs text-slate-400">Center estimate {velocityEstimate.mph.toFixed(1)} mph · {velocityEstimate.frames} frames · {velocityEstimate.confidence} confidence</p>
+                </>
+              ) : (
+                <p className="mt-2 text-sm text-slate-400">Complete all four point selections to calculate a range.</p>
+              )}
+            </div>
+          </div>
+          {selectionMode && <p role="status" className="mt-4 rounded-lg bg-electric-blue/10 p-3 text-sm text-electric-blue-light">Click the requested point directly on the paused video.</p>}
+          <p className="mt-4 text-xs leading-relaxed text-slate-500">This calculation assumes the calibration marker and baseball path occupy the same image plane. Perspective, lens distortion, motion blur, incorrect FPS metadata, and point-selection error can materially affect the result. Radar remains the verified measurement.</p>
+        </section>
+      )}
+
       {summary && (
         <section className="card">
           <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
@@ -769,6 +922,31 @@ function SummaryCard({ label, value }: { label: string; value: string }) {
       <p className="text-xs text-slate-500">{label}</p>
       <p className="mt-1 text-lg font-black text-white">{value}</p>
     </div>
+  )
+}
+
+function PointButton({
+  label,
+  complete,
+  active,
+  onClick,
+  detail,
+}: {
+  label: string
+  complete: boolean
+  active: boolean
+  onClick: () => void
+  detail?: string
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`rounded-xl border p-4 text-left transition ${active ? 'border-electric-blue bg-electric-blue/10' : 'border-surface-border bg-navy-900 hover:border-electric-blue/60'}`}
+    >
+      <span className="block text-sm font-bold text-white">{complete ? '✓ ' : ''}{label}</span>
+      <span className="mt-1 block text-xs text-slate-500">{active ? 'Click on the video now' : detail ?? (complete ? 'Point selected' : 'Select point')}</span>
+    </button>
   )
 }
 
