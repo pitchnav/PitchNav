@@ -121,6 +121,164 @@ function calculateMetrics(
   }
 }
 
+function drawAnatomicalSkeleton(
+  context: CanvasRenderingContext2D,
+  landmarks: NormalizedLandmark[],
+  width: number,
+  height: number
+) {
+  const point = (index: number) => ({
+    x: landmarks[index].x * width,
+    y: landmarks[index].y * height,
+    visibility: landmarks[index].visibility ?? 0,
+  })
+  const midpoint = (a: ReturnType<typeof point>, b: ReturnType<typeof point>) => ({
+    x: (a.x + b.x) / 2,
+    y: (a.y + b.y) / 2,
+    visibility: Math.min(a.visibility, b.visibility),
+  })
+  const distance = (a: ReturnType<typeof point>, b: ReturnType<typeof point>) => Math.hypot(a.x - b.x, a.y - b.y)
+  const shoulders = [point(11), point(12)]
+  const hips = [point(23), point(24)]
+  const shoulderMid = midpoint(shoulders[0], shoulders[1])
+  const hipMid = midpoint(hips[0], hips[1])
+  const scale = Math.max(3, width / 300)
+
+  const bone = (startIndex: number, endIndex: number, thickness = 3.5) => {
+    const start = point(startIndex)
+    const end = point(endIndex)
+    if (Math.min(start.visibility, end.visibility) < 0.45) return
+    context.save()
+    context.lineCap = 'round'
+    context.shadowBlur = 12
+    context.shadowColor = '#38bdf8'
+    context.strokeStyle = '#f8fafc'
+    context.lineWidth = scale * thickness
+    context.beginPath()
+    context.moveTo(start.x, start.y)
+    context.lineTo(end.x, end.y)
+    context.stroke()
+    context.strokeStyle = 'rgba(148, 163, 184, 0.8)'
+    context.lineWidth = scale * 0.65
+    context.stroke()
+    context.restore()
+  }
+
+  const joint = (index: number, radius = 2.2) => {
+    const p = point(index)
+    if (p.visibility < 0.45) return
+    context.save()
+    context.shadowBlur = 10
+    context.shadowColor = '#38bdf8'
+    context.fillStyle = '#dbeafe'
+    context.strokeStyle = '#38bdf8'
+    context.lineWidth = scale * 0.5
+    context.beginPath()
+    context.arc(p.x, p.y, scale * radius, 0, Math.PI * 2)
+    context.fill()
+    context.stroke()
+    context.restore()
+  }
+
+  // Skull and jaw, sized from the detected shoulder width so it remains
+  // visually stable when facial landmarks are partially hidden.
+  const nose = point(0)
+  const earLeft = point(7)
+  const earRight = point(8)
+  const headCenter = midpoint(earLeft, earRight)
+  if (nose.visibility >= 0.45 || headCenter.visibility >= 0.45) {
+    const shoulderWidth = distance(shoulders[0], shoulders[1])
+    const headWidth = Math.max(distance(earLeft, earRight) * 1.45, shoulderWidth * 0.3)
+    const headHeight = headWidth * 1.22
+    context.save()
+    context.translate(headCenter.x, headCenter.y)
+    context.rotate(Math.atan2(earRight.y - earLeft.y, earRight.x - earLeft.x))
+    context.shadowBlur = 14
+    context.shadowColor = '#38bdf8'
+    context.fillStyle = 'rgba(226, 232, 240, 0.18)'
+    context.strokeStyle = '#f8fafc'
+    context.lineWidth = scale * 1.2
+    context.beginPath()
+    context.ellipse(0, 0, headWidth / 2, headHeight / 2, 0, 0, Math.PI * 2)
+    context.fill()
+    context.stroke()
+    context.beginPath()
+    context.moveTo(-headWidth * 0.32, headHeight * 0.22)
+    context.quadraticCurveTo(0, headHeight * 0.52, headWidth * 0.32, headHeight * 0.22)
+    context.stroke()
+    context.restore()
+  }
+
+  // Neck and spine.
+  if (shoulderMid.visibility >= 0.45 && hipMid.visibility >= 0.45) {
+    const neckBottom = shoulderMid
+    const neckTop = { x: headCenter.x, y: headCenter.y + distance(shoulderMid, hipMid) * 0.1, visibility: headCenter.visibility }
+    context.save()
+    context.strokeStyle = '#f8fafc'
+    context.lineCap = 'round'
+    context.lineWidth = scale * 3
+    context.shadowBlur = 12
+    context.shadowColor = '#38bdf8'
+    context.beginPath()
+    context.moveTo(neckTop.x, neckTop.y)
+    context.lineTo(neckBottom.x, neckBottom.y)
+    context.lineTo(hipMid.x, hipMid.y)
+    context.stroke()
+    context.restore()
+
+    // Rib cage follows the torso's translation and rotation.
+    const torsoLength = distance(shoulderMid, hipMid)
+    const shoulderWidth = distance(shoulders[0], shoulders[1])
+    const torsoAngle = Math.atan2(hipMid.y - shoulderMid.y, hipMid.x - shoulderMid.x) - Math.PI / 2
+    context.save()
+    context.translate((shoulderMid.x + hipMid.x) / 2, (shoulderMid.y + hipMid.y) / 2)
+    context.rotate(torsoAngle)
+    context.strokeStyle = 'rgba(248, 250, 252, 0.92)'
+    context.lineWidth = scale * 0.9
+    context.shadowBlur = 8
+    context.shadowColor = '#38bdf8'
+    for (let rib = 0; rib < 5; rib += 1) {
+      const y = -torsoLength * 0.28 + rib * torsoLength * 0.12
+      const taper = 1 - Math.abs(rib - 2) * 0.09
+      context.beginPath()
+      context.ellipse(0, y, shoulderWidth * 0.42 * taper, torsoLength * 0.1, 0, 0, Math.PI * 2)
+      context.stroke()
+    }
+    context.restore()
+
+    // Pelvis bowl.
+    context.save()
+    context.fillStyle = 'rgba(226, 232, 240, 0.18)'
+    context.strokeStyle = '#f8fafc'
+    context.lineWidth = scale
+    context.shadowBlur = 10
+    context.shadowColor = '#38bdf8'
+    context.beginPath()
+    context.moveTo(hips[0].x, hips[0].y)
+    context.quadraticCurveTo(hipMid.x, hipMid.y + torsoLength * 0.18, hips[1].x, hips[1].y)
+    context.lineTo(hipMid.x, hipMid.y + torsoLength * 0.08)
+    context.closePath()
+    context.fill()
+    context.stroke()
+    context.restore()
+  }
+
+  // Upper/lower arms and legs.
+  ;[[11, 13], [13, 15], [12, 14], [14, 16], [23, 25], [25, 27], [24, 26], [26, 28]].forEach(
+    ([start, end]) => bone(start, end)
+  )
+  ;[11, 12, 13, 14, 15, 16, 23, 24, 25, 26, 27, 28].forEach((index) => joint(index))
+
+  // Hands and fingers.
+  ;[[15, 17], [15, 19], [15, 21], [17, 19], [16, 18], [16, 20], [16, 22], [18, 20]].forEach(
+    ([start, end]) => bone(start, end, 1.15)
+  )
+  // Feet, heels and toes.
+  ;[[27, 29], [29, 31], [27, 31], [28, 30], [30, 32], [28, 32]].forEach(
+    ([start, end]) => bone(start, end, 1.5)
+  )
+}
+
 export function MotionAnalysisStudio() {
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -241,34 +399,34 @@ export function MotionAnalysisStudio() {
         lastSampleTimeRef.current = video.currentTime
       }
 
-      context.lineCap = 'round'
-      context.lineJoin = 'round'
-      context.shadowBlur = 12
-      context.shadowColor = '#2563eb'
-      for (const [start, end] of CONNECTIONS) {
-        const a = landmarks[start]
-        const b = landmarks[end]
-        const visibility = Math.min(a.visibility ?? 0, b.visibility ?? 0)
-        if (visibility < 0.45) continue
-        context.beginPath()
-        context.moveTo(a.x * width, a.y * height)
-        context.lineTo(b.x * width, b.y * height)
-        context.strokeStyle = exportStyleRef.current
-          ? (visibility > 0.75 ? '#f8fafc' : '#facc15')
-          : (visibility > 0.75 ? '#38bdf8' : '#facc15')
-        context.lineWidth = exportStyleRef.current ? Math.max(5, width / 190) : Math.max(3, width / 350)
-        context.stroke()
+      if (exportStyleRef.current) {
+        drawAnatomicalSkeleton(context, landmarks, width, height)
+      } else {
+        context.lineCap = 'round'
+        context.lineJoin = 'round'
+        context.shadowBlur = 12
+        context.shadowColor = '#2563eb'
+        for (const [start, end] of CONNECTIONS) {
+          const a = landmarks[start]
+          const b = landmarks[end]
+          const visibility = Math.min(a.visibility ?? 0, b.visibility ?? 0)
+          if (visibility < 0.45) continue
+          context.beginPath()
+          context.moveTo(a.x * width, a.y * height)
+          context.lineTo(b.x * width, b.y * height)
+          context.strokeStyle = visibility > 0.75 ? '#38bdf8' : '#facc15'
+          context.lineWidth = Math.max(3, width / 350)
+          context.stroke()
+        }
+        context.shadowBlur = 8
+        landmarks.forEach((landmark) => {
+          if ((landmark.visibility ?? 0) < 0.45) return
+          context.beginPath()
+          context.arc(landmark.x * width, landmark.y * height, Math.max(3, width / 260), 0, Math.PI * 2)
+          context.fillStyle = (landmark.visibility ?? 0) > 0.75 ? '#ffffff' : '#facc15'
+          context.fill()
+        })
       }
-      context.shadowBlur = 8
-      landmarks.forEach((landmark) => {
-        if ((landmark.visibility ?? 0) < 0.45) return
-        context.beginPath()
-        context.arc(landmark.x * width, landmark.y * height, Math.max(3, width / 260), 0, Math.PI * 2)
-        context.fillStyle = (landmark.visibility ?? 0) > 0.75
-          ? (exportStyleRef.current ? '#38bdf8' : '#ffffff')
-          : '#facc15'
-        context.fill()
-      })
       context.shadowBlur = 0
     }
 
