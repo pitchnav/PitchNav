@@ -61,9 +61,9 @@ export default async function DashboardPage() {
         <div id="feedback-plan" className="mb-8 scroll-mt-24">
           <div className="mb-4 flex items-end justify-between gap-4">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-accent-green">Available immediately</p>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-accent-green">Owner-reviewed delivery</p>
               <h2 className="mt-1 text-lg font-bold text-white">Your Feedback & Training Plan</h2>
-              <p className="mt-1 text-sm text-slate-400">Video-generated coaching estimates appear here as soon as you save a Motion Lab analysis. Coach refinements are added separately.</p>
+              <p className="mt-1 text-sm text-slate-400">Submissions are analyzed first, then released after the Pitch Nav owner reviews the video, scores, velocity assumptions, and plan.</p>
             </div>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
@@ -76,23 +76,23 @@ export default async function DashboardPage() {
                       <p className="font-bold text-white">{analysis.title}</p>
                       <p className="mt-1 text-xs capitalize text-slate-500">{analysis.status.replaceAll('_', ' ')}</p>
                     </div>
-                    {analysis.delivery_score !== null && <span className="rounded-lg bg-electric-blue/10 px-3 py-1 text-sm font-black text-electric-blue-light">{analysis.delivery_score}/30</span>}
+                    {analysis.status === 'published' && analysis.delivery_score !== null && <span className="rounded-lg bg-electric-blue/10 px-3 py-1 text-sm font-black text-electric-blue-light">{analysis.delivery_score}/30</span>}
                   </div>
                   <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
-                    <div className="rounded-lg bg-navy-950 p-3"><p className="text-xs text-slate-500">Velocity estimate</p><p className="mt-1 font-bold text-white">{analysis.velocity_estimate_low !== null ? `${Math.round(analysis.velocity_estimate_low)}–${Math.round(analysis.velocity_estimate_high)} mph` : '—'}</p></div>
-                    <div className="rounded-lg bg-navy-950 p-3"><p className="text-xs text-slate-500">Training plan</p><p className="mt-1 font-bold text-white">{plan?.duration_weeks ? `${plan.duration_weeks} weeks` : 'Pending coach'}</p></div>
+                    <div className="rounded-lg bg-navy-950 p-3"><p className="text-xs text-slate-500">Velocity estimate</p><p className="mt-1 font-bold text-white">{analysis.status === 'published' && analysis.velocity_estimate_low !== null ? `${Math.round(analysis.velocity_estimate_low)}–${Math.round(analysis.velocity_estimate_high)} mph` : '—'}</p></div>
+                    <div className="rounded-lg bg-navy-950 p-3"><p className="text-xs text-slate-500">Training plan</p><p className="mt-1 font-bold text-white">{analysis.status === 'published' && plan?.duration_weeks ? `${plan.duration_weeks} weeks` : 'Pending coach'}</p></div>
                   </div>
-                  {analysis.coach_feedback && <p className="mt-4 line-clamp-3 text-sm text-slate-300">{analysis.coach_feedback}</p>}
-                  {!!analysis.strengths?.length && <p className="mt-4 text-sm text-slate-300"><span className="font-semibold text-accent-green">Starting strength:</span> {analysis.strengths[0]}</p>}
-                  {!!analysis.development_priorities?.length && <p className="mt-2 text-sm text-slate-300"><span className="font-semibold text-electric-blue-light">First priority:</span> {analysis.development_priorities[0]}</p>}
-                  {plan?.weeks?.length > 0 && (
+                  {analysis.status === 'published' && analysis.coach_feedback && <p className="mt-4 line-clamp-3 text-sm text-slate-300">{analysis.coach_feedback}</p>}
+                  {analysis.status === 'published' && !!analysis.strengths?.length && <p className="mt-4 text-sm text-slate-300"><span className="font-semibold text-accent-green">Starting strength:</span> {analysis.strengths[0]}</p>}
+                  {analysis.status === 'published' && !!analysis.development_priorities?.length && <p className="mt-2 text-sm text-slate-300"><span className="font-semibold text-electric-blue-light">First priority:</span> {analysis.development_priorities[0]}</p>}
+                  {analysis.status === 'published' && plan?.weeks?.length > 0 && (
                     <div className="mt-4 rounded-lg border border-surface-border bg-navy-950 p-3">
                       <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Week 1</p>
                       <p className="mt-1 text-sm text-white">{plan.weeks[0]?.priority}</p>
                     </div>
                   )}
                   <div className="mt-4 flex flex-wrap gap-4">
-                    <Link href={`/dashboard/feedback/${analysis.id}`} className="inline-flex text-sm font-semibold text-accent-green hover:text-white">View full feedback & calendar <ArrowRight className="ml-1 h-4 w-4" /></Link>
+                    {analysis.status === 'published' ? <Link href={`/dashboard/feedback/${analysis.id}`} className="inline-flex text-sm font-semibold text-accent-green hover:text-white">View approved feedback & calendar <ArrowRight className="ml-1 h-4 w-4" /></Link> : <span className="text-sm font-semibold text-yellow-300">Owner review in progress — we’ll email you when ready</span>}
                     <Link href="/dashboard/motion-lab" className="inline-flex text-sm font-semibold text-electric-blue-light hover:text-white">Open Motion Lab <ArrowRight className="ml-1 h-4 w-4" /></Link>
                   </div>
                 </div>

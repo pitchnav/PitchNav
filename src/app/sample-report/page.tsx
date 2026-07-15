@@ -286,9 +286,9 @@ export default function SampleReportPage() {
           </div>
         </div>
 
-        {/* Four-week plan */}
+        {/* Eight-week plan */}
         <div className="card mb-8">
-          <h2 className="text-xl font-bold text-white mb-4">Four-Week Focus Plan (Sample)</h2>
+          <h2 className="text-xl font-bold text-white mb-4">Eight-Week Focus Plan (Sample)</h2>
           <div className="space-y-4">
             {[
               { week: 1, focus: 'Front-Leg Stability', detail: 'Pivot Pickoff Drill daily (3×6). Focus on the feeling of a firm front leg through release on every bullpen pitch. Video yourself from the open side at least once.' },
@@ -317,7 +317,7 @@ export default function SampleReportPage() {
             personalized to your specific delivery.
           </p>
           <Link href="/start-analysis" className="btn-primary text-base px-8 py-4">
-            Start My Analysis — $49 <ArrowRight className="h-5 w-5" />
+            Start My Analysis — $25/month <ArrowRight className="h-5 w-5" />
           </Link>
         </div>
       </div>

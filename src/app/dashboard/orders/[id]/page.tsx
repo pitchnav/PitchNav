@@ -153,7 +153,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
           {order.status === 'complete' && (
             <div className="card bg-accent-green/5 border-accent-green/30 text-center py-8">
               <h3 className="text-xl font-bold text-accent-green mb-2">Your Report is Ready!</h3>
-              <p className="text-slate-400 mb-6">View your complete mechanics analysis, drills, and four-week plan.</p>
+              <p className="text-slate-400 mb-6">View your complete mechanics analysis, drills, and eight-week plan.</p>
               <Link href={`/dashboard/reports/${order.id}`} className="btn-accent">
                 View My Report <ArrowRight className="h-4 w-4" />
               </Link>

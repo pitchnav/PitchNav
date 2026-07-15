@@ -5,7 +5,7 @@ import { SafetyDisclaimer } from '@/components/ui/SafetyDisclaimer'
 
 export const metadata: Metadata = {
   title: 'Pricing',
-  description: 'Pitch Nav Complete Pitching Analysis — $49. Expert-reviewed mechanics breakdown, velocity profile, personalized drills, and a four-week development plan.',
+  description: 'Pitch Nav membership — $25/month. Owner-reviewed pitching analysis every two weeks, velocity estimates, progress tracking, and an eight-week development plan.',
 }
 
 const included = [
@@ -17,7 +17,9 @@ const included = [
   { item: '3 identified strengths', note: null },
   { item: '3 development priorities', note: null },
   { item: '3 personalized drills', note: 'Sets, reps, coaching cues, and common mistakes for each' },
-  { item: 'Four-week focus plan', note: null },
+  { item: 'Eight-week Monday–Sunday development plan', note: 'Daily priorities, drills, recovery, progress checkboxes, and a retest date' },
+  { item: 'One new analysis every two weeks', note: 'Compare deliveries and track score, angle, and velocity trends over time' },
+  { item: 'Owner approval before release', note: 'Your results are reviewed before appearing in your dashboard' },
   { item: 'Voice-over video analysis', note: 'Your reviewer walks through the report verbally' },
   { item: 'Downloadable PDF report', note: null },
   { item: 'Annotated position images', note: null },
@@ -34,8 +36,8 @@ const faqs = [
     a: 'If your videos do not meet quality standards, your reviewer will notify you and explain what is needed. You can upload replacement videos at no additional charge within 14 days of the request.',
   },
   {
-    q: 'Does the $49 cover both video angles?',
-    a: 'Yes. The price covers your complete analysis including both the open-side and rear-view videos you submit.',
+    q: 'What does the $25 monthly membership include?',
+    a: 'Your membership includes secure video storage, one owner-reviewed analysis every two weeks, skeleton motion visualization, video-estimated velocity when eligible, an eight-week plan, and progress comparisons.',
   },
   {
     q: 'How much does a follow-up analysis cost?',
@@ -53,7 +55,7 @@ export default function PricingPage() {
             Simple, Transparent Pricing
           </h1>
           <p className="mt-4 text-lg text-slate-400 max-w-2xl mx-auto">
-            One package. Expert-reviewed. Everything you need to understand your delivery and plan your development.
+            Ongoing development—not a one-time report. Submit every two weeks, receive owner-reviewed feedback, follow your daily plan, and measure what changes.
           </p>
         </div>
 
@@ -63,15 +65,14 @@ export default function PricingPage() {
 
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-6 mb-8">
             <div>
-              <h2 className="text-2xl font-black text-white">Complete Pitching Analysis</h2>
+              <h2 className="text-2xl font-black text-white">Pitch Nav Development Membership</h2>
               <p className="text-slate-400 mt-2 max-w-lg">
-                A comprehensive frame-by-frame breakdown of your pitching mechanics,
-                reviewed by an experienced pitching coach.
+                A continuous pitching-development workspace with owner-reviewed video analysis, a clear biggest opportunity, velocity context, and a practical two-month roadmap.
               </p>
             </div>
             <div className="flex-shrink-0">
-              <div className="text-5xl font-black text-white">$49</div>
-              <p className="text-slate-500 text-sm mt-1">one-time · no subscription</p>
+              <div className="text-5xl font-black text-white">$25</div>
+              <p className="text-slate-500 text-sm mt-1">per month · cancel anytime</p>
             </div>
           </div>
 
@@ -89,7 +90,7 @@ export default function PricingPage() {
 
           <div className="flex flex-col sm:flex-row gap-4">
             <Link href="/start-analysis" className="btn-accent flex-1 justify-center text-base py-4">
-              Start My Analysis — $49 <ArrowRight className="h-5 w-5" />
+              Start Membership — $25/month <ArrowRight className="h-5 w-5" />
             </Link>
             <Link href="/sample-report" className="btn-secondary flex-1 justify-center text-base py-4">
               View Sample Report

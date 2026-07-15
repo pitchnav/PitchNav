@@ -62,7 +62,7 @@ const steps = [
     details: [
       'Secure checkout powered by Stripe',
       'Pitch Nav does not store your card number',
-      'One-time $49 payment — no subscription',
+      'Monthly $25 membership — cancel anytime',
       'Order confirmation email sent immediately',
       'Order immediately enters the review queue',
     ],
@@ -91,7 +91,7 @@ const steps = [
       'Position-by-position annotated breakdowns',
       'Three strengths and three development priorities',
       'Three personalized drills with sets, reps, and coaching cues',
-      'Four-week focus plan',
+      'Eight-week focus plan',
       'Voice-over video walking you through the analysis',
       'Downloadable PDF report',
     ],
@@ -176,7 +176,7 @@ export default function HowItWorksPage() {
 
         <div className="mt-12 text-center">
           <Link href="/start-analysis" className="btn-primary text-base px-8 py-4">
-            Start My Analysis — $49 <ArrowRight className="h-5 w-5" />
+            Start My Analysis — $25/month <ArrowRight className="h-5 w-5" />
           </Link>
           <p className="mt-4 text-sm text-slate-500">
             Have questions first?{' '}

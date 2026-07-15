@@ -169,7 +169,7 @@ export async function sendAnalysisCompleteEmail(to: string, name: string, orderI
     html: `<div style="${baseStyle}">${brandHeader}
       <h2 style="color:#00e5a0;font-size:24px;margin-bottom:8px;">Your Analysis is Ready!</h2>
       <p style="color:#94a3b8;line-height:1.6;">Great news, ${name}. Your complete pitching mechanics report is now available in your dashboard.</p>
-      <p style="color:#94a3b8;line-height:1.6;">Log in to view your Delivery Score, position-by-position breakdown, personalized drills, and four-week focus plan.</p>
+      <p style="color:#94a3b8;line-height:1.6;">Log in to view your Delivery Score, position-by-position breakdown, personalized drills, and eight-week focus plan.</p>
       <div style="text-align:center;margin:32px 0;">
         <a href="${APP_URL}/dashboard/reports/${orderId}" style="background:#00e5a0;color:#05080f;text-decoration:none;padding:14px 32px;border-radius:8px;font-weight:700;font-size:16px;display:inline-block;">View My Report</a>
       </div>
@@ -226,5 +226,25 @@ export async function sendFollowupReminderEmail(to: string, name: string) {
       <p><a href="${APP_URL}/start-analysis" style="display:inline-block;background:#2563eb;color:#fff;padding:12px 20px;border-radius:8px;text-decoration:none;font-weight:700">Start follow-up analysis</a></p>
       <p style="font-size:12px;color:#64748b">Pitch Nav provides educational baseball-training information and does not guarantee performance results.</p>
       ${footer}</div>`,
+  })
+}
+
+export async function sendOwnerReviewRequestEmail(to: string, athleteName: string, title: string, analysisId: string) {
+  return sendEmail({
+    to,
+    subject: `Approval requested: ${athleteName} — ${title}`,
+    html: `<div style="${baseStyle}">${brandHeader}
+      <h2 style="color:#f1f5f9;font-size:22px;">A Motion Lab report needs your approval</h2>
+      <p style="color:#94a3b8;line-height:1.6;"><strong style="color:#fff;">${athleteName}</strong> submitted ${title}. Review the source video, phase frames, mechanics scores, velocity assumptions, and plan before releasing it.</p>
+      <div style="text-align:center;margin:32px 0;"><a href="${APP_URL}/admin/motion-lab#${analysisId}" style="background:#2563eb;color:#fff;text-decoration:none;padding:14px 32px;border-radius:8px;font-weight:700;display:inline-block;">Review and approve</a></div>
+      ${footer}</div>`,
+  })
+}
+
+export async function sendMotionAnalysisReadyEmail(to: string, name: string, analysisId: string) {
+  return sendEmail({
+    to,
+    subject: 'Your Pitch Nav feedback has been approved',
+    html: `<div style="${baseStyle}">${brandHeader}<h2 style="color:#00e5a0;font-size:24px;">Your verified feedback is ready</h2><p style="color:#94a3b8;line-height:1.6;">Hi ${name}, your Pitch Nav owner has reviewed and approved your mechanics feedback and two-month development plan.</p><div style="text-align:center;margin:32px 0;"><a href="${APP_URL}/dashboard/feedback/${analysisId}" style="background:#00e5a0;color:#05080f;text-decoration:none;padding:14px 32px;border-radius:8px;font-weight:700;display:inline-block;">View approved report</a></div>${footer}</div>`,
   })
 }

@@ -24,6 +24,7 @@ export default async function FeedbackReportPage({ params }: { params: Promise<{
     .eq('user_id', user.id)
     .single()
   if (!analysis) notFound()
+  if (analysis.status !== 'published') redirect('/dashboard?review=pending')
 
   const categories = (analysis.category_scores ?? []) as Category[]
   const phases = (analysis.phase_snapshots ?? []) as Phase[]

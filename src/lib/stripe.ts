@@ -25,7 +25,7 @@ export async function createCheckoutSession({
   cancelUrl: string
 }) {
   const session = await stripe.checkout.sessions.create({
-    mode: 'payment',
+    mode: 'subscription',
     payment_method_types: ['card'],
     line_items: [
       {
@@ -41,12 +41,9 @@ export async function createCheckoutSession({
     customer_email: undefined, // set via metadata if needed
     success_url: successUrl,
     cancel_url: cancelUrl,
-    // Idempotency via order ID in metadata prevents duplicate charges
-    payment_intent_data: {
-      metadata: {
-        order_id: orderId,
-        user_id: userId,
-      },
+    // The configured Stripe Price must be a recurring monthly $25 price.
+    subscription_data: {
+      metadata: { order_id: orderId, user_id: userId },
     },
   })
 

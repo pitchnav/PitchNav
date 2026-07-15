@@ -397,7 +397,7 @@ export function MotionAnalysisStudio({ initialVideo = null }: { initialVideo?: I
   const [detectedPlaybackFps, setDetectedPlaybackFps] = useState<number | null>(null)
   const [detectingFps, setDetectingFps] = useState(false)
   const [setupConfirmed, setSetupConfirmed] = useState(false)
-  const [planWeeks, setPlanWeeks] = useState<4 | 8>(4)
+  const [planWeeks, setPlanWeeks] = useState<4 | 8>(8)
   const [savingAnalysis, setSavingAnalysis] = useState(false)
   const [saveMessage, setSaveMessage] = useState('')
   const supabase = useMemo(() => createClient(), [])
@@ -658,6 +658,7 @@ export function MotionAnalysisStudio({ initialVideo = null }: { initialVideo?: I
         setDetectedPlaybackFps(fps)
         if (fps >= 180) setCaptureFps(240)
         else if (fps >= 90) setCaptureFps(120)
+        else setCaptureFps(60)
       }
     } catch (reason) {
       console.warn('Frame-rate detection was unavailable', reason)
@@ -670,6 +671,18 @@ export function MotionAnalysisStudio({ initialVideo = null }: { initialVideo?: I
       setDetectingFps(false)
       drawFrame()
     }
+  }
+
+  function stepFrame(direction: -1 | 1) {
+    const video = videoRef.current
+    if (!video || !video.duration) return
+    video.pause()
+    setPlaying(false)
+    // Use the selected capture rate so 240/120 FPS clips can be inspected one recorded frame at a time.
+    const frameDuration = 1 / Math.max(1, captureFps)
+    video.currentTime = Math.max(0, Math.min(video.duration - frameDuration, video.currentTime + direction * frameDuration))
+    setProgress(video.currentTime / video.duration)
+    window.setTimeout(drawFrame, 30)
   }
 
   async function togglePlayback() {
@@ -889,6 +902,12 @@ export function MotionAnalysisStudio({ initialVideo = null }: { initialVideo?: I
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Please sign in again.')
+      const cutoff = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString()
+      const { data: recentAnalysis } = await supabase.from('motion_analyses').select('id,created_at').eq('user_id', user.id).gte('created_at', cutoff).order('created_at', { ascending: false }).limit(1).maybeSingle()
+      if (recentAnalysis) {
+        const nextDate = new Date(new Date(recentAnalysis.created_at).getTime() + 14 * 24 * 60 * 60 * 1000)
+        throw new Error(`Your membership includes one analysis every two weeks. Your next analysis is available ${nextDate.toLocaleDateString()}.`)
+      }
       const analysisId = crypto.randomUUID()
       const source = selectedFileRef.current
       const categoryFeedback = buildCategoryFeedback(samplesRef.current, summary)
@@ -965,9 +984,11 @@ export function MotionAnalysisStudio({ initialVideo = null }: { initialVideo?: I
         title: `${planWeeks}-Week Pitching Development Plan`,
         weeks,
         follow_up_date: followUp.toISOString().slice(0, 10),
+        published_at: null,
       })
       if (planError) throw planError
-      setSaveMessage('Immediate feedback and your training plan are now saved on your dashboard. A coach can review and refine them later.')
+      await fetch('/api/motion-lab/request-review', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ analysisId: analysis.id }) })
+      setSaveMessage('Submitted for owner review. We emailed Pitch Nav and will email you when your verified feedback and plan are approved for release.')
     } catch (reason) {
       console.error(reason)
       setSaveMessage(reason instanceof Error ? reason.message : 'Could not save this analysis.')
@@ -1104,6 +1125,8 @@ export function MotionAnalysisStudio({ initialVideo = null }: { initialVideo?: I
                   {playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
                   {playing ? 'Pause' : 'Play slow motion'}
                 </button>
+                <button type="button" onClick={() => stepFrame(-1)} className="btn-secondary px-3 py-2" aria-label="Previous frame">← Previous frame</button>
+                <button type="button" onClick={() => stepFrame(1)} className="btn-secondary px-3 py-2" aria-label="Next frame">Next frame →</button>
                 <button type="button" onClick={analyzeFullClip} disabled={analyzing || exporting} className="btn-accent px-4 py-2">
                   <Activity className="h-4 w-4" /> {analyzing ? 'Analyzing…' : 'Analyze full clip'}
                 </button>
@@ -1120,7 +1143,7 @@ export function MotionAnalysisStudio({ initialVideo = null }: { initialVideo?: I
                   </select>
                 </label>
                 <span className="rounded-lg bg-electric-blue/10 px-3 py-2 text-xs text-electric-blue-light">
-                  {detectingFps ? 'Detecting playback FPS…' : detectedPlaybackFps ? `Detected playback: ~${detectedPlaybackFps} FPS` : 'Playback FPS unavailable'}
+                  {detectingFps ? 'Detecting FPS…' : detectedPlaybackFps ? `Detected video track: ~${detectedPlaybackFps} FPS · ${detectedPlaybackFps >= 90 ? 'velocity eligible' : 'verify original slow-motion capture setting'}` : 'FPS unavailable—confirm original Camera setting'}
                 </span>
               </div>
             </div>
@@ -1160,7 +1183,7 @@ export function MotionAnalysisStudio({ initialVideo = null }: { initialVideo?: I
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-electric-blue-light">Experimental</p>
               <h2 className="mt-1 text-xl font-bold text-white">Calibrated video velocity estimator</h2>
               <p className="mt-2 max-w-3xl text-sm text-slate-400">
-                Pause the video and select two ends of the known calibration marker. Then select the baseball center on one frame, advance several frames, and select it again.
+                Use Previous/Next frame above for precise selection. Select both ends of a known-length marker placed on the ground beside the ball path, then select the baseball center on two different frames. The result appears automatically after valid points are selected.
               </p>
             </div>
             <div className="rounded-lg border border-yellow-400/25 bg-yellow-400/10 px-3 py-2 text-xs text-yellow-100">Estimated range—not radar verified</div>
@@ -1172,6 +1195,7 @@ export function MotionAnalysisStudio({ initialVideo = null }: { initialVideo?: I
               <select className="input" value={captureFps} onChange={(event) => setCaptureFps(Number(event.target.value))}>
                 <option value={240}>240 FPS</option>
                 <option value={120}>120 FPS</option>
+                <option value={60}>60 FPS — mechanics only</option>
               </select>
               <span className="mt-1 block text-xs text-slate-500">{detectedPlaybackFps ? `File playback track: approximately ${detectedPlaybackFps} FPS. ` : ''}Confirm the original Camera app setting because edited iPhone slow-motion files may report 30/60 playback FPS even when captured at 120/240.</span>
             </label>
@@ -1196,7 +1220,7 @@ export function MotionAnalysisStudio({ initialVideo = null }: { initialVideo?: I
                   <p className="mt-1 text-xs text-slate-400">Center estimate {velocityEstimate.mph.toFixed(1)} mph · {velocityEstimate.frames} frames · {velocityEstimate.confidence} confidence</p>
                 </>
               ) : (
-                <p className="mt-2 text-sm text-slate-400">Complete all four point selections to calculate a range.</p>
+                <div className="mt-2 space-y-1 text-sm text-slate-400"><p>Complete all four point selections to calculate a range.</p><p className="text-xs text-yellow-200">If all four are complete but no range appears, the points produced an implausible result. Make sure the marker length is correct, Ball 2 is on a later frame, and both ball points track the same pitch.</p></div>
               )}
             </div>
           </div>
@@ -1240,7 +1264,7 @@ export function MotionAnalysisStudio({ initialVideo = null }: { initialVideo?: I
                 </select>
               </label>
               <button type="button" onClick={saveAnalysisToDashboard} disabled={savingAnalysis} className="btn-accent">
-                {savingAnalysis ? 'Saving securely…' : 'Save immediate feedback & plan'}
+                {savingAnalysis ? 'Saving securely…' : 'Submit for owner review'}
               </button>
             </div>
             {saveMessage && <p role="status" className="mt-3 text-sm text-slate-300">{saveMessage}</p>}

@@ -118,13 +118,13 @@ function HowItWorks() {
       step: '03',
       icon: <Target className="h-6 w-6" />,
       title: 'Pay & Submit',
-      description: 'Complete your secure checkout for the Complete Pitching Analysis package. Your submission is immediately queued for review.',
+      description: 'Complete your secure checkout for the Pitch Nav Development Membership package. Your submission is immediately queued for review.',
     },
     {
       step: '04',
       icon: <FileBarChart2 className="h-6 w-6" />,
       title: 'Receive Your Report',
-      description: 'Your expert reviewer analyzes your delivery frame-by-frame and delivers a full report, voice-over video, drills, and a four-week focus plan.',
+      description: 'Your expert reviewer analyzes your delivery frame-by-frame and delivers a full report, voice-over video, drills, and a eight-week focus plan.',
     },
   ]
 
@@ -183,7 +183,7 @@ function WhatIsIncluded() {
     'Three identified strengths',
     'Three development priorities',
     'Three personalized drills with coaching cues',
-    'Four-week focus plan',
+    'Eight-week focus plan',
     'Voice-over video analysis',
     'Downloadable PDF report',
     'Follow-up analysis option',
@@ -196,7 +196,7 @@ function WhatIsIncluded() {
           <div>
             <h2 className="section-heading">Everything in the Analysis</h2>
             <p className="mt-4 text-lg text-slate-400 leading-relaxed">
-              Your Complete Pitching Analysis delivers a thorough, professional breakdown of your
+              Your Pitch Nav Development Membership delivers a thorough, professional breakdown of your
               delivery — designed to give you actionable information, not generic advice.
             </p>
             <ul className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -209,7 +209,7 @@ function WhatIsIncluded() {
             </ul>
             <div className="mt-10 flex gap-4">
               <Link href="/start-analysis" className="btn-primary">
-                Get Started — $49 <ArrowRight className="h-4 w-4" />
+                Get Started — $25/month <ArrowRight className="h-4 w-4" />
               </Link>
               <Link href="/pricing" className="btn-secondary">
                 See Pricing Details
@@ -222,7 +222,7 @@ function WhatIsIncluded() {
             <div className="flex items-center justify-between mb-6">
               <div>
                 <p className="text-xs text-slate-500 uppercase tracking-widest">Complete Package</p>
-                <p className="text-3xl font-black text-white mt-1">$49</p>
+                <p className="text-3xl font-black text-white mt-1">$25/month</p>
               </div>
               <div className="rounded-lg bg-accent-green/10 px-3 py-1">
                 <span className="text-sm font-semibold text-accent-green">All Included</span>
@@ -394,11 +394,11 @@ function PricingSection() {
 
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h3 className="text-2xl font-black text-white">Complete Pitching Analysis</h3>
+              <h3 className="text-2xl font-black text-white">Pitch Nav Development Membership</h3>
               <p className="text-slate-400 mt-1">Everything you need to improve your delivery</p>
             </div>
             <div className="text-right">
-              <p className="text-4xl font-black text-white">$49</p>
+              <p className="text-4xl font-black text-white">$25/month</p>
               <p className="text-slate-500 text-sm">one-time</p>
             </div>
           </div>
@@ -413,7 +413,7 @@ function PricingSection() {
               '3 identified strengths',
               '3 development priorities',
               '3 personalized drills',
-              'Four-week focus plan',
+              'Eight-week focus plan',
               'Voice-over video',
               'Downloadable PDF report',
               'Follow-up analysis option',
@@ -426,7 +426,7 @@ function PricingSection() {
           </div>
 
           <Link href="/start-analysis" className="btn-accent w-full justify-center text-base py-4">
-            Start My Analysis — $49 <ArrowRight className="h-5 w-5" />
+            Start My Analysis — $25/month <ArrowRight className="h-5 w-5" />
           </Link>
         </div>
 
@@ -509,7 +509,7 @@ function FAQPreview() {
     },
     {
       q: 'How long does the analysis take?',
-      a: 'Most analyses are delivered within 5–7 business days of receiving your complete video submission and payment confirmation.',
+      a: 'Most analyses are delivered within after owner review of receiving your complete video submission and payment confirmation.',
     },
     {
       q: 'Can I submit for a younger pitcher?',

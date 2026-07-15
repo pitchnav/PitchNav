@@ -322,10 +322,10 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
         </div>
       )}
 
-      {/* Four-week plan */}
+      {/* Eight-week plan */}
       {report.four_week_plan && (
         <div className="card mb-8">
-          <h2 className="text-xl font-bold text-white mb-4">Four-Week Focus Plan</h2>
+          <h2 className="text-xl font-bold text-white mb-4">Eight-Week Focus Plan</h2>
           <div className="prose prose-invert prose-sm max-w-none">
             <p className="text-slate-300 whitespace-pre-line leading-relaxed">{report.four_week_plan}</p>
           </div>

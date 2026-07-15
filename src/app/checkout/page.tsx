@@ -16,7 +16,7 @@ const PACKAGE_ITEMS = [
   'Mechanics scorecard',
   'Three strengths & three development priorities',
   'Three personalized drills',
-  'Four-week focus plan',
+  'Eight-week focus plan',
   'Voice-over video analysis',
   'Downloadable PDF report',
 ]
@@ -189,7 +189,7 @@ function CheckoutContent() {
                   <h3 className="text-lg font-bold text-white">Order Total</h3>
                   <p className="text-slate-500 text-sm">One-time payment</p>
                 </div>
-                <p className="text-4xl font-black text-white">$49</p>
+                <p className="text-4xl font-black text-white">$25/month</p>
               </div>
 
               {error && (
@@ -212,7 +212,7 @@ function CheckoutContent() {
                 ) : (
                   <>
                     <Lock className="h-4 w-4" />
-                    Pay $49 Securely
+                    Subscribe for $25/month
                   </>
                 )}
               </button>

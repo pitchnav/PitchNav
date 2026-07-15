@@ -57,8 +57,8 @@ export async function POST(request: NextRequest) {
         .update({
           status: 'submitted',
           payment_confirmed_at: new Date().toISOString(),
-          stripe_payment_intent_id: session.payment_intent as string,
-          amount_paid_cents: session.amount_total ?? 4900,
+          stripe_payment_intent_id: (session.subscription as string) || null,
+          amount_paid_cents: session.amount_total ?? 2500,
           submitted_at: new Date().toISOString(),
         })
         .eq('id', orderId)
@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
           profile.athlete_email,
           profile.athlete_full_name,
           orderId,
-          session.amount_total ?? 4900
+          session.amount_total ?? 2500
         )
 
         await supabase.from('email_log').insert({
