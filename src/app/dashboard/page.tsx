@@ -91,7 +91,10 @@ export default async function DashboardPage() {
                       <p className="mt-1 text-sm text-white">{plan.weeks[0]?.priority}</p>
                     </div>
                   )}
-                  <Link href="/dashboard/motion-lab" className="mt-4 inline-flex text-sm font-semibold text-electric-blue-light hover:text-white">Open Motion Lab <ArrowRight className="ml-1 h-4 w-4" /></Link>
+                  <div className="mt-4 flex flex-wrap gap-4">
+                    <Link href={`/dashboard/feedback/${analysis.id}`} className="inline-flex text-sm font-semibold text-accent-green hover:text-white">View full feedback & calendar <ArrowRight className="ml-1 h-4 w-4" /></Link>
+                    <Link href="/dashboard/motion-lab" className="inline-flex text-sm font-semibold text-electric-blue-light hover:text-white">Open Motion Lab <ArrowRight className="ml-1 h-4 w-4" /></Link>
+                  </div>
                 </div>
               )
             })}

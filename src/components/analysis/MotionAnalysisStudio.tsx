@@ -30,6 +30,15 @@ type ClipSummary = {
   widestStrideTime: number | null
 }
 
+type CategoryFeedback = {
+  category: string
+  score: number
+  confidence: 'Low' | 'Moderate' | 'High'
+  strength: string
+  development: string
+  evidence: string
+}
+
 const CONNECTIONS: Array<[number, number]> = [
   [11, 12], [11, 13], [13, 15], [15, 17], [15, 19], [15, 21],
   [12, 14], [14, 16], [16, 18], [16, 20], [16, 22],
@@ -67,6 +76,62 @@ function range(values: Array<number | null>): [number, number] | null {
   const valid = values.filter((value): value is number => value !== null && Number.isFinite(value))
   if (!valid.length) return null
   return [Math.min(...valid), Math.max(...valid)]
+}
+
+function buildCategoryFeedback(frames: FrameMetrics[], summary: ClipSummary): CategoryFeedback[] {
+  const spread = (values: Array<number | null>) => {
+    const valid = values.filter((value): value is number => value !== null && Number.isFinite(value))
+    if (valid.length < 2) return 0
+    return Math.max(...valid) - Math.min(...valid)
+  }
+  const quality = summary.averageConfidence >= 0.8 ? 'High' : summary.averageConfidence >= 0.6 ? 'Moderate' : 'Low'
+  const peak = summary.peakLegLiftTime
+  const stride = summary.widestStrideTime
+  const sequenceGap = peak !== null && stride !== null ? stride - peak : null
+  const trunkSpread = spread(frames.map((frame) => frame.trunkTilt))
+  const kneeSpread = spread(frames.filter((frame) => stride === null || frame.time >= stride).map((frame) => frame.leadKnee))
+  const elbowSpread = spread(frames.map((frame) => frame.throwingElbow))
+  const separationSpread = spread(frames.map((frame) => frame.hipShoulderSeparation))
+  const score = (value: number, good: number, fair: number) => value <= good ? 5 : value <= fair ? 4 : value <= fair * 1.5 ? 3 : value <= fair * 2 ? 2 : 1
+
+  return [
+    {
+      category: 'Direction', score: 3, confidence: 'Low',
+      strength: 'The full stride remained visible for a directional checkpoint.',
+      development: 'Confirm the landing line from the rear-view clip before changing direction mechanics.',
+      evidence: 'A single open-side 2D view cannot reliably determine plate-line direction; this neutral score requires coach/rear-view confirmation.',
+    },
+    {
+      category: 'Lower-Half Sequencing', score: sequenceGap !== null && sequenceGap > 0 ? 4 : 2, confidence: quality,
+      strength: sequenceGap !== null && sequenceGap > 0 ? 'Peak leg lift was detected before the widest-stride candidate.' : 'The lower half remained visible through the delivery.',
+      development: sequenceGap !== null && sequenceGap > 0 ? 'Preserve this order as throwing intent increases.' : 'Capture a clearer full-body clip so leg-lift and stride timing can be separated.',
+      evidence: sequenceGap === null ? 'Candidate event timing was incomplete.' : `Detected candidate timing gap: ${sequenceGap.toFixed(2)} seconds.`,
+    },
+    {
+      category: 'Upper-Half Timing', score: score(elbowSpread, 35, 65), confidence: quality,
+      strength: 'The throwing shoulder, elbow, and wrist were visible enough to track elbow-angle change.',
+      development: elbowSpread > 65 ? 'Review whether arm action is arriving consistently around lead-foot contact.' : 'Maintain smooth arm timing without forcing a fixed elbow angle.',
+      evidence: `Observed projected throwing-elbow range: ${Math.round(elbowSpread)}°.`,
+    },
+    {
+      category: 'Front-Side Stability', score: score(kneeSpread, 18, 35), confidence: quality,
+      strength: kneeSpread <= 35 ? 'Lead-knee motion was comparatively stable after the widest-stride candidate.' : 'The lead leg stayed visible through the post-stride portion.',
+      development: kneeSpread > 35 ? 'Review lead-leg control from contact through finish; avoid forcing a locked knee.' : 'Keep the lead leg stable while allowing a natural, pain-free finish.',
+      evidence: `Post-stride projected lead-knee range: ${Math.round(kneeSpread)}°.`,
+    },
+    {
+      category: 'Posture', score: score(trunkSpread, 12, 25), confidence: quality,
+      strength: trunkSpread <= 25 ? 'Trunk-tilt change remained controlled in this clip.' : 'The torso stayed detectable through the delivery.',
+      development: trunkSpread > 25 ? 'Review when trunk tilt increases and whether the head leaves the body’s center line.' : 'Repeat the same posture pattern at game intent.',
+      evidence: `Observed projected trunk-tilt range: ${Math.round(trunkSpread)}°.`,
+    },
+    {
+      category: 'Release Consistency', score: 3, confidence: 'Low',
+      strength: 'The throwing hand remained trackable near the release portion of this pitch.',
+      development: 'Compare multiple pitches or a radar-backed clip before making release-consistency claims.',
+      evidence: `Single-pitch body-pose review; separation variation was ${Math.round(separationSpread)}°. The baseball itself is not reliably tracked.`,
+    },
+  ]
 }
 
 function formatAngle(value: number | null) {
@@ -706,6 +771,47 @@ export function MotionAnalysisStudio({ initialVideo = null }: { initialVideo?: I
     }
   }, [calibrationA, calibrationB, ballStart, ballEnd, calibrationFeet, captureFps, setupConfirmed])
 
+  async function capturePhaseScreenshots(userId: string, analysisId: string) {
+    const video = videoRef.current
+    const canvas = canvasRef.current
+    if (!video || !canvas || !video.duration) return []
+    const originalTime = video.currentTime
+    const peak = summary?.peakLegLiftTime ?? video.duration * 0.25
+    const stride = summary?.widestStrideTime ?? video.duration * 0.55
+    const phases = [
+      { key: 'peak_leg_lift', label: 'Peak Leg Lift', time: peak },
+      { key: 'hand_separation', label: 'Hand Separation', time: Math.min(video.duration * 0.95, peak + video.duration * 0.1) },
+      { key: 'lead_foot_contact', label: 'Lead-Foot Contact Candidate', time: stride },
+      { key: 'maximum_external_rotation', label: 'Maximum External Rotation Candidate', time: Math.min(video.duration * 0.95, stride + video.duration * 0.1) },
+      { key: 'ball_release', label: 'Ball Release Candidate', time: Math.min(video.duration * 0.95, stride + video.duration * 0.18) },
+      { key: 'finish', label: 'Finish & Deceleration', time: video.duration * 0.9 },
+    ]
+    const output: Array<{ key: string; label: string; time: number; storage_path: string; confidence_note: string }> = []
+    video.pause()
+    for (const phase of phases) {
+      await new Promise<void>((resolve) => {
+        const done = () => resolve()
+        video.addEventListener('seeked', done, { once: true })
+        video.currentTime = Math.max(0, Math.min(video.duration - 0.01, phase.time))
+      })
+      drawFrame()
+      await new Promise((resolve) => requestAnimationFrame(() => resolve(null)))
+      const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png', 0.92))
+      if (!blob) continue
+      const path = `${userId}/motion-lab/${analysisId}/phases/${phase.key}.png`
+      const { error: uploadError } = await supabase.storage.from('analysis-assets').upload(path, blob, { upsert: true, contentType: 'image/png' })
+      if (!uploadError) output.push({
+        ...phase,
+        storage_path: path,
+        confidence_note: phase.key === 'peak_leg_lift' || phase.key === 'finish'
+          ? 'Video-based candidate selected from visible pose geometry.'
+          : 'Estimated phase frame; a coach must confirm the exact event.',
+      })
+    }
+    video.currentTime = originalTime
+    return output
+  }
+
   async function saveAnalysisToDashboard() {
     if (!summary || !selectedFileRef.current) return
     setSavingAnalysis(true)
@@ -715,6 +821,8 @@ export function MotionAnalysisStudio({ initialVideo = null }: { initialVideo?: I
       if (!user) throw new Error('Please sign in again.')
       const analysisId = crypto.randomUUID()
       const source = selectedFileRef.current
+      const categoryFeedback = buildCategoryFeedback(samplesRef.current, summary)
+      const overallScore = categoryFeedback.reduce((total, category) => total + category.score, 0)
       const immediateStrengths = [
         summary.averageConfidence >= 0.7 ? 'Consistent full-body landmark visibility supports repeatable frame review.' : 'A complete delivery was captured for frame-by-frame review.',
         summary.peakLegLiftTime !== null ? 'Peak leg lift was identified as a repeatable comparison checkpoint.' : 'The delivery can be reviewed through the visible movement sequence.',
@@ -736,6 +844,7 @@ export function MotionAnalysisStudio({ initialVideo = null }: { initialVideo?: I
         const { error: renderError } = await supabase.storage.from('pitch-videos').upload(renderedPath, renderedBlobRef.current, { upsert: true, contentType: 'video/webm' })
         if (renderError) throw renderError
       }
+      const phaseSnapshots = await capturePhaseScreenshots(user.id, analysisId)
 
       const { data: analysis, error: analysisError } = await supabase.from('motion_analyses').insert({
         id: analysisId,
@@ -753,6 +862,9 @@ export function MotionAnalysisStudio({ initialVideo = null }: { initialVideo?: I
         velocity_assumptions: velocityEstimate ? `${captureFps} FPS; fixed side view; ${calibrationFeet} ft calibration marker; video-based estimate` : null,
         mechanics_metrics: metrics ?? {},
         clip_summary: summary,
+        delivery_score: overallScore,
+        category_scores: categoryFeedback,
+        phase_snapshots: phaseSnapshots,
         strengths: immediateStrengths,
         development_priorities: immediatePriorities,
       }).select('id').single()
@@ -763,6 +875,15 @@ export function MotionAnalysisStudio({ initialVideo = null }: { initialVideo?: I
         priority: index < 2 ? 'Movement quality and repeatability' : index < 4 ? 'Progressive intent and constraint drills' : 'Transfer, command, and retest preparation',
         coaching_cue: index < 2 ? 'Move smoothly, finish under control, and keep each repetition repeatable.' : 'Preserve the same movement pattern as intent increases.',
         prescription: index < 2 ? '2 sessions; 3 sets of 5 controlled repetitions' : '2 bullpen or throwing sessions with video checkpoints',
+        days: [
+          { day: 'Monday', focus: 'Movement quality', work: `Warm-up, mobility, then 3 x 5 controlled delivery reps. Focus: ${immediatePriorities[0]}` },
+          { day: 'Tuesday', focus: 'Throwing development', work: 'Complete your normal medically appropriate throwing program; film one controlled checkpoint pitch.' },
+          { day: 'Wednesday', focus: 'Recovery and review', work: 'Light mobility and recovery. Review Monday/Tuesday video without high-intent throwing.' },
+          { day: 'Thursday', focus: 'Constraint drill day', work: 'Warm-up, then 3 x 5 repeatability reps using the week’s primary coaching cue.' },
+          { day: 'Friday', focus: 'Bullpen or intent progression', work: index < 2 ? 'Moderate-intent throwing only; preserve movement quality.' : 'Progress intent only if pain-free and consistent with your existing throwing program.' },
+          { day: 'Saturday', focus: 'Strength and mobility', work: 'Follow your existing strength program; add mobility only within your normal pain-free range.' },
+          { day: 'Sunday', focus: 'Rest and check-in', work: 'Rest from pitching. Record soreness, confidence, and completion notes for the week.' },
+        ],
         completed: false,
       }))
       const followUp = new Date()
@@ -1004,6 +1125,7 @@ export function MotionAnalysisStudio({ initialVideo = null }: { initialVideo?: I
             <div>
               <h2 className="text-xl font-bold text-white">Clip summary</h2>
               <p className="mt-1 text-sm text-slate-400">{summary.frames} accepted samples · {Math.round(summary.averageConfidence * 100)}% average landmark confidence</p>
+              <p className="mt-2 text-xs text-electric-blue-light">Saving the detailed report creates six phase screenshots, category feedback, and every day of your plan. Keep this page open while it finishes; longer clips may take several minutes.</p>
             </div>
             <button type="button" onClick={exportOverlay} disabled={exporting} className="btn-primary">
               <Download className="h-4 w-4" /> {exporting ? 'Rendering full clip…' : 'Download mocap-style video'}
