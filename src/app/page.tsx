@@ -61,37 +61,12 @@ function Hero() {
       </div>
 
       {/* ── Right panel — hero image ── */}
-      <div className="relative w-full lg:w-1/2" style={{ minHeight: '50vh' }}>
-        {/* Left-edge gradient blending into the navy left panel */}
-        <div
-          className="absolute inset-y-0 left-0 z-10 w-32 pointer-events-none hidden lg:block"
-          style={{ background: 'linear-gradient(to right, #020817, transparent)' }}
-        />
-
+      <div className="relative w-full overflow-hidden bg-[#020817] aspect-[3/2] lg:aspect-auto lg:w-1/2 lg:min-h-screen">
         <img
           src="/pitcher-hero-v2.jpg"
           alt="Pitcher in Pitch Nav jersey throwing from the mound"
-          className="absolute inset-0 h-full w-full object-cover object-center"
+          className="absolute inset-0 h-full w-full object-contain object-center"
         />
-
-        {/* Stat overlay cards */}
-        <div className="absolute top-1/4 right-4 lg:right-6 z-20 space-y-3">
-          {[
-            { label: 'MECHANICS SCORE', value: '23/30', color: 'text-accent-green' },
-            { label: 'DEVELOPMENT AREAS', value: '3 FOUND', color: 'text-electric-blue-light' },
-            { label: 'DRILLS ASSIGNED', value: '3 DRILLS', color: 'text-white' },
-            { label: 'TURNAROUND', value: '5–7 DAYS', color: 'text-yellow-400' },
-          ].map(({ label, value, color }) => (
-            <div
-              key={label}
-              className="rounded-lg border border-white/10 px-4 py-2.5 text-right min-w-[140px]"
-              style={{ backgroundColor: 'rgba(2,8,23,0.85)', backdropFilter: 'blur(8px)' }}
-            >
-              <p className="text-[10px] text-slate-500 uppercase tracking-widest">{label}</p>
-              <p className={`text-base font-black ${color}`}>{value}</p>
-            </div>
-          ))}
-        </div>
       </div>
 
     </section>
