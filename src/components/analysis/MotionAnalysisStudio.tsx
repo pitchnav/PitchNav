@@ -414,36 +414,51 @@ function drawScientificMound(
   context.restore()
 }
 
-function framePoseForExport(landmarks: NormalizedLandmark[]): NormalizedLandmark[] {
+type ExportFrameTransform = {
+  sourceCenterX: number
+  sourceFootY: number
+  scale: number
+}
+
+function createExportFrameTransform(landmarks: NormalizedLandmark[]): ExportFrameTransform | null {
   const tracked = landmarks.filter((point, index) => index <= 32 && (point.visibility ?? 0) >= 0.35)
-  if (tracked.length < 12) return landmarks
+  if (tracked.length < 12) return null
   const minX = Math.min(...tracked.map((point) => point.x))
   const maxX = Math.max(...tracked.map((point) => point.x))
   const minY = Math.min(...tracked.map((point) => point.y))
   const maxY = Math.max(...tracked.map((point) => point.y))
   const poseWidth = Math.max(0.08, maxX - minX)
   const poseHeight = Math.max(0.18, maxY - minY)
-  // Preserve the detected body proportions while presenting the athlete at a
-  // consistent scientific-review scale. This changes framing, not joint geometry.
-  const scale = Math.min(0.72 / poseWidth, 0.72 / poseHeight, 4.5)
-  const sourceCenterX = (minX + maxX) / 2
+  return {
+    sourceCenterX: (minX + maxX) / 2,
+    sourceFootY: maxY,
+    // One fixed transform is used for the entire export. Recalculating the
+    // bounding box every frame caused the skeleton to jump, resize, and float.
+    scale: Math.min(0.62 / poseWidth, 0.66 / poseHeight, 3.6),
+  }
+}
+
+function framePoseForExport(landmarks: NormalizedLandmark[], transform: ExportFrameTransform): NormalizedLandmark[] {
   const targetCenterX = 0.56
   const targetFootY = 0.79
   return landmarks.map((point) => ({
     ...point,
-    x: targetCenterX + (point.x - sourceCenterX) * scale,
-    y: targetFootY + (point.y - maxY) * scale,
+    x: targetCenterX + (point.x - transform.sourceCenterX) * transform.scale,
+    y: targetFootY + (point.y - transform.sourceFootY) * transform.scale,
   }))
 }
 
 function smoothPose(previous: NormalizedLandmark[] | null, current: NormalizedLandmark[]) {
   if (!previous || previous.length !== current.length) return current
-  const responsiveness = 0.62
+  const responsiveness = 0.38
+  const maximumStep = 0.055
   return current.map((point, index) => ({
     ...point,
-    x: previous[index].x + (point.x - previous[index].x) * responsiveness,
-    y: previous[index].y + (point.y - previous[index].y) * responsiveness,
-    z: previous[index].z + (point.z - previous[index].z) * responsiveness,
+    // Hold low-confidence landmarks and cap one-frame jumps. This suppresses
+    // common left/right swaps and occlusion spikes without inventing joints.
+    x: (point.visibility ?? 0) < 0.4 ? previous[index].x : previous[index].x + Math.max(-maximumStep, Math.min(maximumStep, point.x - previous[index].x)) * responsiveness,
+    y: (point.visibility ?? 0) < 0.4 ? previous[index].y : previous[index].y + Math.max(-maximumStep, Math.min(maximumStep, point.y - previous[index].y)) * responsiveness,
+    z: previous[index].z + Math.max(-maximumStep, Math.min(maximumStep, point.z - previous[index].z)) * responsiveness,
   }))
 }
 
@@ -481,6 +496,7 @@ export function MotionAnalysisStudio({ initialVideo = null }: { initialVideo?: I
   const analysisStartRef = useRef(Math.max(0, initialVideo?.trimStartSecs ?? 0))
   const analysisEndRef = useRef<number | null>(initialVideo?.trimEndSecs ?? null)
   const exportPoseRef = useRef<NormalizedLandmark[] | null>(null)
+  const exportFrameTransformRef = useRef<ExportFrameTransform | null>(null)
   const watermarkRef = useRef<HTMLCanvasElement | null>(null)
 
   const [fileUrl, setFileUrl] = useState<string | null>(null)
@@ -625,7 +641,12 @@ export function MotionAnalysisStudio({ initialVideo = null }: { initialVideo?: I
       }
 
       if (exportStyleRef.current) {
-        const framed = framePoseForExport(landmarks)
+        if (!exportFrameTransformRef.current) {
+          exportFrameTransformRef.current = createExportFrameTransform(landmarks)
+        }
+        const framed = exportFrameTransformRef.current
+          ? framePoseForExport(landmarks, exportFrameTransformRef.current)
+          : landmarks
         const presentationPose = smoothPose(exportPoseRef.current, framed)
         exportPoseRef.current = presentationPose
         drawScientificMound(context, presentationPose, width, height)
@@ -903,6 +924,7 @@ export function MotionAnalysisStudio({ initialVideo = null }: { initialVideo?: I
     if (!landmarkerRef.current && !(await initializeModel())) return
     recordedChunksRef.current = []
     exportPoseRef.current = null
+    exportFrameTransformRef.current = null
     video.pause()
     setPlaying(false)
     // Render the skeleton at quarter speed so the downloaded motion study is
