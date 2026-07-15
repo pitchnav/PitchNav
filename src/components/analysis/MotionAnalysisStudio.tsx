@@ -212,7 +212,7 @@ function drawAnatomicalSkeleton(
   const hipMid = midpoint(hips[0], hips[1])
   const scale = Math.max(3, width / 300)
 
-  const bone = (startIndex: number, endIndex: number, thickness = 3.5) => {
+  const bone = (startIndex: number, endIndex: number, thickness = 1.8) => {
     const start = point(startIndex)
     const end = point(endIndex)
     if (Math.min(start.visibility, end.visibility) < 0.45) return
@@ -227,7 +227,7 @@ function drawAnatomicalSkeleton(
     context.lineTo(end.x, end.y)
     context.stroke()
     context.strokeStyle = 'rgba(148, 163, 184, 0.8)'
-    context.lineWidth = scale * 0.65
+    context.lineWidth = scale * 0.35
     context.stroke()
     context.restore()
   }
@@ -240,7 +240,7 @@ function drawAnatomicalSkeleton(
     context.shadowColor = '#38bdf8'
     context.fillStyle = '#dbeafe'
     context.strokeStyle = '#38bdf8'
-    context.lineWidth = scale * 0.5
+    context.lineWidth = scale * 0.3
     context.beginPath()
     context.arc(p.x, p.y, scale * radius, 0, Math.PI * 2)
     context.fill()
@@ -265,7 +265,7 @@ function drawAnatomicalSkeleton(
     context.shadowColor = '#38bdf8'
     context.fillStyle = 'rgba(226, 232, 240, 0.18)'
     context.strokeStyle = '#f8fafc'
-    context.lineWidth = scale * 1.2
+    context.lineWidth = scale * 0.7
     context.beginPath()
     context.ellipse(0, 0, headWidth / 2, headHeight / 2, 0, 0, Math.PI * 2)
     context.fill()
@@ -284,7 +284,7 @@ function drawAnatomicalSkeleton(
     context.save()
     context.strokeStyle = '#f8fafc'
     context.lineCap = 'round'
-    context.lineWidth = scale * 3
+    context.lineWidth = scale * 1.5
     context.shadowBlur = 12
     context.shadowColor = '#38bdf8'
     context.beginPath()
@@ -302,7 +302,7 @@ function drawAnatomicalSkeleton(
     context.translate((shoulderMid.x + hipMid.x) / 2, (shoulderMid.y + hipMid.y) / 2)
     context.rotate(torsoAngle)
     context.strokeStyle = 'rgba(248, 250, 252, 0.92)'
-    context.lineWidth = scale * 0.9
+    context.lineWidth = scale * 0.5
     context.shadowBlur = 8
     context.shadowColor = '#38bdf8'
     for (let rib = 0; rib < 5; rib += 1) {
@@ -318,7 +318,7 @@ function drawAnatomicalSkeleton(
     context.save()
     context.fillStyle = 'rgba(226, 232, 240, 0.18)'
     context.strokeStyle = '#f8fafc'
-    context.lineWidth = scale
+    context.lineWidth = scale * 0.55
     context.shadowBlur = 10
     context.shadowColor = '#38bdf8'
     context.beginPath()
@@ -339,11 +339,11 @@ function drawAnatomicalSkeleton(
 
   // Hands and fingers.
   ;[[15, 17], [15, 19], [15, 21], [17, 19], [16, 18], [16, 20], [16, 22], [18, 20]].forEach(
-    ([start, end]) => bone(start, end, 1.15)
+    ([start, end]) => bone(start, end, 0.85)
   )
   // Feet, heels and toes.
   ;[[27, 29], [29, 31], [27, 31], [28, 30], [30, 32], [28, 32]].forEach(
-    ([start, end]) => bone(start, end, 1.5)
+    ([start, end]) => bone(start, end, 1.05)
   )
 }
 
@@ -392,11 +392,20 @@ export function MotionAnalysisStudio({ initialVideo = null }: { initialVideo?: I
   const [ballEnd, setBallEnd] = useState<VideoPoint | null>(null)
   const [calibrationFeet, setCalibrationFeet] = useState(6)
   const [captureFps, setCaptureFps] = useState(240)
+  const [playbackSpeed, setPlaybackSpeed] = useState(0.25)
+  const playbackSpeedRef = useRef(0.25)
+  const [detectedPlaybackFps, setDetectedPlaybackFps] = useState<number | null>(null)
+  const [detectingFps, setDetectingFps] = useState(false)
   const [setupConfirmed, setSetupConfirmed] = useState(false)
   const [planWeeks, setPlanWeeks] = useState<4 | 8>(4)
   const [savingAnalysis, setSavingAnalysis] = useState(false)
   const [saveMessage, setSaveMessage] = useState('')
   const supabase = useMemo(() => createClient(), [])
+
+  useEffect(() => {
+    playbackSpeedRef.current = playbackSpeed
+    if (videoRef.current) videoRef.current.playbackRate = playbackSpeed
+  }, [playbackSpeed])
 
   const initializeModel = useCallback(async () => {
     if (landmarkerRef.current) return landmarkerRef.current
@@ -606,11 +615,69 @@ export function MotionAnalysisStudio({ initialVideo = null }: { initialVideo?: I
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialVideo?.signedUrl])
 
+  async function detectVideoFrameRate(video: HTMLVideoElement) {
+    if (!('requestVideoFrameCallback' in video) || !video.duration) {
+      setDetectedPlaybackFps(null)
+      return
+    }
+    setDetectingFps(true)
+    const wasPaused = video.paused
+    const originalTime = video.currentTime
+    const originalRate = video.playbackRate
+    const mediaTimes: number[] = []
+    try {
+      video.pause()
+      video.playbackRate = 1
+      if (video.currentTime > Math.max(0.25, video.duration - 1)) video.currentTime = 0
+      await video.play()
+      await new Promise<void>((resolve) => {
+        let finished = false
+        const finish = () => {
+          if (finished) return
+          finished = true
+          resolve()
+        }
+        const timeout = window.setTimeout(finish, 2200)
+        const sample = (_now: number, metadata: VideoFrameCallbackMetadata) => {
+          if (finished) return
+          if (!mediaTimes.length || metadata.mediaTime !== mediaTimes[mediaTimes.length - 1]) mediaTimes.push(metadata.mediaTime)
+          if (mediaTimes.length >= 36 || video.ended) {
+            window.clearTimeout(timeout)
+            finish()
+          } else {
+            video.requestVideoFrameCallback(sample)
+          }
+        }
+        video.requestVideoFrameCallback(sample)
+      })
+      const deltas = mediaTimes.slice(1).map((time, index) => time - mediaTimes[index]).filter((delta) => delta > 0.0001)
+      if (deltas.length) {
+        deltas.sort((a, b) => a - b)
+        const median = deltas[Math.floor(deltas.length / 2)]
+        const fps = Math.round(1 / median)
+        setDetectedPlaybackFps(fps)
+        if (fps >= 180) setCaptureFps(240)
+        else if (fps >= 90) setCaptureFps(120)
+      }
+    } catch (reason) {
+      console.warn('Frame-rate detection was unavailable', reason)
+      setDetectedPlaybackFps(null)
+    } finally {
+      video.pause()
+      video.currentTime = originalTime
+      video.playbackRate = originalRate || playbackSpeedRef.current
+      if (!wasPaused) void video.play()
+      setDetectingFps(false)
+      drawFrame()
+    }
+  }
+
   async function togglePlayback() {
     const video = videoRef.current
     if (!video || !fileUrl) return
     if (!landmarkerRef.current && !(await initializeModel())) return
     if (video.paused) {
+      video.playbackRate = playbackSpeedRef.current
       await video.play()
       setPlaying(true)
       renderLoop()
@@ -656,6 +723,7 @@ export function MotionAnalysisStudio({ initialVideo = null }: { initialVideo?: I
     analyzingRef.current = true
     setAnalyzing(true)
     video.currentTime = 0
+    video.playbackRate = playbackSpeedRef.current
     await video.play()
     setPlaying(true)
     renderLoop()
@@ -673,7 +741,9 @@ export function MotionAnalysisStudio({ initialVideo = null }: { initialVideo?: I
     recordedChunksRef.current = []
     video.pause()
     setPlaying(false)
-    video.playbackRate = 1
+    // Render the skeleton at quarter speed so the downloaded motion study is
+    // easier to inspect frame by frame.
+    video.playbackRate = playbackSpeedRef.current
     exportStyleRef.current = true
 
     // Seeking is asynchronous. Recording before it finishes was the cause of
@@ -727,7 +797,7 @@ export function MotionAnalysisStudio({ initialVideo = null }: { initialVideo?: I
       // recording from hanging forever if a browser drops the ended event.
       exportWatchdogRef.current = setTimeout(() => {
         if (recorder.state !== 'inactive') recorder.stop()
-      }, Math.ceil(video.duration * 1000) + 5000)
+      }, Math.ceil((video.duration / video.playbackRate) * 1000) + 5000)
     } catch (reason) {
       console.error(reason)
       if (recorder.state !== 'inactive') recorder.stop()
@@ -987,7 +1057,12 @@ export function MotionAnalysisStudio({ initialVideo = null }: { initialVideo?: I
                 className="hidden"
                 muted
                 playsInline
-                onLoadedData={() => drawFrame()}
+                onLoadedData={(event) => {
+                  event.currentTarget.defaultPlaybackRate = playbackSpeedRef.current
+                  event.currentTarget.playbackRate = playbackSpeedRef.current
+                  drawFrame()
+                  void detectVideoFrameRate(event.currentTarget)
+                }}
                 onEnded={() => {
                   setPlaying(false)
                   if (analyzingRef.current) finishAnalysis()
@@ -1027,7 +1102,7 @@ export function MotionAnalysisStudio({ initialVideo = null }: { initialVideo?: I
               <div className="flex flex-wrap items-center gap-3">
                 <button type="button" onClick={togglePlayback} className="btn-primary px-4 py-2">
                   {playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-                  {playing ? 'Pause' : 'Play'}
+                  {playing ? 'Pause' : 'Play slow motion'}
                 </button>
                 <button type="button" onClick={analyzeFullClip} disabled={analyzing || exporting} className="btn-accent px-4 py-2">
                   <Activity className="h-4 w-4" /> {analyzing ? 'Analyzing…' : 'Analyze full clip'}
@@ -1036,6 +1111,17 @@ export function MotionAnalysisStudio({ initialVideo = null }: { initialVideo?: I
                   <RotateCcw className="h-4 w-4" /> Replace
                   <input type="file" accept="video/mp4,video/quicktime,video/webm" className="sr-only" onChange={(event) => event.target.files?.[0] && handleFile(event.target.files[0])} />
                 </label>
+                <label className="flex items-center gap-2 rounded-lg border border-surface-border bg-navy-950 px-3 py-2 text-sm text-slate-300">
+                  Playback
+                  <select className="bg-transparent font-bold text-white outline-none" value={playbackSpeed} onChange={(event) => setPlaybackSpeed(Number(event.target.value))}>
+                    <option className="bg-navy-900" value={0.5}>0.5×</option>
+                    <option className="bg-navy-900" value={0.25}>0.25×</option>
+                    <option className="bg-navy-900" value={0.125}>0.125×</option>
+                  </select>
+                </label>
+                <span className="rounded-lg bg-electric-blue/10 px-3 py-2 text-xs text-electric-blue-light">
+                  {detectingFps ? 'Detecting playback FPS…' : detectedPlaybackFps ? `Detected playback: ~${detectedPlaybackFps} FPS` : 'Playback FPS unavailable'}
+                </span>
               </div>
             </div>
           </div>
@@ -1086,8 +1172,8 @@ export function MotionAnalysisStudio({ initialVideo = null }: { initialVideo?: I
               <select className="input" value={captureFps} onChange={(event) => setCaptureFps(Number(event.target.value))}>
                 <option value={240}>240 FPS</option>
                 <option value={120}>120 FPS</option>
-                <option value={60}>60 FPS (mechanics only)</option>
               </select>
+              <span className="mt-1 block text-xs text-slate-500">{detectedPlaybackFps ? `File playback track: approximately ${detectedPlaybackFps} FPS. ` : ''}Confirm the original Camera app setting because edited iPhone slow-motion files may report 30/60 playback FPS even when captured at 120/240.</span>
             </label>
             <label>
               <span className="label">Calibration-marker length</span>
@@ -1128,7 +1214,7 @@ export function MotionAnalysisStudio({ initialVideo = null }: { initialVideo?: I
               <p className="mt-2 text-xs text-electric-blue-light">Saving the detailed report creates six phase screenshots, category feedback, and every day of your plan. Keep this page open while it finishes; longer clips may take several minutes.</p>
             </div>
             <button type="button" onClick={exportOverlay} disabled={exporting} className="btn-primary">
-              <Download className="h-4 w-4" /> {exporting ? 'Rendering full clip…' : 'Download mocap-style video'}
+              <Download className="h-4 w-4" /> {exporting ? `Rendering at ${playbackSpeed}×…` : `Download skeleton video (${playbackSpeed}×)`}
             </button>
           </div>
           <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
