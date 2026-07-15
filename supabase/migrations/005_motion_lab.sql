@@ -1,4 +1,10 @@
 -- Pitch Nav persistent Motion Lab, coach feedback, and training plans
+-- Repair accounts created before the profile trigger was installed.
+insert into public.profiles (id, email, full_name)
+select id, email, coalesce(raw_user_meta_data ->> 'full_name', email)
+from auth.users
+on conflict (id) do nothing;
+
 create table if not exists public.motion_analyses (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references public.profiles(id) on delete cascade,
