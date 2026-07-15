@@ -76,11 +76,16 @@ export const stepPitchingSchema = z.object({
 
 // ── Step 5: Health & Safety ───────────────────────────────────
 
+const radioBoolean = z.preprocess(
+  (value) => value === 'true' ? true : value === 'false' ? false : value,
+  z.boolean({ required_error: 'Please answer this question' })
+)
+
 export const stepHealthSchema = z.object({
-  currentPain: z.boolean({ required_error: 'Please answer this question' }),
-  recentPain30Days: z.boolean({ required_error: 'Please answer this question' }),
-  returnedFromInjury: z.boolean({ required_error: 'Please answer this question' }),
-  medicallyCLeared: z.boolean({ required_error: 'Please answer this question' }),
+  currentPain: radioBoolean,
+  recentPain30Days: radioBoolean,
+  returnedFromInjury: radioBoolean,
+  medicallyCLeared: radioBoolean,
   healthNotes: z.string().optional(),
 })
 

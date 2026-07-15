@@ -119,9 +119,8 @@ export function StepPhysical({ initialData, athleteProfileId, onComplete, onBack
           <div className="flex gap-3">
             {[{ value: 'right', label: 'Right-Handed' }, { value: 'left', label: 'Left-Handed' }].map(({ value, label }) => (
               <label key={value} className="flex-1 cursor-pointer">
-                <input type="radio" value={value} className="sr-only" {...register('throwingHand')} />
-                <div className={`rounded-lg border p-3 text-center text-sm font-semibold transition-all
-                  peer-checked:border-electric-blue peer-checked:bg-electric-blue/10`}>
+                <input type="radio" value={value} className="sr-only peer" {...register('throwingHand')} />
+                <div className="rounded-lg border border-surface-border bg-navy-800 p-3 text-center text-sm font-semibold text-slate-400 transition-all peer-checked:border-electric-blue peer-checked:bg-electric-blue/10 peer-checked:text-white hover:border-electric-blue/50 hover:text-white">
                   {label}
                 </div>
               </label>
