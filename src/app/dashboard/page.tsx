@@ -61,9 +61,9 @@ export default async function DashboardPage() {
         <div id="feedback-plan" className="mb-8 scroll-mt-24">
           <div className="mb-4 flex items-end justify-between gap-4">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-accent-green">Owner-reviewed delivery</p>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-accent-green">Staff-reviewed delivery</p>
               <h2 className="mt-1 text-lg font-bold text-white">Your Feedback & Training Plan</h2>
-              <p className="mt-1 text-sm text-slate-400">Submissions are analyzed first, then released after the Pitch Nav owner reviews the video, scores, velocity assumptions, and plan.</p>
+              <p className="mt-1 text-sm text-slate-400">Submissions are analyzed first, then released after the Pitch Nav staff reviews the video, scores, velocity assumptions, and plan.</p>
             </div>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
@@ -92,7 +92,7 @@ export default async function DashboardPage() {
                     </div>
                   )}
                   <div className="mt-4 flex flex-wrap gap-4">
-                    {analysis.status === 'published' ? <Link href={`/dashboard/feedback/${analysis.id}`} className="inline-flex text-sm font-semibold text-accent-green hover:text-white">View approved feedback & calendar <ArrowRight className="ml-1 h-4 w-4" /></Link> : <span className="text-sm font-semibold text-yellow-300">Owner review in progress — we’ll email you when ready</span>}
+                    {analysis.status === 'published' ? <Link href={`/dashboard/feedback/${analysis.id}`} className="inline-flex text-sm font-semibold text-accent-green hover:text-white">View approved feedback & calendar <ArrowRight className="ml-1 h-4 w-4" /></Link> : <span className="text-sm font-semibold text-yellow-300">Staff review in progress — we’ll email you when ready</span>}
                     <Link href="/dashboard/motion-lab" className="inline-flex text-sm font-semibold text-electric-blue-light hover:text-white">Open Motion Lab <ArrowRight className="ml-1 h-4 w-4" /></Link>
                   </div>
                 </div>

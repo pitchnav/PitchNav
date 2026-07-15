@@ -28,6 +28,8 @@ export default function AdminOrderDetailPage() {
   // Memoize the client so it's stable across renders and won't trigger infinite loops
   const supabase = useMemo(() => createClient(), [])
 
+  const [loadError, setLoadError] = useState('')
+  const [reportId, setReportId] = useState<string | null>(null)
   const [order, setOrder] = useState<Order | null>(null)
   const [profile, setProfile] = useState<AthleteProfile | null>(null)
   const [videos, setVideos] = useState<VideoSubmission[]>([])
@@ -52,18 +54,15 @@ export default function AdminOrderDetailPage() {
   const loadData = useCallback(async () => {
     const { data: orderData } = await supabase
       .from('orders')
-      .select('*, athlete_profiles(*), video_submissions(*), scorecard_categories(*), position_screenshots(*), assigned_drills(*, drills(*))')
+      .select('*, athlete_profiles(*), video_submissions(*)')
       .eq('id', id)
       .single()
 
-    if (!orderData) return
+    if (!orderData) { setLoadError('This order could not be loaded. Confirm it still exists and that your account is an administrator.'); return }
 
     setOrder(orderData as Order)
     setProfile(orderData.athlete_profiles as AthleteProfile)
     setVideos((orderData.video_submissions as VideoSubmission[]) ?? [])
-    setScorecard((orderData.scorecard_categories as ScorecardCategory[]) ?? [])
-    setPositions((orderData.position_screenshots as PositionScreenshot[]) ?? [])
-    setAssigned((orderData.assigned_drills as AssignedDrill[]) ?? [])
     setNewStatus(orderData.status as OrderStatus)
 
     // Report fields
@@ -73,6 +72,15 @@ export default function AdminOrderDetailPage() {
       .eq('order_id', id)
       .single()
     if (report) {
+      setReportId(report.id)
+      const [{ data: scoreRows }, { data: positionRows }, { data: assignedRows }] = await Promise.all([
+        supabase.from('scorecard_categories').select('*').eq('report_id', report.id),
+        supabase.from('position_screenshots').select('*').eq('report_id', report.id),
+        supabase.from('assigned_drills').select('*,drills(*)').eq('report_id', report.id),
+      ])
+      setScorecard((scoreRows as ScorecardCategory[]) ?? [])
+      setPositions((positionRows as PositionScreenshot[]) ?? [])
+      setAssigned((assignedRows as AssignedDrill[]) ?? [])
       setReportNotes(report.overall_assessment ?? '')
       setVelocityNotes(report.velocity_notes ?? '')
       setOverallNotes(report.notess ?? '')
@@ -93,6 +101,16 @@ export default function AdminOrderDetailPage() {
   }, [id, supabase])
 
   useEffect(() => { loadData() }, [loadData])
+
+  async function saveVideoTrim(videoId: string) {
+    const start = Number((document.getElementById(`trim-start-${videoId}`) as HTMLInputElement)?.value || 0)
+    const endRaw = (document.getElementById(`trim-end-${videoId}`) as HTMLInputElement)?.value
+    const end = endRaw ? Number(endRaw) : null
+    if (start < 0 || (end !== null && end <= start)) { alert('Trim end must be after trim start.'); return }
+    await supabase.from('video_submissions').update({ trim_start_secs: start, trim_end_secs: end }).eq('id', videoId)
+    alert('Analysis range saved. Only this complete-motion range should be used during review.')
+    await loadData()
+  }
 
   async function updateVideoQuality(videoId: string, approved: boolean, reason?: string) {
     await supabase
@@ -120,27 +138,30 @@ export default function AdminOrderDetailPage() {
 
   async function saveReport() {
     setSaving(true)
-    await supabase.from('analysis_reports').upsert({
+    const { data: savedReport } = await supabase.from('analysis_reports').upsert({
       order_id: id,
       overall_assessment: reportNotes,
       velocity_notes: velocityNotes,
       notess: overallNotes,
       follow_up_recommendation: followUp,
-    }, { onConflict: 'order_id' })
+    }, { onConflict: 'order_id' }).select('id').single()
+    if (savedReport?.id) setReportId(savedReport.id)
     setSaving(false)
   }
 
   async function saveScorecardItem(category: string, score: number, note: string) {
+    if (!reportId) { await saveReport(); return }
     await supabase.from('scorecard_categories').upsert({
-      order_id: id,
+      report_id: reportId,
       category,
       score,
       notes: note,
-    }, { onConflict: 'order_id,category' })
+    }, { onConflict: 'report_id,category' })
   }
 
   async function addDrill(drillId: string) {
-    await supabase.from('assigned_drills').insert({ order_id: id, drill_id: drillId })
+    if (!reportId) return
+    await supabase.from('assigned_drills').insert({ report_id: reportId, drill_id: drillId })
     await loadData()
   }
 
@@ -164,6 +185,7 @@ export default function AdminOrderDetailPage() {
   }
 
   if (!order) {
+    if (loadError) return <div className="card border-red-500/30 text-red-300">{loadError}</div>
     return (
       <div className="max-w-6xl mx-auto animate-pulse">
         <div className="h-8 bg-navy-800 rounded w-64 mb-8" />
@@ -186,7 +208,7 @@ export default function AdminOrderDetailPage() {
           <a href="/admin/orders" className="text-sm text-slate-500 hover:text-white block mb-2">← All Orders</a>
           <h1 className="text-2xl font-black text-white">Order #{id.slice(0, 8).toUpperCase()}</h1>
         </div>
-        <OrderStatusBadge status={order.status} />
+        <div className="text-right"><OrderStatusBadge status={order.status} /><p className={`mt-2 text-xs font-bold ${order.payment_confirmed_at ? 'text-accent-green' : 'text-yellow-300'}`}>{order.payment_confirmed_at ? `Payment confirmed · $${((order.amount_paid_cents ?? 0)/100).toFixed(2)}` : 'Payment not confirmed'}</p></div>
       </div>
 
       {/* Tabs */}
@@ -348,6 +370,11 @@ export default function AdminOrderDetailPage() {
                   {video.file_name} {video.file_size_bytes && `· ${formatFileSize(video.file_size_bytes)}`}
                 </div>
               )}
+
+              <div className="mb-4 rounded-xl border border-electric-blue/20 bg-navy-950 p-4">
+                <h4 className="font-semibold text-white">Analysis-range trimmer</h4><p className="mt-1 text-xs text-slate-400">Set the start at the first movement of the delivery and the end after the athlete completes the full finish. This is non-destructive: the original video remains secure.</p>
+                <div className="mt-3 grid gap-3 sm:grid-cols-[1fr_1fr_auto]"><label><span className="label">Start (seconds)</span><input id={`trim-start-${video.id}`} type="number" min="0" step="0.01" defaultValue={(video as VideoSubmission & { trim_start_secs?: number }).trim_start_secs ?? 0} className="input" /></label><label><span className="label">End (seconds)</span><input id={`trim-end-${video.id}`} type="number" min="0" step="0.01" defaultValue={(video as VideoSubmission & { trim_end_secs?: number | null }).trim_end_secs ?? video.duration_secs ?? ''} className="input" /></label><button type="button" onClick={() => saveVideoTrim(video.id)} className="btn-primary self-end">Save analysis range</button></div>
+              </div>
 
               <div className="flex items-center gap-2">
                 <span className={`text-xs px-2 py-1 rounded-full font-medium ${

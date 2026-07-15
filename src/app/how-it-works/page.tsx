@@ -77,7 +77,7 @@ const steps = [
       'Real-time status tracking in your dashboard',
       'Email notifications at key milestones',
       'Reviewer may request replacement videos if needed',
-      'Typical delivery: 5–7 business days after complete submission',
+      'Typical delivery: one business day after complete submission',
     ],
     note: 'If your reviewer needs replacement videos, you\'ll be notified with a clear explanation and 14 days to re-upload at no extra charge.',
   },

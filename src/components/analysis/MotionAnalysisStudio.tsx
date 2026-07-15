@@ -988,7 +988,7 @@ export function MotionAnalysisStudio({ initialVideo = null }: { initialVideo?: I
       })
       if (planError) throw planError
       await fetch('/api/motion-lab/request-review', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ analysisId: analysis.id }) })
-      setSaveMessage('Submitted for owner review. We emailed Pitch Nav and will email you when your verified feedback and plan are approved for release.')
+      setSaveMessage('Submitted for staff review. We emailed Pitch Nav and will email you when your verified feedback and plan are approved for release.')
     } catch (reason) {
       console.error(reason)
       setSaveMessage(reason instanceof Error ? reason.message : 'Could not save this analysis.')
@@ -1264,7 +1264,7 @@ export function MotionAnalysisStudio({ initialVideo = null }: { initialVideo?: I
                 </select>
               </label>
               <button type="button" onClick={saveAnalysisToDashboard} disabled={savingAnalysis} className="btn-accent">
-                {savingAnalysis ? 'Saving securely…' : 'Submit for owner review'}
+                {savingAnalysis ? 'Saving securely…' : 'Submit for staff review'}
               </button>
             </div>
             {saveMessage && <p role="status" className="mt-3 text-sm text-slate-300">{saveMessage}</p>}

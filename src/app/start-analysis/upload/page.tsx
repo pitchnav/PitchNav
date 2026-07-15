@@ -43,6 +43,7 @@ const CHECKLIST = [
 function UploadContent() {
   const searchParams = useSearchParams()
   const profileId = searchParams.get('profileId')
+  const paidOrderId = searchParams.get('orderId')
   const router = useRouter()
   const supabase = useMemo(() => createClient(), [])
 
@@ -113,33 +114,25 @@ function UploadContent() {
   useEffect(() => {
     async function init() {
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user || !profileId) {
-        router.push('/start-analysis')
-        return
-      }
+      if (!user) { router.push('/login?redirectTo=/start-analysis'); return }
       setUserId(user.id)
-
-      // Create a draft order
-      const { data: order, error } = await supabase
-        .from('orders')
-        .insert({
-          user_id: user.id,
-          athlete_profile_id: profileId,
-          status: 'awaiting_videos',
-          delivery_estimate_text: null,
-        })
-        .select()
-        .single()
-
-      if (error) {
-        console.error('Could not create order draft', error)
-      } else {
-        setOrderId(order.id)
+      if (paidOrderId) {
+        const { data: paidOrder } = await supabase.from('orders').select('id,athlete_profile_id,payment_confirmed_at').eq('id', paidOrderId).eq('user_id', user.id).single()
+        if (!paidOrder?.payment_confirmed_at) { router.replace(`/success?orderId=${paidOrderId}&payment=processing`); return }
+        setOrderId(paidOrder.id); setLoading(false); return
       }
-      setLoading(false)
+      if (!profileId) { router.push('/start-analysis'); return }
+      const { data: existing } = await supabase.from('orders').select('id,payment_confirmed_at').eq('user_id', user.id).eq('athlete_profile_id', profileId).is('payment_confirmed_at', null).eq('status', 'awaiting_payment').order('created_at', { ascending: false }).limit(1).maybeSingle()
+      let order = existing
+      if (!order) {
+        const result = await supabase.from('orders').insert({ user_id: user.id, athlete_profile_id: profileId, status: 'awaiting_payment', delivery_estimate_text: 'Staff review completed within one business day.' }).select('id,payment_confirmed_at').single()
+        order = result.data
+      }
+      if (!order) { setLoading(false); return }
+      router.replace(`/checkout?orderId=${order.id}`)
     }
-    init()
-  }, [profileId])
+    void init()
+  }, [profileId, paidOrderId, router, supabase])
 
   async function handleFileSelect(angle: 'open_side' | 'rear', file: File) {
     // Validate type
@@ -258,17 +251,12 @@ function UploadContent() {
 
   const requiredUploaded = REQUIRED_ANGLES.every((a) => videos[a]?.submissionId)
 
-  async function proceedToCheckout() {
+  async function finishSubmission() {
     if (!orderId || !profileId) return
     setOrderLoading(true)
     try {
-      // Update order status to awaiting_payment
-      await supabase
-        .from('orders')
-        .update({ status: 'awaiting_payment' })
-        .eq('id', orderId)
-
-      router.push(`/checkout?orderId=${orderId}`)
+      await supabase.from('orders').update({ status: 'submitted', submitted_at: new Date().toISOString(), delivery_estimate_text: 'Staff review completed within one business day.' }).eq('id', orderId)
+      router.push(`/dashboard/orders/${orderId}`)
     } catch {
       setOrderLoading(false)
     }
@@ -295,6 +283,10 @@ function UploadContent() {
             before filming.
           </p>
         </div>
+
+        <section className="card mb-8 overflow-hidden border-electric-blue/30">
+          <div className="grid items-center gap-5 md:grid-cols-[0.9fr_1.1fr]"><div><p className="text-xs font-bold uppercase tracking-[0.18em] text-electric-blue-light">Before choosing files</p><h2 className="mt-1 text-xl font-black text-white">Confirm that you recorded in SLO-MO</h2><p className="mt-2 text-sm leading-relaxed text-slate-400">Use 240 FPS when available or 120 FPS when necessary. Normal Video mode—even when played slowly later—is not eligible for the velocity estimator.</p><a href="/camera-setup" target="_blank" className="mt-4 inline-flex text-sm font-bold text-electric-blue-light hover:text-white">Open the complete recording guide →</a></div><img src="/pitch-nav-slow-motion-guide.png" alt="How to configure iPhone Slo-mo recording at 240 or 120 FPS" className="w-full rounded-lg border border-surface-border" /></div>
+        </section>
 
         {/* Video slots */}
         <div className="space-y-6 mb-8">
@@ -473,7 +465,7 @@ function UploadContent() {
         <div className="card">
           <h3 className="text-base font-semibold text-white mb-2">Ready to continue?</h3>
           <p className="text-sm text-slate-400 mb-4">
-            Both required videos must be uploaded before you can proceed to checkout.
+            Payment is confirmed. Upload both required videos, trim each clip to the complete delivery, then submit them for staff review within one business day.
           </p>
           <div className="flex gap-3 mb-4">
             {REQUIRED_ANGLES.map((a) => (
@@ -493,10 +485,10 @@ function UploadContent() {
           <button
             type="button"
             disabled={!requiredUploaded || orderLoading}
-            onClick={proceedToCheckout}
+            onClick={finishSubmission}
             className="btn-primary w-full justify-center py-3"
           >
-            {orderLoading ? 'Preparing...' : 'Continue to Checkout →'}
+            {orderLoading ? 'Submitting…' : 'Submit Videos for Staff Review →'}
           </button>
         </div>
 

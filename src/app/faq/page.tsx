@@ -71,7 +71,7 @@ const FAQ_SECTIONS = [
       },
       {
         q: 'How long does the analysis take?',
-        a: 'Most analyses are delivered within 5–7 business days of receiving a complete video submission and payment confirmation. Delivery time can vary based on current volume. Your dashboard shows a configured delivery estimate from the admin team.',
+        a: 'Most analyses are delivered within one business day of receiving a complete video submission and payment confirmation. Delivery time can vary based on current volume. Your dashboard shows a configured delivery estimate from the admin team.',
       },
       {
         q: 'What six positions are analyzed?',

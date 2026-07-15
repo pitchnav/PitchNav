@@ -37,8 +37,7 @@ function SuccessContent() {
         <h1 className="text-4xl font-black text-white mb-4">You're in the Queue!</h1>
 
         <p className="text-lg text-slate-400 mb-6 leading-relaxed">
-          Payment confirmed. Your pitching videos are secure and your analysis is on its way to
-          your reviewer. You'll receive an email confirmation shortly.
+          Payment confirmed. Your membership is active. Continue to upload your pitching videos; files cannot be saved before payment is verified.
         </p>
 
         <div className="card mb-8">
@@ -49,15 +48,15 @@ function SuccessContent() {
             </div>
             <div className="flex items-center gap-3 text-accent-green">
               <CheckCircle className="h-4 w-4 flex-shrink-0" />
-              <span>Videos securely stored</span>
+              <span>Video upload unlocked</span>
             </div>
             <div className="flex items-center gap-3 text-accent-green">
               <CheckCircle className="h-4 w-4 flex-shrink-0" />
-              <span>Order queued for review</span>
+              <span>Upload both required pitching views next</span>
             </div>
             <div className="flex items-center gap-3 text-electric-blue-light">
               <div className="h-4 w-4 rounded-full border-2 border-electric-blue flex-shrink-0" />
-              <span>Analysis delivery: 5–7 business days</span>
+              <span>Staff review: no more than one business day after submission</span>
             </div>
           </div>
         </div>
@@ -71,12 +70,7 @@ function SuccessContent() {
 
         <div className="flex flex-col sm:flex-row gap-3">
           {orderId && (
-            <Link
-              href={`/dashboard/orders/${orderId}`}
-              className="btn-primary flex-1 justify-center py-3"
-            >
-              Track My Order <ArrowRight className="h-4 w-4" />
-            </Link>
+            <Link href={`/start-analysis/upload?orderId=${orderId}`} className="btn-primary flex-1 justify-center py-3">Upload My Videos <ArrowRight className="h-4 w-4" /></Link>
           )}
           <Link href="/dashboard" className="btn-secondary flex-1 justify-center py-3">
             Go to Dashboard

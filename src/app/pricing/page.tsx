@@ -5,7 +5,7 @@ import { SafetyDisclaimer } from '@/components/ui/SafetyDisclaimer'
 
 export const metadata: Metadata = {
   title: 'Pricing',
-  description: 'Pitch Nav membership — $25/month. Owner-reviewed pitching analysis every two weeks, velocity estimates, progress tracking, and an eight-week development plan.',
+  description: 'Pitch Nav membership — $25/month. Staff-reviewed pitching analysis every two weeks, velocity estimates, progress tracking, and an eight-week development plan.',
 }
 
 const included = [
@@ -37,7 +37,7 @@ const faqs = [
   },
   {
     q: 'What does the $25 monthly membership include?',
-    a: 'Your membership includes secure video storage, one owner-reviewed analysis every two weeks, skeleton motion visualization, video-estimated velocity when eligible, an eight-week plan, and progress comparisons.',
+    a: 'Your membership includes secure video storage, one staff-reviewed analysis every two weeks, skeleton motion visualization, video-estimated velocity when eligible, an eight-week plan, and progress comparisons.',
   },
   {
     q: 'How much does a follow-up analysis cost?',
@@ -55,7 +55,7 @@ export default function PricingPage() {
             Simple, Transparent Pricing
           </h1>
           <p className="mt-4 text-lg text-slate-400 max-w-2xl mx-auto">
-            Ongoing development—not a one-time report. Submit every two weeks, receive owner-reviewed feedback, follow your daily plan, and measure what changes.
+            Ongoing development—not a one-time report. Submit every two weeks, receive staff-reviewed feedback, follow your daily plan, and measure what changes.
           </p>
         </div>
 
@@ -67,7 +67,7 @@ export default function PricingPage() {
             <div>
               <h2 className="text-2xl font-black text-white">Pitch Nav Development Membership</h2>
               <p className="text-slate-400 mt-2 max-w-lg">
-                A continuous pitching-development workspace with owner-reviewed video analysis, a clear biggest opportunity, velocity context, and a practical two-month roadmap.
+                A continuous pitching-development workspace with staff-reviewed video analysis, a clear biggest opportunity, velocity context, and a practical two-month roadmap.
               </p>
             </div>
             <div className="flex-shrink-0">

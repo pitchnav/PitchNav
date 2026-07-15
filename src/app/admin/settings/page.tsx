@@ -14,7 +14,7 @@ const SETTING_DESCRIPTIONS: Record<string, { label: string; description: string;
   business_name:          { label: 'Business Name', description: 'Displayed in emails and the site header.' },
   contact_email:          { label: 'Support Email', description: 'Used in contact page and outbound emails.' },
   from_email_name:        { label: 'From Name (Emails)', description: 'The "from" name for Resend emails.' },
-  delivery_estimate_text: { label: 'Delivery Estimate Wording', description: 'Shown on order detail pages. E.g. "Estimated delivery: 5–7 business days."' },
+  delivery_estimate_text: { label: 'Delivery Estimate Wording', description: 'Shown on order detail pages. E.g. "Estimated delivery: one business day."' },
   max_weekly_orders:      { label: 'Max Weekly Orders', description: 'Leave blank to disable the cap.', type: 'number' },
   video_retention_days:   { label: 'Video Retention (Days)', description: 'How long uploaded videos are kept after analysis completion.', type: 'number' },
   follow_up_price_cents:  { label: 'Follow-Up Price (cents)', description: 'E.g. 2500 = $25.00.', type: 'number' },

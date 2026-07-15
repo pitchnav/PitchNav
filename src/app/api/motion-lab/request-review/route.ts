@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
     if (ownerEmail) await sendOwnerReviewRequestEmail(ownerEmail, profile?.full_name || profile?.email || 'Athlete', analysis.title, analysis.id)
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Owner review notification failed', error)
+    console.error('Staff review notification failed', error)
     return NextResponse.json({ error: 'Review request could not be sent' }, { status: 400 })
   }
 }

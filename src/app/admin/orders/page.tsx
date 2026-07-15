@@ -74,7 +74,7 @@ export default async function AdminOrdersPage({
           <table className="w-full text-sm">
             <thead className="border-b border-surface-border bg-navy-800">
               <tr>
-                {['Order ID', 'Athlete', 'Status', 'Submitted', 'Health Flag', 'Actions'].map((h) => (
+                {['Order ID', 'Athlete', 'Payment', 'Status', 'Submitted', 'Health Flag', 'Actions'].map((h) => (
                   <th key={h} className="text-left text-xs font-semibold uppercase tracking-widest text-slate-500 py-3 px-4">{h}</th>
                 ))}
               </tr>
@@ -86,6 +86,7 @@ export default async function AdminOrdersPage({
                   <tr key={order.id} className="hover:bg-surface-hover/30 transition-colors">
                     <td className="py-3 px-4 font-mono text-xs text-slate-400">{order.id.slice(0, 8).toUpperCase()}</td>
                     <td className="py-3 px-4 text-white font-medium">{profile?.athlete_full_name ?? '—'}</td>
+                    <td className="py-3 px-4">{order.payment_confirmed_at ? <span className="rounded-full bg-accent-green/10 px-2 py-1 text-xs font-bold text-accent-green">Paid ${((order.amount_paid_cents ?? 0)/100).toFixed(2)}</span> : <span className="rounded-full bg-yellow-400/10 px-2 py-1 text-xs font-bold text-yellow-300">Unpaid</span>}</td>
                     <td className="py-3 px-4"><OrderStatusBadge status={order.status} /></td>
                     <td className="py-3 px-4 text-slate-400 text-xs">{order.submitted_at ? formatDateShort(order.submitted_at) : '—'}</td>
                     <td className="py-3 px-4">
@@ -105,7 +106,7 @@ export default async function AdminOrdersPage({
               })}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="py-12 text-center text-slate-500">No orders found.</td>
+                  <td colSpan={7} className="py-12 text-center text-slate-500">No orders found.</td>
                 </tr>
               )}
             </tbody>

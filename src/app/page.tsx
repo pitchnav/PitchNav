@@ -509,7 +509,7 @@ function FAQPreview() {
     },
     {
       q: 'How long does the analysis take?',
-      a: 'Most analyses are delivered within after owner review of receiving your complete video submission and payment confirmation.',
+      a: 'Completed reports are reviewed and released within one business day after receiving your complete paid video submission.',
     },
     {
       q: 'Can I submit for a younger pitcher?',
