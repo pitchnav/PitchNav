@@ -218,17 +218,26 @@ function drawAnatomicalSkeleton(
     if (Math.min(start.visibility, end.visibility) < 0.45) return
     context.save()
     context.lineCap = 'round'
-    context.shadowBlur = 12
-    context.shadowColor = '#38bdf8'
-    context.strokeStyle = '#f8fafc'
-    context.lineWidth = scale * thickness
-    context.beginPath()
-    context.moveTo(start.x, start.y)
-    context.lineTo(end.x, end.y)
-    context.stroke()
-    context.strokeStyle = 'rgba(148, 163, 184, 0.8)'
-    context.lineWidth = scale * 0.35
-    context.stroke()
+    const length = Math.max(1, Math.hypot(end.x - start.x, end.y - start.y))
+    const normalX = -(end.y - start.y) / length
+    const normalY = (end.x - start.x) / length
+    const separation = Math.min(scale * thickness * 0.62, length * 0.045)
+    context.shadowBlur = 3
+    context.shadowColor = 'rgba(125, 211, 252, 0.45)'
+    context.strokeStyle = '#e5e7eb'
+    context.lineWidth = Math.max(1.2, scale * 0.52)
+    for (const side of [-1, 1]) {
+      context.beginPath()
+      context.moveTo(start.x + normalX * separation * side, start.y + normalY * separation * side)
+      context.lineTo(end.x + normalX * separation * side, end.y + normalY * separation * side)
+      context.stroke()
+    }
+    context.fillStyle = '#f8fafc'
+    for (const endpoint of [start, end]) {
+      context.beginPath()
+      context.ellipse(endpoint.x, endpoint.y, scale * 0.75, scale * 0.5, Math.atan2(end.y - start.y, end.x - start.x), 0, Math.PI * 2)
+      context.fill()
+    }
     context.restore()
   }
 
@@ -347,6 +356,62 @@ function drawAnatomicalSkeleton(
   )
 }
 
+function drawScientificMound(
+  context: CanvasRenderingContext2D,
+  landmarks: NormalizedLandmark[],
+  width: number,
+  height: number
+) {
+  const visibleFeet = [27, 28, 29, 30, 31, 32]
+    .map((index) => landmarks[index])
+    .filter((point) => point && (point.visibility ?? 0) >= 0.4)
+  const footY = visibleFeet.length
+    ? Math.min(height * 0.9, Math.max(...visibleFeet.map((point) => point.y * height)) + height * 0.018)
+    : height * 0.78
+  const footX = visibleFeet.length
+    ? visibleFeet.reduce((sum, point) => sum + point.x * width, 0) / visibleFeet.length
+    : width * 0.5
+
+  context.save()
+  const ground = context.createLinearGradient(0, footY - height * 0.08, 0, height)
+  ground.addColorStop(0, 'rgba(20, 29, 42, 0.1)')
+  ground.addColorStop(0.25, 'rgba(17, 24, 39, 0.94)')
+  ground.addColorStop(1, '#05070b')
+  context.fillStyle = ground
+  context.fillRect(0, footY - height * 0.03, width, height - footY + height * 0.03)
+
+  // Perspective measurement grid anchored to the detected foot plane.
+  context.strokeStyle = 'rgba(56, 189, 248, 0.22)'
+  context.lineWidth = Math.max(0.7, width / 1500)
+  for (let row = 0; row <= 7; row += 1) {
+    const t = row / 7
+    const y = footY + Math.pow(t, 1.55) * (height - footY)
+    context.beginPath(); context.moveTo(0, y); context.lineTo(width, y); context.stroke()
+  }
+  for (let column = -9; column <= 9; column += 1) {
+    context.beginPath(); context.moveTo(footX, footY); context.lineTo(footX + column * width * 0.12, height); context.stroke()
+  }
+
+  // Low pitching-mound profile, landing surface, rubber, and contact shadow.
+  const moundWidth = width * 0.52
+  const moundHeight = height * 0.075
+  const moundGradient = context.createLinearGradient(0, footY - moundHeight, 0, footY + moundHeight)
+  moundGradient.addColorStop(0, '#59412e')
+  moundGradient.addColorStop(0.55, '#2f241c')
+  moundGradient.addColorStop(1, '#120f0c')
+  context.fillStyle = moundGradient
+  context.beginPath()
+  context.ellipse(footX, footY + moundHeight * 0.36, moundWidth / 2, moundHeight, 0, Math.PI, Math.PI * 2)
+  context.lineTo(footX + moundWidth / 2, footY + moundHeight)
+  context.lineTo(footX - moundWidth / 2, footY + moundHeight)
+  context.closePath(); context.fill()
+  context.fillStyle = 'rgba(0,0,0,0.42)'
+  context.beginPath(); context.ellipse(footX, footY + height * 0.015, width * 0.12, height * 0.018, 0, 0, Math.PI * 2); context.fill()
+  context.fillStyle = '#d7d8d5'
+  context.fillRect(footX - width * 0.035, footY - height * 0.012, width * 0.07, Math.max(3, height * 0.009))
+  context.restore()
+}
+
 type InitialVideo = {
   signedUrl: string
   fileName: string
@@ -355,6 +420,8 @@ type InitialVideo = {
   orderId: string
   ownerUserId?: string
   staffProcessing?: boolean
+  trimStartSecs?: number | null
+  trimEndSecs?: number | null
   athleteProfileId: string | null
   handedness: Handedness
 } | null
@@ -376,6 +443,8 @@ export function MotionAnalysisStudio({ initialVideo = null }: { initialVideo?: I
   const renderedBlobRef = useRef<Blob | null>(null)
   const existingSourcePathRef = useRef<string | null>(initialVideo?.storagePath ?? null)
   const initialVideoLoadedRef = useRef(false)
+  const analysisStartRef = useRef(Math.max(0, initialVideo?.trimStartSecs ?? 0))
+  const analysisEndRef = useRef<number | null>(initialVideo?.trimEndSecs ?? null)
 
   const [fileUrl, setFileUrl] = useState<string | null>(null)
   const [fileName, setFileName] = useState('')
@@ -462,27 +531,6 @@ export function MotionAnalysisStudio({ initialVideo = null }: { initialVideo?: I
       context.fillStyle = background
       context.fillRect(0, 0, width, height)
 
-      const horizon = height * 0.7
-      context.save()
-      context.strokeStyle = 'rgba(37, 99, 235, 0.34)'
-      context.lineWidth = Math.max(1, width / 1000)
-      for (let row = 0; row <= 8; row += 1) {
-        const t = row / 8
-        const y = horizon + Math.pow(t, 1.7) * (height - horizon)
-        context.beginPath()
-        context.moveTo(0, y)
-        context.lineTo(width, y)
-        context.stroke()
-      }
-      for (let column = -8; column <= 8; column += 1) {
-        const bottomX = width / 2 + column * (width / 8)
-        context.beginPath()
-        context.moveTo(width / 2, horizon)
-        context.lineTo(bottomX, height)
-        context.stroke()
-      }
-      context.restore()
-
       context.fillStyle = 'rgba(255,255,255,0.92)'
       context.font = `700 ${Math.max(18, width / 42)}px sans-serif`
       context.fillText('PITCH NAV MOTION CAPTURE', width * 0.035, height * 0.07)
@@ -505,6 +553,7 @@ export function MotionAnalysisStudio({ initialVideo = null }: { initialVideo?: I
       }
 
       if (exportStyleRef.current) {
+        drawScientificMound(context, landmarks, width, height)
         drawAnatomicalSkeleton(context, landmarks, width, height)
       } else {
         context.lineCap = 'round'
@@ -555,12 +604,23 @@ export function MotionAnalysisStudio({ initialVideo = null }: { initialVideo?: I
       context.restore()
     }
 
-    setProgress(video.duration ? video.currentTime / video.duration : 0)
+    const start = analysisStartRef.current
+    const end = Math.min(video.duration, analysisEndRef.current ?? video.duration)
+    setProgress(end > start ? Math.max(0, Math.min(1, (video.currentTime - start) / (end - start))) : 0)
   }, [handedness, calibrationA, calibrationB, ballStart, ballEnd])
 
   const renderLoop = useCallback(() => {
     drawFrame()
-    if (videoRef.current && !videoRef.current.paused && !videoRef.current.ended) {
+    const video = videoRef.current
+    const end = video ? Math.min(video.duration || Infinity, analysisEndRef.current ?? Infinity) : Infinity
+    if (video && !video.paused && video.currentTime >= end - 0.003) {
+      video.pause()
+      setPlaying(false)
+      if (analyzingRef.current) finishAnalysis()
+      if (exportingRef.current && recorderRef.current?.state !== 'inactive') recorderRef.current?.stop()
+      return
+    }
+    if (video && !video.paused && !video.ended) {
       animationRef.current = requestAnimationFrame(renderLoop)
     }
   }, [drawFrame])
@@ -683,8 +743,10 @@ export function MotionAnalysisStudio({ initialVideo = null }: { initialVideo?: I
     setPlaying(false)
     // Use the selected capture rate so 240/120 FPS clips can be inspected one recorded frame at a time.
     const frameDuration = 1 / Math.max(1, captureFps)
-    video.currentTime = Math.max(0, Math.min(video.duration - frameDuration, video.currentTime + direction * frameDuration))
-    setProgress(video.currentTime / video.duration)
+    const start = analysisStartRef.current
+    const end = Math.min(video.duration, analysisEndRef.current ?? video.duration)
+    video.currentTime = Math.max(start, Math.min(end - frameDuration, video.currentTime + direction * frameDuration))
+    setProgress(end > start ? (video.currentTime - start) / (end - start) : 0)
     window.setTimeout(drawFrame, 30)
   }
 
@@ -693,6 +755,8 @@ export function MotionAnalysisStudio({ initialVideo = null }: { initialVideo?: I
     if (!video || !fileUrl) return
     if (!landmarkerRef.current && !(await initializeModel())) return
     if (video.paused) {
+      const end = Math.min(video.duration, analysisEndRef.current ?? video.duration)
+      if (video.currentTime < analysisStartRef.current || video.currentTime >= end - 0.003) video.currentTime = analysisStartRef.current
       video.playbackRate = playbackSpeedRef.current
       await video.play()
       setPlaying(true)
@@ -738,7 +802,7 @@ export function MotionAnalysisStudio({ initialVideo = null }: { initialVideo?: I
     setError('')
     analyzingRef.current = true
     setAnalyzing(true)
-    video.currentTime = 0
+    video.currentTime = analysisStartRef.current
     video.playbackRate = playbackSpeedRef.current
     await video.play()
     setPlaying(true)
@@ -764,14 +828,16 @@ export function MotionAnalysisStudio({ initialVideo = null }: { initialVideo?: I
 
     // Seeking is asynchronous. Recording before it finishes was the cause of
     // exports beginning near the end and containing only a few seconds.
-    if (video.currentTime !== 0) {
+    const exportStart = analysisStartRef.current
+    const exportEnd = Math.min(video.duration, analysisEndRef.current ?? video.duration)
+    if (Math.abs(video.currentTime - exportStart) > 0.001) {
       await new Promise<void>((resolve) => {
         const done = () => resolve()
         video.addEventListener('seeked', done, { once: true })
-        video.currentTime = 0
+        video.currentTime = exportStart
       })
     } else {
-      video.currentTime = 0
+      video.currentTime = exportStart
     }
     drawFrame()
 
@@ -813,7 +879,7 @@ export function MotionAnalysisStudio({ initialVideo = null }: { initialVideo?: I
       // recording from hanging forever if a browser drops the ended event.
       exportWatchdogRef.current = setTimeout(() => {
         if (recorder.state !== 'inactive') recorder.stop()
-      }, Math.ceil((video.duration / video.playbackRate) * 1000) + 5000)
+      }, Math.ceil(((exportEnd - exportStart) / video.playbackRate) * 1000) + 5000)
     } catch (reason) {
       console.error(reason)
       if (recorder.state !== 'inactive') recorder.stop()
@@ -862,15 +928,18 @@ export function MotionAnalysisStudio({ initialVideo = null }: { initialVideo?: I
     const canvas = canvasRef.current
     if (!video || !canvas || !video.duration) return []
     const originalTime = video.currentTime
-    const peak = summary?.peakLegLiftTime ?? video.duration * 0.25
-    const stride = summary?.widestStrideTime ?? video.duration * 0.55
+    const clipStart = analysisStartRef.current
+    const clipEnd = Math.min(video.duration, analysisEndRef.current ?? video.duration)
+    const clipDuration = Math.max(0.01, clipEnd - clipStart)
+    const peak = summary?.peakLegLiftTime ?? clipStart + clipDuration * 0.25
+    const stride = summary?.widestStrideTime ?? clipStart + clipDuration * 0.55
     const phases = [
       { key: 'peak_leg_lift', label: 'Peak Leg Lift', time: peak },
-      { key: 'hand_separation', label: 'Hand Separation', time: Math.min(video.duration * 0.95, peak + video.duration * 0.1) },
+      { key: 'hand_separation', label: 'Hand Separation', time: Math.min(clipEnd, peak + clipDuration * 0.1) },
       { key: 'lead_foot_contact', label: 'Lead-Foot Contact Candidate', time: stride },
-      { key: 'maximum_external_rotation', label: 'Maximum External Rotation Candidate', time: Math.min(video.duration * 0.95, stride + video.duration * 0.1) },
-      { key: 'ball_release', label: 'Ball Release Candidate', time: Math.min(video.duration * 0.95, stride + video.duration * 0.18) },
-      { key: 'finish', label: 'Finish & Deceleration', time: video.duration * 0.9 },
+      { key: 'maximum_external_rotation', label: 'Maximum External Rotation Candidate', time: Math.min(clipEnd, stride + clipDuration * 0.1) },
+      { key: 'ball_release', label: 'Ball Release Candidate', time: Math.min(clipEnd, stride + clipDuration * 0.18) },
+      { key: 'finish', label: 'Finish & Deceleration', time: clipStart + clipDuration * 0.9 },
     ]
     const output: Array<{ key: string; label: string; time: number; storage_path: string; confidence_note: string }> = []
     video.pause()
@@ -1093,6 +1162,9 @@ export function MotionAnalysisStudio({ initialVideo = null }: { initialVideo?: I
                 onLoadedData={(event) => {
                   event.currentTarget.defaultPlaybackRate = playbackSpeedRef.current
                   event.currentTarget.playbackRate = playbackSpeedRef.current
+                  const trimEnd = analysisEndRef.current
+                  if (trimEnd !== null && trimEnd > event.currentTarget.duration) analysisEndRef.current = event.currentTarget.duration
+                  event.currentTarget.currentTime = Math.min(event.currentTarget.duration - 0.01, analysisStartRef.current)
                   drawFrame()
                   void detectVideoFrameRate(event.currentTarget)
                 }}
@@ -1116,6 +1188,11 @@ export function MotionAnalysisStudio({ initialVideo = null }: { initialVideo?: I
             </div>
 
             <div className="space-y-3 border-t border-surface-border bg-navy-900 p-4">
+              {initialVideo && (initialVideo.trimStartSecs || initialVideo.trimEndSecs) && (
+                <div className="rounded-lg border border-accent-green/20 bg-accent-green/5 px-3 py-2 text-xs text-accent-green">
+                  Saved analysis range applied: {(initialVideo.trimStartSecs ?? 0).toFixed(2)}s–{initialVideo.trimEndSecs?.toFixed(2) ?? 'video end'}. Playback, measurements, phase screenshots, and skeleton export use only this range.
+                </div>
+              )}
               <input
                 aria-label="Video progress"
                 type="range"
@@ -1126,7 +1203,9 @@ export function MotionAnalysisStudio({ initialVideo = null }: { initialVideo?: I
                 onChange={(event) => {
                   const video = videoRef.current
                   if (!video?.duration) return
-                  video.currentTime = Number(event.target.value) * video.duration
+                  const start = analysisStartRef.current
+                  const end = Math.min(video.duration, analysisEndRef.current ?? video.duration)
+                  video.currentTime = start + Number(event.target.value) * (end - start)
                   setProgress(Number(event.target.value))
                   drawFrame()
                 }}

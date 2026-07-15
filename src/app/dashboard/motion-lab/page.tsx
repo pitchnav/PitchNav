@@ -22,12 +22,14 @@ export default async function MotionLabPage({ searchParams }: { searchParams: Pr
     orderId: string
     athleteProfileId: string | null
     handedness: 'right' | 'left'
+    trimStartSecs: number | null
+    trimEndSecs: number | null
   } | null = null
 
   if (videoId) {
     const { data: submission } = await supabase
       .from('video_submissions')
-      .select('id,order_id,storage_path,file_name,mime_type,orders!inner(user_id,athlete_profile_id,athlete_profiles(throwing_hand))')
+      .select('id,order_id,storage_path,file_name,mime_type,trim_start_secs,trim_end_secs,orders!inner(user_id,athlete_profile_id,athlete_profiles(throwing_hand))')
       .eq('id', videoId)
       .eq('orders.user_id', user.id)
       .single()
@@ -45,6 +47,8 @@ export default async function MotionLabPage({ searchParams }: { searchParams: Pr
           orderId: submission.order_id,
           athleteProfileId: order?.athlete_profile_id ?? null,
           handedness: athlete?.throwing_hand === 'left' ? 'left' : 'right',
+          trimStartSecs: submission.trim_start_secs ?? null,
+          trimEndSecs: submission.trim_end_secs ?? null,
         }
       }
     }
