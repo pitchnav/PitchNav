@@ -12,10 +12,11 @@ import Link from 'next/link'
 interface Props {
   initialData: Partial<IntakeFormData>
   userId: string
+  existingProfileId?: string | null
   onComplete: (data: Partial<IntakeFormData>, profileId?: string) => void
 }
 
-export function StepContact({ initialData, userId, onComplete }: Props) {
+export function StepContact({ initialData, userId, existingProfileId, onComplete }: Props) {
   const [loading, setLoading] = useState(false)
   const [serverError, setServerError] = useState('')
   const supabase = createClient()
@@ -40,9 +41,7 @@ export function StepContact({ initialData, userId, onComplete }: Props) {
     setServerError('')
     try {
       // Upsert athlete profile (step 1 fields only)
-      const { data: profile, error } = await supabase
-        .from('athlete_profiles')
-        .insert({
+      const profileFields = {
           user_id: userId,
           athlete_full_name: data.athleteFullName,
           athlete_email: data.athleteEmail,
@@ -63,7 +62,11 @@ export function StepContact({ initialData, userId, onComplete }: Props) {
           consent_athlete_name: data.consentAthleteName ?? false,
           consent_testimonial: data.consentTestimonial ?? false,
           consent_before_after: data.consentBeforeAfter ?? false,
-        })
+        }
+      const query = existingProfileId
+        ? supabase.from('athlete_profiles').update(profileFields).eq('id', existingProfileId).eq('user_id', userId)
+        : supabase.from('athlete_profiles').insert(profileFields)
+      const { data: profile, error } = await query
         .select()
         .single()
 

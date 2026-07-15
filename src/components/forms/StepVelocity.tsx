@@ -18,6 +18,7 @@ interface Props {
 export function StepVelocity({ initialData, athleteProfileId, onComplete, onBack }: Props) {
   const [loading, setLoading] = useState(false)
   const [serverError, setServerError] = useState('')
+  const [radarEvidence, setRadarEvidence] = useState<File | null>(null)
   const supabase = createClient()
 
   const { register, handleSubmit, formState: { errors } } = useForm<StepVelocityData>({
@@ -48,6 +49,21 @@ export function StepVelocity({ initialData, athleteProfileId, onComplete, onBack
         .eq('id', athleteProfileId)
 
       if (error) throw error
+      if (radarEvidence) {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) throw new Error('Please sign in again.')
+        const ext = radarEvidence.name.split('.').pop() || 'jpg'
+        const path = `${user.id}/${athleteProfileId}/radar-${Date.now()}.${ext}`
+        const { error: uploadError } = await supabase.storage.from('radar-screenshots').upload(path, radarEvidence, { contentType: radarEvidence.type, upsert: false })
+        if (uploadError) throw uploadError
+        const { error: evidenceError } = await supabase.from('velocity_evidence').insert({
+          user_id: user.id, athlete_profile_id: athleteProfileId, storage_path: path,
+          evidence_type: radarEvidence.type.startsWith('video/') ? 'radar_video' : 'radar_screenshot',
+          reported_velocity: data.currentMaxVelocity, reported_source: data.velocitySource,
+          verification_label: data.velocitySource === 'coach_provided' ? 'coach_reported' : 'athlete_reported',
+        })
+        if (evidenceError) throw evidenceError
+      }
       onComplete(data)
     } catch {
       setServerError('Could not save your information. Please try again.')
@@ -64,6 +80,12 @@ export function StepVelocity({ initialData, athleteProfileId, onComplete, onBack
           All velocity data is athlete-provided and will be clearly labeled as such in your report.
           Pitch Nav does not independently verify velocity readings.
         </p>
+      </div>
+
+      <div className="rounded-xl border border-surface-border bg-navy-950 p-4">
+        <label className="label" htmlFor="radarEvidence">Radar screenshot or radar-backed video (optional)</label>
+        <input id="radarEvidence" type="file" accept="image/jpeg,image/png,image/webp,video/mp4,video/quicktime" className="input" onChange={(event) => setRadarEvidence(event.target.files?.[0] ?? null)} />
+        <p className="mt-2 text-xs text-slate-500">Uploads begin as athlete- or coach-reported. An authorized reviewer must confirm the visible device reading before the label changes to Radar verified. Video-derived ranges remain labeled Video estimate.</p>
       </div>
 
       <div className="rounded-lg border border-electric-blue/20 bg-electric-blue/5 p-4">

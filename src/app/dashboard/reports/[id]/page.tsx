@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { Download, Play, Star, CheckCircle } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { ProgressBar } from '@/components/ui/ProgressBar'
+import { AnnotatedVideoPlayer } from '@/components/reports/AnnotatedVideoPlayer'
 import { SafetyDisclaimer } from '@/components/ui/SafetyDisclaimer'
 import {
   PITCH_POSITION_LABELS,
@@ -128,15 +129,7 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
           <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
             <Play className="h-5 w-5 text-electric-blue-light" /> Voice-Over Analysis
           </h2>
-          <video
-            src={voiceoverUrl}
-            controls
-            className="w-full rounded-lg bg-black"
-            aria-label="Reviewer voice-over analysis"
-          >
-            <track kind="captions" label="Captions" />
-            Your browser does not support video playback.
-          </video>
+          <AnnotatedVideoPlayer src={voiceoverUrl} title="Reviewer voice-over analysis" />
           <p className="text-xs text-slate-600 mt-2">
             If captions or a transcript are available, they can be accessed via the video controls.
           </p>

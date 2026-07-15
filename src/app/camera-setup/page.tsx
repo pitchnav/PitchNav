@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { CheckCircle, AlertCircle, Camera, Eye, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { CameraAlignmentStudio } from '@/components/camera/CameraAlignmentStudio'
 
 type Angle = 'open_side' | 'rear'
 
@@ -97,6 +98,8 @@ export default function CameraSetupPage() {
             important factor in a thorough analysis.
           </p>
         </div>
+
+        <CameraAlignmentStudio />
 
         {/* Angle selector */}
         <div className="flex flex-col sm:flex-row gap-3 mb-10">

@@ -37,6 +37,22 @@ export default function StartAnalysisPage() {
         return
       }
       setUserId(user.id)
+      const { data: saved } = await supabase.from('athlete_profiles').select('*').eq('user_id', user.id).order('updated_at', { ascending: false }).limit(1).maybeSingle()
+      if (saved) {
+        setAthleteProfileId(saved.id)
+        setFormData({
+          athleteFullName: saved.athlete_full_name,
+          athleteEmail: saved.athlete_email,
+          phoneNumber: saved.phone_number ?? '', dateOfBirth: saved.date_of_birth,
+          city: saved.city ?? '', state: saved.state ?? '', communicationPref: saved.communication_pref ?? 'email',
+          guardianName: saved.guardian_name ?? '', guardianEmail: saved.guardian_email ?? '', guardianConsented: saved.guardian_consented,
+          consentAnonymousClips: saved.consent_anonymous_clips ?? false, consentAthleteName: saved.consent_athlete_name ?? false, consentTestimonial: saved.consent_testimonial ?? false, consentBeforeAfter: saved.consent_before_after ?? false,
+          heightFeet: saved.height_feet ?? undefined, heightInches: saved.height_inches ?? undefined, weightLbs: saved.weight_lbs ?? undefined,
+          throwingHand: saved.throwing_hand ?? undefined, primaryPosition: saved.primary_position ?? undefined, schoolOrg: saved.school_org ?? '', graduationYear: saved.graduation_year ?? undefined, playingLevel: saved.playing_level ?? undefined,
+          currentAvgVelocity: saved.current_avg_velocity ?? undefined, currentMaxVelocity: saved.current_max_velocity ?? undefined, goalVelocity: saved.goal_velocity ?? undefined, velocitySource: saved.velocity_source ?? undefined, velocityMeasuredAt: saved.velocity_measured_at ?? '', bullpenIntensity: saved.bullpen_intensity ?? undefined, pitchesPerWeek: saved.pitches_per_week ?? undefined,
+          fastballType: saved.fastball_type ?? '', secondaryPitches: saved.secondary_pitches ?? [], yearsPitching: saved.years_pitching ?? undefined, currentCoach: saved.current_coach ?? '', throwingProgram: saved.throwing_program ?? '', strengthProgram: saved.strength_program ?? '', mainGoal: saved.main_goal ?? '', mechanicalConcern: saved.mechanical_concern ?? '', previousFeedback: saved.previous_feedback ?? '', upcomingDeadline: saved.upcoming_deadline ?? '',
+        })
+      }
       setLoading(false)
     }
     checkAuth()
@@ -88,6 +104,7 @@ export default function StartAnalysisPage() {
             <StepContact
               initialData={formData}
               userId={userId!}
+              existingProfileId={athleteProfileId}
               onComplete={handleStepComplete}
             />
           )}

@@ -16,6 +16,17 @@ type UploadedVideo = {
   error: string | null
   submissionId: string | null
   checklistConfirmed: boolean
+  quality: VideoQuality | null
+}
+
+type VideoQuality = {
+  frameRate: number | null
+  width: number
+  height: number
+  duration: number
+  orientation: 'Landscape' | 'Portrait' | 'Square'
+  rating: 'Ready for analysis' | 'Usable, but limited' | 'Please record again'
+  warnings: string[]
 }
 
 const CHECKLIST = [
@@ -49,6 +60,54 @@ function UploadContent() {
   const ANGLE_LABELS: Record<string, string> = {
     open_side: 'Open-Side View (Required)',
     rear: 'Rear View (Required)',
+  }
+
+  async function inspectVideo(file: File, url: string): Promise<VideoQuality | null> {
+    return new Promise((resolve) => {
+      const probe = document.createElement('video')
+      probe.muted = true
+      probe.playsInline = true
+      probe.preload = 'metadata'
+      probe.src = url
+      probe.onloadedmetadata = async () => {
+        const width = probe.videoWidth
+        const height = probe.videoHeight
+        const duration = probe.duration
+        const orientation = width > height ? 'Landscape' : height > width ? 'Portrait' : 'Square'
+        let frameRate: number | null = null
+        if ('requestVideoFrameCallback' in probe && duration > 0) {
+          const times: number[] = []
+          try {
+            await probe.play()
+            await new Promise<void>((done) => {
+              let finished = false
+              const finish = () => { if (!finished) { finished = true; done() } }
+              const timeout = window.setTimeout(finish, 1500)
+              const sample = (_now: number, metadata: VideoFrameCallbackMetadata) => {
+                if (finished) return
+                if (!times.length || metadata.mediaTime !== times[times.length - 1]) times.push(metadata.mediaTime)
+                if (times.length >= 24 || probe.ended) { window.clearTimeout(timeout); finish() }
+                else probe.requestVideoFrameCallback(sample)
+              }
+              probe.requestVideoFrameCallback(sample)
+            })
+            const deltas = times.slice(1).map((time, index) => time - times[index]).filter((delta) => delta > 0.0001).sort((a, b) => a - b)
+            if (deltas.length) frameRate = Math.round(1 / deltas[Math.floor(deltas.length / 2)])
+          } catch { frameRate = null }
+          probe.pause()
+        }
+        const warnings: string[] = []
+        if (duration < 1) warnings.push('Clip is extremely short.')
+        if (width < 720 || height < 480) warnings.push('Resolution is below the recommended minimum.')
+        if (orientation !== 'Landscape') warnings.push('Landscape orientation is recommended.')
+        if (frameRate !== null && frameRate < 60) warnings.push('The playback track is below 60 FPS; confirm the original slow-motion capture setting.')
+        const rating = duration < 0.5 || Math.min(width, height) < 360
+          ? 'Please record again'
+          : warnings.length >= 2 ? 'Usable, but limited' : 'Ready for analysis'
+        resolve({ frameRate, width, height, duration, orientation, rating, warnings })
+      }
+      probe.onerror = () => resolve(null)
+    })
   }
 
   useEffect(() => {
@@ -105,8 +164,11 @@ function UploadContent() {
         error: null,
         submissionId: null,
         checklistConfirmed: false,
+        quality: null,
       },
     }))
+    const quality = await inspectVideo(file, url)
+    setVideos((prev) => prev[angle] ? ({ ...prev, [angle]: { ...prev[angle], quality } }) : prev)
     setChecklistAngle(angle)
     setChecklistItems({})
   }
@@ -151,6 +213,10 @@ function UploadContent() {
           file_name: filename,
           file_size_bytes: video.file.size,
           mime_type: video.file.type,
+          duration_secs: video.quality ? Math.round(video.quality.duration) : null,
+          resolution: video.quality ? `${video.quality.width}x${video.quality.height}` : null,
+          frame_rate: video.quality?.frameRate ?? null,
+          orientation: video.quality?.orientation.toLowerCase() ?? null,
           checklist_confirmed: true,
         })
         .select()
@@ -299,6 +365,26 @@ function UploadContent() {
                       <span>{video.file.name}</span>
                       <span>{formatFileSize(video.file.size)}</span>
                     </div>
+
+                    {video.quality && (
+                      <div className="mb-3 rounded-xl border border-surface-border bg-navy-950 p-4">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Automatic file check</p>
+                          <span className={`rounded-full px-3 py-1 text-xs font-bold ${video.quality.rating === 'Ready for analysis' ? 'bg-accent-green/10 text-accent-green' : video.quality.rating === 'Usable, but limited' ? 'bg-yellow-400/10 text-yellow-300' : 'bg-red-400/10 text-red-300'}`}>{video.quality.rating}</span>
+                        </div>
+                        <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-5">
+                          {[
+                            ['Frame rate', video.quality.frameRate ? `~${video.quality.frameRate} playback FPS` : 'Not exposed'],
+                            ['Resolution', `${video.quality.width}×${video.quality.height}`],
+                            ['Length', `${video.quality.duration.toFixed(1)} sec`],
+                            ['Orientation', video.quality.orientation],
+                            ['File size', formatFileSize(video.file.size)],
+                          ].map(([label, value]) => <div key={label} className="rounded-lg bg-navy-900 p-2"><p className="text-[10px] uppercase text-slate-600">{label}</p><p className="mt-1 text-xs font-semibold text-white">{value}</p></div>)}
+                        </div>
+                        {video.quality.warnings.map((warning) => <p key={warning} className="mt-2 text-xs text-yellow-300">• {warning}</p>)}
+                        <p className="mt-3 text-xs text-slate-500">This checks file metadata only. You must still confirm that the full body, throwing hand, landing foot, and release are visible.</p>
+                      </div>
+                    )}
 
                     {video.error && (
                       <div className="rounded-lg bg-red-500/10 border border-red-500/20 p-3 mb-3 flex items-center gap-2">

@@ -48,7 +48,7 @@ const baseStyle = `
 const brandHeader = `
   <div style="text-align:center;margin-bottom:32px;">
     <h1 style="color:#2563eb;font-size:28px;font-weight:800;letter-spacing:-1px;margin:0;">
-      Pitch<span style="color:#00e5a0;">Frame</span>
+      Pitch<span style="color:#00e5a0;">Nav</span>
     </h1>
     <p style="color:#64748b;font-size:13px;margin:4px 0 0;">Baseball Pitching Analysis</p>
   </div>
@@ -211,6 +211,20 @@ export async function sendDeletionConfirmationEmail(to: string, name: string, re
       <h2 style="color:#f1f5f9;font-size:22px;margin-bottom:8px;">Deletion Request Received</h2>
       <p style="color:#94a3b8;line-height:1.6;">Hi ${name}, we've received your request to delete your ${requestType === 'all' ? 'account and all associated data' : requestType === 'videos' ? 'uploaded videos' : 'account'}.</p>
       <p style="color:#94a3b8;line-height:1.6;">Our team will process your request within 30 days and send a confirmation when complete. If you have questions, contact <a href="mailto:support@pitchnav.com" style="color:#2563eb;">support@pitchnav.com</a>.</p>
+      ${footer}</div>`,
+  })
+}
+
+export async function sendFollowupReminderEmail(to: string, name: string) {
+  return sendEmail({
+    to,
+    subject: 'It’s time to retest your Pitch Nav delivery',
+    html: `<div style="${baseStyle}">${brandHeader}
+      <h1 style="color:#fff;margin:0 0 16px">Ready to see what changed?</h1>
+      <p>Hi ${name}, your development-plan follow-up date has arrived.</p>
+      <p>Record your next delivery using the same camera angle and frame-rate settings so you can compare your first and latest analyses.</p>
+      <p><a href="${APP_URL}/start-analysis" style="display:inline-block;background:#2563eb;color:#fff;padding:12px 20px;border-radius:8px;text-decoration:none;font-weight:700">Start follow-up analysis</a></p>
+      <p style="font-size:12px;color:#64748b">Pitch Nav provides educational baseball-training information and does not guarantee performance results.</p>
       ${footer}</div>`,
   })
 }

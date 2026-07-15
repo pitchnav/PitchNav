@@ -4,6 +4,7 @@ import { AlertTriangle, ArrowLeft, CalendarDays, CheckCircle } from 'lucide-reac
 import { createClient } from '@/lib/supabase/server'
 import { ProgressBar } from '@/components/ui/ProgressBar'
 import { SafetyDisclaimer } from '@/components/ui/SafetyDisclaimer'
+import { InteractiveFeedbackTools } from '@/components/reports/InteractiveFeedbackTools'
 
 type Category = { category: string; score: number; confidence: string; strength: string; development: string; evidence: string }
 type Phase = { key: string; label: string; time: number; storage_path: string; confidence_note: string; signedUrl?: string }
@@ -64,27 +65,15 @@ export default async function FeedbackReportPage({ params }: { params: Promise<{
         <p className="mt-5 text-xs text-slate-500">The Delivery Score is an internal coaching tool for tracking the same athlete over time. It is not a medical score, laboratory biomechanics score, or prediction of injury.</p>
       </section>
 
-      <section className="card">
-        <h2 className="text-2xl font-black text-white">Six delivery phases</h2>
-        <p className="mt-1 text-sm text-slate-400">Automated candidate screenshots from this exact uploaded video.</p>
-        <div className="mt-6 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-          {phases.map((phase) => <article key={phase.key} className="overflow-hidden rounded-xl border border-surface-border bg-navy-950">
-            {phase.signedUrl ? <img src={phase.signedUrl} alt={`${phase.label} video-based candidate`} className="aspect-video w-full object-contain bg-black" /> : <div className="flex aspect-video items-center justify-center bg-black text-sm text-slate-600">Screenshot unavailable</div>}
-            <div className="p-4"><p className="font-bold text-white">{phase.label}</p><p className="mt-1 text-xs text-electric-blue-light">{phase.time.toFixed(2)} seconds</p><p className="mt-2 text-xs leading-relaxed text-slate-500">{phase.confidence_note}</p></div>
-          </article>)}
-          {!phases.length && <p className="text-sm text-slate-500">Save a new Motion Lab analysis to generate phase screenshots.</p>}
-        </div>
-      </section>
-
-      <section className="grid gap-6 md:grid-cols-2">
-        <div className="card"><h2 className="text-xl font-bold text-white">What looked good</h2><div className="mt-4 space-y-3">{strengths.map((item) => <p key={item} className="flex gap-3 text-sm text-slate-300"><CheckCircle className="h-5 w-5 shrink-0 text-accent-green" />{item}</p>)}</div></div>
-        <div className="card"><h2 className="text-xl font-bold text-white">Development priorities</h2><ol className="mt-4 space-y-3">{priorities.map((item, index) => <li key={item} className="flex gap-3 text-sm text-slate-300"><span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-electric-blue/15 text-xs font-bold text-electric-blue-light">{index + 1}</span>{item}</li>)}</ol></div>
-      </section>
-
-      <section className="card">
-        <div className="flex items-center gap-3"><CalendarDays className="h-6 w-6 text-electric-blue-light" /><div><h2 className="text-2xl font-black text-white">{planRecord?.duration_weeks ?? 4}-week Monday–Sunday plan</h2><p className="text-sm text-slate-400">Follow your existing throwing and strength program; do not use this plan to override medical or coaching restrictions.</p></div></div>
-        <div className="mt-6 space-y-6">{weeks.map((week) => <div key={week.week} className="rounded-xl border border-surface-border bg-navy-950 p-5"><h3 className="text-lg font-bold text-white">Week {week.week}: {week.priority}</h3>{week.coaching_cue && <p className="mt-2 text-sm text-electric-blue-light">Cue: {week.coaching_cue}</p>}<div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-7">{week.days?.map((day) => <div key={day.day} className="rounded-lg border border-surface-border bg-navy-900 p-3"><p className="text-xs font-black uppercase text-white">{day.day}</p><p className="mt-1 text-xs font-semibold text-accent-green">{day.focus}</p><p className="mt-2 text-xs leading-relaxed text-slate-400">{day.work}</p></div>)}</div></div>)}</div>
-      </section>
+      <InteractiveFeedbackTools
+        analysisId={analysis.id}
+        planId={planRecord?.id}
+        title={analysis.title}
+        categories={categories}
+        phases={phases}
+        weeks={weeks}
+        initialProgress={planRecord?.progress ?? {}}
+      />
       <SafetyDisclaimer />
     </div>
   )
