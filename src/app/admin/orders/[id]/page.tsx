@@ -495,6 +495,12 @@ export default function AdminOrderDetailPage() {
                 <div className="mt-3 grid gap-3 sm:grid-cols-[1fr_1fr_auto]"><label><span className="label">Start (seconds)</span><input id={`trim-start-${video.id}`} type="number" min="0" step="0.01" defaultValue={(video as VideoSubmission & { trim_start_secs?: number }).trim_start_secs ?? 0} className="input" /></label><label><span className="label">End (seconds)</span><input id={`trim-end-${video.id}`} type="number" min="0" step="0.01" defaultValue={(video as VideoSubmission & { trim_end_secs?: number | null }).trim_end_secs ?? video.duration_secs ?? ''} className="input" /></label><button type="button" onClick={() => saveVideoTrim(video.id)} className="btn-primary self-end">Save analysis range</button></div>
               </div>
 
+              {video.angle === 'open_side' && (
+                <a href={`/admin/orders/${id}/motion-lab?videoId=${video.id}`} className="btn-primary mb-4 w-full justify-center">
+                  Process this video in Motion Lab →
+                </a>
+              )}
+
               <div className="flex items-center gap-2">
                 <span className={`text-xs px-2 py-1 rounded-full font-medium ${
                   video.quality_approved === true ? 'bg-accent-green/10 text-accent-green' :

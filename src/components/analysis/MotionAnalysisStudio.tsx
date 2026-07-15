@@ -353,6 +353,8 @@ type InitialVideo = {
   mimeType: string
   storagePath: string
   orderId: string
+  ownerUserId?: string
+  staffProcessing?: boolean
   athleteProfileId: string | null
   handedness: Handedness
 } | null
@@ -903,9 +905,10 @@ export function MotionAnalysisStudio({ initialVideo = null }: { initialVideo?: I
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Please sign in again.')
+      const targetUserId = initialVideo?.ownerUserId ?? user.id
       const cutoff = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString()
-      const { data: recentAnalysis } = await supabase.from('motion_analyses').select('id,created_at').eq('user_id', user.id).gte('created_at', cutoff).order('created_at', { ascending: false }).limit(1).maybeSingle()
-      if (recentAnalysis) {
+      const { data: recentAnalysis } = await supabase.from('motion_analyses').select('id,created_at').eq('user_id', targetUserId).gte('created_at', cutoff).order('created_at', { ascending: false }).limit(1).maybeSingle()
+      if (recentAnalysis && !initialVideo?.staffProcessing) {
         const nextDate = new Date(new Date(recentAnalysis.created_at).getTime() + 14 * 24 * 60 * 60 * 1000)
         throw new Error(`Your membership includes one analysis every two weeks. Your next analysis is available ${nextDate.toLocaleDateString()}.`)
       }
@@ -922,7 +925,7 @@ export function MotionAnalysisStudio({ initialVideo = null }: { initialVideo?: I
         'Use the same camera angle and intensity during the follow-up recording.',
       ]
       const extension = source.name.split('.').pop()?.toLowerCase() || 'mp4'
-      const sourcePath = existingSourcePathRef.current ?? `${user.id}/motion-lab/${analysisId}/source.${extension}`
+      const sourcePath = existingSourcePathRef.current ?? `${targetUserId}/motion-lab/${analysisId}/source.${extension}`
       if (!existingSourcePathRef.current) {
         const { error: sourceError } = await supabase.storage.from('pitch-videos').upload(sourcePath, source, { upsert: false, contentType: source.type })
         if (sourceError) throw sourceError
@@ -930,15 +933,15 @@ export function MotionAnalysisStudio({ initialVideo = null }: { initialVideo?: I
 
       let renderedPath: string | null = null
       if (renderedBlobRef.current) {
-        renderedPath = `${user.id}/motion-lab/${analysisId}/skeleton.webm`
+        renderedPath = `${targetUserId}/motion-lab/${analysisId}/skeleton.webm`
         const { error: renderError } = await supabase.storage.from('pitch-videos').upload(renderedPath, renderedBlobRef.current, { upsert: true, contentType: 'video/webm' })
         if (renderError) throw renderError
       }
-      const phaseSnapshots = await capturePhaseScreenshots(user.id, analysisId)
+      const phaseSnapshots = await capturePhaseScreenshots(targetUserId, analysisId)
 
       const { data: analysis, error: analysisError } = await supabase.from('motion_analyses').insert({
         id: analysisId,
-        user_id: user.id,
+        user_id: targetUserId,
         athlete_profile_id: initialVideo?.athleteProfileId ?? null,
         title: fileName.replace(/\.[^.]+$/, '') || 'Motion Lab Analysis',
         status: 'submitted_for_review',
@@ -988,7 +991,7 @@ export function MotionAnalysisStudio({ initialVideo = null }: { initialVideo?: I
       followUp.setDate(followUp.getDate() + planWeeks * 7)
       const { error: planError } = await supabase.from('training_plans').insert({
         motion_analysis_id: analysis.id,
-        user_id: user.id,
+        user_id: targetUserId,
         duration_weeks: planWeeks,
         title: `${planWeeks}-Week Pitching Development Plan`,
         weeks,
