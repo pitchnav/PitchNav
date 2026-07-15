@@ -265,7 +265,8 @@ function drawAnatomicalSkeleton(
   const headCenter = midpoint(earLeft, earRight)
   if (nose.visibility >= 0.45 || headCenter.visibility >= 0.45) {
     const shoulderWidth = distance(shoulders[0], shoulders[1])
-    const headWidth = Math.max(distance(earLeft, earRight) * 1.45, shoulderWidth * 0.3)
+    const bodyReference = distance(shoulderMid, hipMid)
+    const headWidth = Math.max(distance(earLeft, earRight) * 1.45, shoulderWidth * 0.3, bodyReference * 0.24)
     const headHeight = headWidth * 1.22
     context.save()
     context.translate(headCenter.x, headCenter.y)
@@ -305,7 +306,7 @@ function drawAnatomicalSkeleton(
 
     // Rib cage follows the torso's translation and rotation.
     const torsoLength = distance(shoulderMid, hipMid)
-    const shoulderWidth = distance(shoulders[0], shoulders[1])
+    const shoulderWidth = Math.max(distance(shoulders[0], shoulders[1]), torsoLength * 0.34)
     const torsoAngle = Math.atan2(hipMid.y - shoulderMid.y, hipMid.x - shoulderMid.x) - Math.PI / 2
     context.save()
     context.translate((shoulderMid.x + hipMid.x) / 2, (shoulderMid.y + hipMid.y) / 2)
@@ -330,9 +331,10 @@ function drawAnatomicalSkeleton(
     context.lineWidth = scale * 0.55
     context.shadowBlur = 10
     context.shadowColor = '#38bdf8'
+    const pelvisHalfWidth = Math.max(distance(hips[0], hips[1]) / 2, torsoLength * 0.13)
     context.beginPath()
-    context.moveTo(hips[0].x, hips[0].y)
-    context.quadraticCurveTo(hipMid.x, hipMid.y + torsoLength * 0.18, hips[1].x, hips[1].y)
+    context.moveTo(hipMid.x - pelvisHalfWidth, hipMid.y - torsoLength * 0.025)
+    context.quadraticCurveTo(hipMid.x, hipMid.y + torsoLength * 0.18, hipMid.x + pelvisHalfWidth, hipMid.y - torsoLength * 0.025)
     context.lineTo(hipMid.x, hipMid.y + torsoLength * 0.08)
     context.closePath()
     context.fill()
@@ -412,6 +414,39 @@ function drawScientificMound(
   context.restore()
 }
 
+function framePoseForExport(landmarks: NormalizedLandmark[]): NormalizedLandmark[] {
+  const tracked = landmarks.filter((point, index) => index <= 32 && (point.visibility ?? 0) >= 0.35)
+  if (tracked.length < 12) return landmarks
+  const minX = Math.min(...tracked.map((point) => point.x))
+  const maxX = Math.max(...tracked.map((point) => point.x))
+  const minY = Math.min(...tracked.map((point) => point.y))
+  const maxY = Math.max(...tracked.map((point) => point.y))
+  const poseWidth = Math.max(0.08, maxX - minX)
+  const poseHeight = Math.max(0.18, maxY - minY)
+  // Preserve the detected body proportions while presenting the athlete at a
+  // consistent scientific-review scale. This changes framing, not joint geometry.
+  const scale = Math.min(0.72 / poseWidth, 0.72 / poseHeight, 4.5)
+  const sourceCenterX = (minX + maxX) / 2
+  const targetCenterX = 0.56
+  const targetFootY = 0.79
+  return landmarks.map((point) => ({
+    ...point,
+    x: targetCenterX + (point.x - sourceCenterX) * scale,
+    y: targetFootY + (point.y - maxY) * scale,
+  }))
+}
+
+function smoothPose(previous: NormalizedLandmark[] | null, current: NormalizedLandmark[]) {
+  if (!previous || previous.length !== current.length) return current
+  const responsiveness = 0.62
+  return current.map((point, index) => ({
+    ...point,
+    x: previous[index].x + (point.x - previous[index].x) * responsiveness,
+    y: previous[index].y + (point.y - previous[index].y) * responsiveness,
+    z: previous[index].z + (point.z - previous[index].z) * responsiveness,
+  }))
+}
+
 type InitialVideo = {
   signedUrl: string
   fileName: string
@@ -445,6 +480,8 @@ export function MotionAnalysisStudio({ initialVideo = null }: { initialVideo?: I
   const initialVideoLoadedRef = useRef(false)
   const analysisStartRef = useRef(Math.max(0, initialVideo?.trimStartSecs ?? 0))
   const analysisEndRef = useRef<number | null>(initialVideo?.trimEndSecs ?? null)
+  const exportPoseRef = useRef<NormalizedLandmark[] | null>(null)
+  const watermarkRef = useRef<HTMLCanvasElement | null>(null)
 
   const [fileUrl, setFileUrl] = useState<string | null>(null)
   const [fileName, setFileName] = useState('')
@@ -478,6 +515,41 @@ export function MotionAnalysisStudio({ initialVideo = null }: { initialVideo?: I
     playbackSpeedRef.current = playbackSpeed
     if (videoRef.current) videoRef.current.playbackRate = playbackSpeed
   }, [playbackSpeed])
+
+  useEffect(() => {
+    const image = new Image()
+    image.src = '/pitch-nav-logo-source.png'
+    image.onload = () => {
+      const sourceX = image.naturalWidth * 0.075
+      const sourceY = image.naturalHeight * 0.245
+      const sourceWidth = image.naturalWidth * 0.86
+      const sourceHeight = image.naturalHeight * 0.36
+      const logo = document.createElement('canvas')
+      logo.width = 1200
+      logo.height = 430
+      const logoContext = logo.getContext('2d', { willReadFrequently: true })
+      if (!logoContext) return
+      logoContext.drawImage(image, sourceX, sourceY, sourceWidth, sourceHeight, 0, 0, logo.width, logo.height)
+      const pixels = logoContext.getImageData(0, 0, logo.width, logo.height)
+      for (let index = 0; index < pixels.data.length; index += 4) {
+        const red = pixels.data[index]
+        const green = pixels.data[index + 1]
+        const blue = pixels.data[index + 2]
+        const darkness = 255 - Math.min(red, green, blue)
+        if (red > 225 && green > 225 && blue > 225) {
+          pixels.data[index + 3] = 0
+          continue
+        }
+        const isBlue = blue > red * 1.18 && blue > green * 1.03
+        pixels.data[index] = isBlue ? 24 : 248
+        pixels.data[index + 1] = isBlue ? 135 : 250
+        pixels.data[index + 2] = isBlue ? 255 : 252
+        pixels.data[index + 3] = Math.min(255, Math.max(0, darkness * 2.4))
+      }
+      logoContext.putImageData(pixels, 0, 0)
+      watermarkRef.current = logo
+    }
+  }, [])
 
   const initializeModel = useCallback(async () => {
     if (landmarkerRef.current) return landmarkerRef.current
@@ -553,8 +625,19 @@ export function MotionAnalysisStudio({ initialVideo = null }: { initialVideo?: I
       }
 
       if (exportStyleRef.current) {
-        drawScientificMound(context, landmarks, width, height)
-        drawAnatomicalSkeleton(context, landmarks, width, height)
+        const framed = framePoseForExport(landmarks)
+        const presentationPose = smoothPose(exportPoseRef.current, framed)
+        exportPoseRef.current = presentationPose
+        drawScientificMound(context, presentationPose, width, height)
+        drawAnatomicalSkeleton(context, presentationPose, width, height)
+        if (watermarkRef.current) {
+          const logoWidth = width * 0.24
+          const logoHeight = logoWidth * (watermarkRef.current.height / watermarkRef.current.width)
+          context.save()
+          context.globalAlpha = 0.82
+          context.drawImage(watermarkRef.current, width - logoWidth - width * 0.035, height - logoHeight - height * 0.035, logoWidth, logoHeight)
+          context.restore()
+        }
       } else {
         context.lineCap = 'round'
         context.lineJoin = 'round'
@@ -819,6 +902,7 @@ export function MotionAnalysisStudio({ initialVideo = null }: { initialVideo?: I
     }
     if (!landmarkerRef.current && !(await initializeModel())) return
     recordedChunksRef.current = []
+    exportPoseRef.current = null
     video.pause()
     setPlaying(false)
     // Render the skeleton at quarter speed so the downloaded motion study is

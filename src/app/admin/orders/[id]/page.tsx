@@ -529,11 +529,17 @@ export default function AdminOrderDetailPage() {
                 <h2 className="mt-1 text-lg font-bold text-white">AI prepares the report; staff verifies it</h2>
                 <p className="mt-2 max-w-3xl text-sm text-slate-400">Pose tracking can generate score candidates and six phase images. Peak leg lift and finish are stronger candidates. Hand separation, foot contact, maximum external rotation, and ball release must be visually confirmed; ordinary 2D phone video cannot identify all of those events exactly.</p>
               </div>
-              <button onClick={applyAutomatedDraft} disabled={!automatedAnalysis || saving} className="btn-primary shrink-0">
-                <CheckCircle className="h-4 w-4" /> {saving ? 'Applying…' : 'Apply automated draft'}
-              </button>
+              {automatedAnalysis ? (
+                <button onClick={applyAutomatedDraft} disabled={saving} className="btn-primary shrink-0">
+                  <CheckCircle className="h-4 w-4" /> {saving ? 'Applying…' : 'Apply automated draft'}
+                </button>
+              ) : videos.find((video) => video.angle === 'open_side') ? (
+                <a href={`/admin/orders/${id}/motion-lab?videoId=${videos.find((video) => video.angle === 'open_side')!.id}`} className="btn-primary shrink-0">
+                  Generate draft from side-view video →
+                </a>
+              ) : null}
             </div>
-            {!automatedAnalysis && <p className="mt-3 text-sm text-yellow-300">No saved Motion Lab result is connected to this athlete yet. Run and save Motion Lab processing before an automatic draft can be generated.</p>}
+            {!automatedAnalysis && <p className="mt-3 text-sm text-yellow-300">The video is uploaded, but it has not been processed yet. Click “Generate draft from side-view video,” analyze the trimmed clip, and save it. You will then return here to verify and apply the generated material.</p>}
             {draftMessage && <p className="mt-3 text-sm text-accent-green">{draftMessage}</p>}
           </div>
           {/* Scorecard */}
