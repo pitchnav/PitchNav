@@ -28,6 +28,9 @@ export function StepVelocity({ initialData, athleteProfileId, onComplete, onBack
       currentMaxVelocity: initialData.currentMaxVelocity,
       goalVelocity: initialData.goalVelocity,
       velocitySource: initialData.velocitySource,
+      velocityMeasuredAt: initialData.velocityMeasuredAt,
+      bullpenIntensity: initialData.bullpenIntensity,
+      pitchesPerWeek: initialData.pitchesPerWeek,
     },
   })
 
@@ -35,20 +38,12 @@ export function StepVelocity({ initialData, athleteProfileId, onComplete, onBack
     setLoading(true)
     setServerError('')
     try {
-      const { error } = await supabase
-        .from('athlete_profiles')
-        .update({
-          current_avg_velocity: data.currentAvgVelocity,
-          current_max_velocity: data.currentMaxVelocity,
-          goal_velocity: data.goalVelocity,
-          velocity_source: data.velocitySource,
-          velocity_measured_at: data.velocityMeasuredAt ?? null,
-          bullpen_intensity: data.bullpenIntensity ?? null,
-          pitches_per_week: data.pitchesPerWeek ?? null,
-        })
-        .eq('id', athleteProfileId)
-
-      if (error) throw error
+      const response = await fetch('/api/athlete/velocity', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ athleteProfileId, ...data, velocityMeasuredAt: data.velocityMeasuredAt || null, bullpenIntensity: data.bullpenIntensity || null, pitchesPerWeek: Number.isFinite(data.pitchesPerWeek) ? data.pitchesPerWeek : null }),
+      })
+      const result = await response.json()
+      if (!response.ok) throw new Error(result.error || 'Could not save velocity profile.')
       if (radarEvidence) {
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) throw new Error('Please sign in again.')
@@ -65,8 +60,8 @@ export function StepVelocity({ initialData, athleteProfileId, onComplete, onBack
         if (evidenceError) throw evidenceError
       }
       onComplete(data)
-    } catch {
-      setServerError('Could not save your information. Please try again.')
+    } catch (error) {
+      setServerError(error instanceof Error ? error.message : 'Could not save your information. Please try again.')
     } finally {
       setLoading(false)
     }
