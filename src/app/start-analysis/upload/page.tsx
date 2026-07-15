@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense, useState, useEffect, useRef, useMemo } from 'react'
+import { Suspense, useState, useEffect, useMemo } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { Upload, Video, CheckCircle, X, AlertCircle, Camera } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
@@ -26,7 +26,6 @@ const CHECKLIST = [
   'Camera did not move during the pitch',
   'Lighting is adequate',
   'Video is at normal game or bullpen intensity',
-  'At least three full pitches are included',
   'Angle matches the selected guide',
 ]
 
@@ -39,22 +38,17 @@ function UploadContent() {
   const [userId, setUserId] = useState<string | null>(null)
   const [orderId, setOrderId] = useState<string | null>(null)
   const [videos, setVideos] = useState<Record<string, UploadedVideo>>({})
-  const [activeAngle, setActiveAngle] = useState<'open_side' | 'rear' | 'front' | 'radar'>('open_side')
   const [checklistItems, setChecklistItems] = useState<Record<string, boolean>>({})
   const [checklistAngle, setChecklistAngle] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [orderLoading, setOrderLoading] = useState(false)
-  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const REQUIRED_ANGLES = ['open_side', 'rear'] as const
-  const OPTIONAL_ANGLES = ['front', 'radar'] as const
-  const ALL_ANGLES = [...REQUIRED_ANGLES, ...OPTIONAL_ANGLES]
+  const ALL_ANGLES = [...REQUIRED_ANGLES]
 
   const ANGLE_LABELS: Record<string, string> = {
     open_side: 'Open-Side View (Required)',
     rear: 'Rear View (Required)',
-    front: 'Front View (Optional)',
-    radar: 'Radar View (Optional)',
   }
 
   useEffect(() => {
@@ -88,7 +82,7 @@ function UploadContent() {
     init()
   }, [profileId])
 
-  async function handleFileSelect(angle: typeof activeAngle, file: File) {
+  async function handleFileSelect(angle: 'open_side' | 'rear', file: File) {
     // Validate type
     if (!ACCEPTED_VIDEO_TYPES.includes(file.type)) {
       alert('Unsupported video format. Please use MP4, MOV, or WebM.')
@@ -259,19 +253,19 @@ function UploadContent() {
                 {!video ? (
                   <div
                     className="border-2 border-dashed border-surface-border rounded-lg p-8 text-center cursor-pointer hover:border-electric-blue/50 transition-colors"
-                    onClick={() => fileInputRef.current?.click()}
+                    onClick={() => document.getElementById(`video-file-${angle}`)?.click()}
                     onDragOver={(e) => e.preventDefault()}
                     onDrop={(e) => {
                       e.preventDefault()
                       const file = e.dataTransfer.files[0]
-                      if (file) { setActiveAngle(angle); handleFileSelect(angle, file) }
+                      if (file) handleFileSelect(angle, file)
                     }}
                   >
                     <Upload className="h-8 w-8 text-slate-600 mx-auto mb-3" />
                     <p className="text-sm text-slate-400">Drag & drop or click to upload</p>
                     <p className="text-xs text-slate-600 mt-1">MP4, MOV, WebM · Max 500 MB</p>
                     <input
-                      ref={fileInputRef}
+                      id={`video-file-${angle}`}
                       type="file"
                       accept={ACCEPTED_VIDEO_TYPES.join(',')}
                       className="hidden"
@@ -280,12 +274,11 @@ function UploadContent() {
                         if (file) handleFileSelect(angle, file)
                         e.target.value = ''
                       }}
-                      onClick={() => setActiveAngle(angle)}
                     />
                     <button
                       type="button"
                       className="mt-4 btn-secondary text-sm px-4 py-2"
-                      onClick={(e) => { e.stopPropagation(); setActiveAngle(angle); fileInputRef.current?.click() }}
+                      onClick={(e) => { e.stopPropagation(); document.getElementById(`video-file-${angle}`)?.click() }}
                     >
                       <Camera className="h-4 w-4" /> Choose File
                     </button>

@@ -293,7 +293,7 @@ export default function SampleReportPage() {
             {[
               { week: 1, focus: 'Front-Leg Stability', detail: 'Pivot Pickoff Drill daily (3×6). Focus on the feeling of a firm front leg through release on every bullpen pitch. Video yourself from the open side at least once.' },
               { week: 2, focus: 'Hip Sequencing & Direction', detail: 'Add Rocker Drill (3×10) before bullpen sessions. Aim to feel more hip-to-shoulder separation before hand separation.' },
-              { week: 3, focus: 'Integration', detail: 'Connect the front-leg feel and the hip sequencing in live bullpen sessions. Video 3 pitches from the open side to compare against your original submission.' },
+              { week: 3, focus: 'Integration', detail: 'Connect the front-leg feel and the hip sequencing in live bullpen sessions. Record a comparison pitch from the open side.' },
               { week: 4, focus: 'Deceleration & Arm Care', detail: 'Introduce Towel Drill (3×10) at the end of bullpen sessions. Focus on complete follow-through on every pitch, especially when fatigued.' },
             ].map(({ week, focus, detail }) => (
               <div key={week} className="flex gap-4">

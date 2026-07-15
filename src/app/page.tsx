@@ -110,7 +110,7 @@ function HowItWorks() {
       step: '02',
       icon: <Camera className="h-6 w-6" />,
       title: 'Set Up & Film',
-      description: 'Follow our guided camera-setup wizard for open-side and rear-view angles. Submit at least 3 full-intent pitches from each angle.',
+      description: 'Follow our guided camera-setup wizard and submit one clear, complete pitch from both the open-side and rear-view angles.',
     },
     {
       step: '03',

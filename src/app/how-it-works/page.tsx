@@ -37,7 +37,7 @@ const steps = [
       'Full body must remain in frame through release',
       'Do not zoom or move the camera during the pitch',
     ],
-    note: 'Submit at least 3 full-intent pitches from each angle.',
+    note: 'Submit one clear, complete pitch from each required angle.',
   },
   {
     icon: <Upload className="h-8 w-8" />,

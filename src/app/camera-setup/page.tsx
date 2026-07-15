@@ -4,12 +4,11 @@ import { useState } from 'react'
 import { CheckCircle, AlertCircle, Camera, Eye, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-type Angle = 'open_side' | 'rear' | 'front'
+type Angle = 'open_side' | 'rear'
 
 const ANGLES: { key: Angle; label: string; icon: string }[] = [
   { key: 'open_side', label: 'Open-Side View', icon: '📹' },
   { key: 'rear', label: 'Rear View', icon: '📷' },
-  { key: 'front', label: 'Front View (Optional)', icon: '🎥' },
 ]
 
 const CHECKLIST_ITEMS = [
@@ -20,7 +19,6 @@ const CHECKLIST_ITEMS = [
   'Camera does not move during the pitch',
   'Lighting is adequate — pitcher is not in shadow',
   'Video is recorded at normal game or bullpen intensity',
-  'At least three full pitches are included in the video',
   'The camera angle matches the selected guide above',
 ]
 
@@ -45,7 +43,7 @@ const GUIDE: Record<Angle, {
     lighting: 'Film with the sun or primary light source behind the camera, not behind the pitcher.',
     dos: [
       'Keep the full body — from the head to the landing foot — visible at all times',
-      'Record at least 3 full-intent pitches from the same position',
+      'Include at least one complete pitch from start through finish',
       'Place the camera on a tripod, fence, or stable surface',
       'Make sure the throwing hand remains visible at and through ball release',
     ],
@@ -67,7 +65,7 @@ const GUIDE: Record<Angle, {
     dos: [
       'Stay centered with the target line — not offset to either side',
       'Ensure the landing foot stays in frame through and after release',
-      'Record at least 3 pitches from the same position',
+      'Include at least one complete pitch from start through finish',
       'Keep the camera completely stationary',
     ],
     donts: [
@@ -75,23 +73,6 @@ const GUIDE: Record<Angle, {
       'Do not move the camera while filming',
       'Do not stand so close that the pitcher\'s body fills the entire frame',
       'Do not allow the head or feet to leave the frame',
-    ],
-  },
-  front: {
-    description: 'The front view is optional and films from the catcher\'s perspective. It can reveal release point and pitch movement but is not required for the standard analysis.',
-    position: 'Directly in front of the pitcher, from the catcher\'s position — never in the actual line of the pitch for safety.',
-    distance: '50–65 feet, approximately at home plate.',
-    height: 'Approximately waist-to-chest high.',
-    orientation: 'Horizontal (landscape).',
-    frameRate: '120 fps or 240 fps when available.',
-    lighting: 'Avoid filming directly into the sun.',
-    dos: [
-      'Use a tripod or net attachment rather than a person holding the camera',
-      'Ensure the full delivery is visible',
-    ],
-    donts: [
-      'Never have a person hold the camera in the direct line of a thrown pitch',
-      'Do not film from directly in front — offset slightly for safety if a person is holding the camera',
     ],
   },
 }
