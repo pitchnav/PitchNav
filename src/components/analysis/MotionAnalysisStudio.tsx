@@ -132,6 +132,8 @@ export function MotionAnalysisStudio() {
   const recordedChunksRef = useRef<Blob[]>([])
   const analyzingRef = useRef(false)
   const exportingRef = useRef(false)
+  const exportStyleRef = useRef(false)
+  const exportWatchdogRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const [fileUrl, setFileUrl] = useState<string | null>(null)
   const [fileName, setFileName] = useState('')
@@ -189,7 +191,44 @@ export function MotionAnalysisStudio() {
     const context = canvas.getContext('2d')
     if (!context) return
     context.clearRect(0, 0, width, height)
-    context.drawImage(video, 0, 0, width, height)
+    if (exportStyleRef.current) {
+      // A clean coaching visualization, not a reconstructed 3D laboratory model.
+      const background = context.createLinearGradient(0, 0, 0, height)
+      background.addColorStop(0, '#070a12')
+      background.addColorStop(1, '#111827')
+      context.fillStyle = background
+      context.fillRect(0, 0, width, height)
+
+      const horizon = height * 0.7
+      context.save()
+      context.strokeStyle = 'rgba(37, 99, 235, 0.34)'
+      context.lineWidth = Math.max(1, width / 1000)
+      for (let row = 0; row <= 8; row += 1) {
+        const t = row / 8
+        const y = horizon + Math.pow(t, 1.7) * (height - horizon)
+        context.beginPath()
+        context.moveTo(0, y)
+        context.lineTo(width, y)
+        context.stroke()
+      }
+      for (let column = -8; column <= 8; column += 1) {
+        const bottomX = width / 2 + column * (width / 8)
+        context.beginPath()
+        context.moveTo(width / 2, horizon)
+        context.lineTo(bottomX, height)
+        context.stroke()
+      }
+      context.restore()
+
+      context.fillStyle = 'rgba(255,255,255,0.92)'
+      context.font = `700 ${Math.max(18, width / 42)}px sans-serif`
+      context.fillText('PITCH NAV MOTION CAPTURE', width * 0.035, height * 0.07)
+      context.fillStyle = 'rgba(148,163,184,0.9)'
+      context.font = `500 ${Math.max(12, width / 70)}px sans-serif`
+      context.fillText('Estimated 2D pose visualization', width * 0.035, height * 0.105)
+    } else {
+      context.drawImage(video, 0, 0, width, height)
+    }
 
     const result = landmarker.detectForVideo(video, performance.now())
     const landmarks = result.landmarks[0]
@@ -214,8 +253,10 @@ export function MotionAnalysisStudio() {
         context.beginPath()
         context.moveTo(a.x * width, a.y * height)
         context.lineTo(b.x * width, b.y * height)
-        context.strokeStyle = visibility > 0.75 ? '#38bdf8' : '#facc15'
-        context.lineWidth = Math.max(3, width / 350)
+        context.strokeStyle = exportStyleRef.current
+          ? (visibility > 0.75 ? '#f8fafc' : '#facc15')
+          : (visibility > 0.75 ? '#38bdf8' : '#facc15')
+        context.lineWidth = exportStyleRef.current ? Math.max(5, width / 190) : Math.max(3, width / 350)
         context.stroke()
       }
       context.shadowBlur = 8
@@ -223,7 +264,9 @@ export function MotionAnalysisStudio() {
         if ((landmark.visibility ?? 0) < 0.45) return
         context.beginPath()
         context.arc(landmark.x * width, landmark.y * height, Math.max(3, width / 260), 0, Math.PI * 2)
-        context.fillStyle = (landmark.visibility ?? 0) > 0.75 ? '#ffffff' : '#facc15'
+        context.fillStyle = (landmark.visibility ?? 0) > 0.75
+          ? (exportStyleRef.current ? '#38bdf8' : '#ffffff')
+          : '#facc15'
         context.fill()
       })
       context.shadowBlur = 0
@@ -242,6 +285,7 @@ export function MotionAnalysisStudio() {
   useEffect(() => {
     return () => {
       if (animationRef.current) cancelAnimationFrame(animationRef.current)
+      if (exportWatchdogRef.current) clearTimeout(exportWatchdogRef.current)
       landmarkerRef.current?.close()
     }
   }, [])
@@ -332,7 +376,26 @@ export function MotionAnalysisStudio() {
       setError('This browser cannot export the overlay. Try Chrome on a desktop computer.')
       return
     }
+    if (!landmarkerRef.current && !(await initializeModel())) return
     recordedChunksRef.current = []
+    video.pause()
+    setPlaying(false)
+    video.playbackRate = 1
+    exportStyleRef.current = true
+
+    // Seeking is asynchronous. Recording before it finishes was the cause of
+    // exports beginning near the end and containing only a few seconds.
+    if (video.currentTime !== 0) {
+      await new Promise<void>((resolve) => {
+        const done = () => resolve()
+        video.addEventListener('seeked', done, { once: true })
+        video.currentTime = 0
+      })
+    } else {
+      video.currentTime = 0
+    }
+    drawFrame()
+
     const stream = canvas.captureStream(30)
     const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9')
       ? 'video/webm;codecs=vp9'
@@ -343,6 +406,10 @@ export function MotionAnalysisStudio() {
       if (event.data.size) recordedChunksRef.current.push(event.data)
     }
     recorder.onstop = () => {
+      if (exportWatchdogRef.current) {
+        clearTimeout(exportWatchdogRef.current)
+        exportWatchdogRef.current = null
+      }
       const blob = new Blob(recordedChunksRef.current, { type: 'video/webm' })
       const url = URL.createObjectURL(blob)
       const anchor = document.createElement('a')
@@ -351,15 +418,27 @@ export function MotionAnalysisStudio() {
       anchor.click()
       setTimeout(() => URL.revokeObjectURL(url), 1000)
       exportingRef.current = false
+      exportStyleRef.current = false
       setExporting(false)
+      drawFrame()
     }
     exportingRef.current = true
     setExporting(true)
-    video.currentTime = 0
     recorder.start(250)
-    await video.play()
-    setPlaying(true)
-    renderLoop()
+    try {
+      await video.play()
+      setPlaying(true)
+      renderLoop()
+      // Fallback only: onEnded normally stops the recorder. This prevents a
+      // recording from hanging forever if a browser drops the ended event.
+      exportWatchdogRef.current = setTimeout(() => {
+        if (recorder.state !== 'inactive') recorder.stop()
+      }, Math.ceil(video.duration * 1000) + 5000)
+    } catch (reason) {
+      console.error(reason)
+      if (recorder.state !== 'inactive') recorder.stop()
+      setError('The browser blocked video rendering. Press Play once, then try the download again.')
+    }
   }
 
   const metricCards = useMemo(() => [
@@ -498,7 +577,7 @@ export function MotionAnalysisStudio() {
               <p className="mt-1 text-sm text-slate-400">{summary.frames} accepted samples · {Math.round(summary.averageConfidence * 100)}% average landmark confidence</p>
             </div>
             <button type="button" onClick={exportOverlay} disabled={exporting} className="btn-primary">
-              <Download className="h-4 w-4" /> {exporting ? 'Rendering video…' : 'Download skeleton video'}
+              <Download className="h-4 w-4" /> {exporting ? 'Rendering full clip…' : 'Download mocap-style video'}
             </button>
           </div>
           <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
@@ -510,6 +589,9 @@ export function MotionAnalysisStudio() {
           </div>
           <p className="mt-5 text-xs leading-relaxed text-slate-500">
             Candidate events are selected from pose geometry and must be confirmed by a human reviewer. Ball release and maximum external rotation are not automatically asserted because a standard body-pose model does not reliably track the baseball or humeral rotation.
+          </p>
+          <p className="mt-2 text-xs leading-relaxed text-slate-500">
+            The downloaded visualization uses a dark motion-capture stage and a 2D pose skeleton without the original video background. Keep this tab visible while the full clip renders in real time.
           </p>
         </section>
       )}
