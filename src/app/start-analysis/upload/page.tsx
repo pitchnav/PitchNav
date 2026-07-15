@@ -8,7 +8,7 @@ import { formatFileSize, ACCEPTED_VIDEO_TYPES, MAX_VIDEO_SIZE_BYTES } from '@/li
 import { SafetyDisclaimer } from '@/components/ui/SafetyDisclaimer'
 
 type UploadedVideo = {
-  angle: 'open_side' | 'rear' | 'front' | 'radar'
+  angle: 'open_side'
   file: File
   url: string
   uploading: boolean
@@ -55,12 +55,11 @@ function UploadContent() {
   const [loading, setLoading] = useState(true)
   const [orderLoading, setOrderLoading] = useState(false)
 
-  const REQUIRED_ANGLES = ['open_side', 'rear'] as const
+  const REQUIRED_ANGLES = ['open_side'] as const
   const ALL_ANGLES = [...REQUIRED_ANGLES]
 
   const ANGLE_LABELS: Record<string, string> = {
-    open_side: 'Open-Side View (Required)',
-    rear: 'Rear View (Required)',
+    open_side: 'Throwing-Arm Side View (Required)',
   }
 
   async function inspectVideo(file: File, url: string): Promise<VideoQuality | null> {
@@ -134,7 +133,7 @@ function UploadContent() {
     void init()
   }, [profileId, paidOrderId, router, supabase])
 
-  async function handleFileSelect(angle: 'open_side' | 'rear', file: File) {
+  async function handleFileSelect(angle: 'open_side', file: File) {
     // Validate type
     if (!ACCEPTED_VIDEO_TYPES.includes(file.type)) {
       alert('Unsupported video format. Please use MP4, MOV, or WebM.')
@@ -252,11 +251,13 @@ function UploadContent() {
   const requiredUploaded = REQUIRED_ANGLES.every((a) => videos[a]?.submissionId)
 
   async function finishSubmission() {
-    if (!orderId || !profileId) return
+    if (!orderId) return
+    const sideVideoId = videos.open_side?.submissionId
+    if (!sideVideoId) return
     setOrderLoading(true)
     try {
       await supabase.from('orders').update({ status: 'submitted', submitted_at: new Date().toISOString(), delivery_estimate_text: 'Staff review completed within one business day.' }).eq('id', orderId)
-      router.push(`/dashboard/orders/${orderId}`)
+      router.push(`/dashboard/motion-lab?videoId=${sideVideoId}`)
     } catch {
       setOrderLoading(false)
     }
@@ -276,7 +277,7 @@ function UploadContent() {
         <div className="text-center mb-8">
           <h1 className="text-3xl font-black text-white">Upload Your Videos</h1>
           <p className="mt-2 text-slate-400">
-            Submit at least the open-side and rear-view videos. Review the{' '}
+            Submit one clear throwing-arm side-view video. It will open directly in Motion Lab after upload. Review the{' '}
             <a href="/camera-setup" className="text-electric-blue-light hover:underline" target="_blank">
               camera setup guide
             </a>{' '}
@@ -465,7 +466,7 @@ function UploadContent() {
         <div className="card">
           <h3 className="text-base font-semibold text-white mb-2">Ready to continue?</h3>
           <p className="text-sm text-slate-400 mb-4">
-            Payment is confirmed. Upload both required videos, trim each clip to the complete delivery, then submit them for staff review within one business day.
+            Payment is confirmed. Upload one complete throwing-arm side view. After upload, continue directly into Motion Lab for synchronized skeleton, measurements, phase frames, and staff review.
           </p>
           <div className="flex gap-3 mb-4">
             {REQUIRED_ANGLES.map((a) => (
@@ -488,7 +489,7 @@ function UploadContent() {
             onClick={finishSubmission}
             className="btn-primary w-full justify-center py-3"
           >
-            {orderLoading ? 'Submitting…' : 'Submit Videos for Staff Review →'}
+            {orderLoading ? 'Opening Motion Lab…' : 'Continue to Motion Lab →'}
           </button>
         </div>
 

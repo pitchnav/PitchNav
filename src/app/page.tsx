@@ -112,7 +112,7 @@ function HowItWorks() {
       step: '02',
       icon: <Camera className="h-6 w-6" />,
       title: 'Set Up & Film',
-      description: 'Follow our guided camera-setup wizard and submit one clear, complete pitch from both the open-side and rear-view angles.',
+      description: 'Follow our guided camera-setup wizard and submit one clear, complete pitch from the throwing-arm side.',
     },
     {
       step: '03',
@@ -176,7 +176,6 @@ function HowItWorks() {
 function WhatIsIncluded() {
   const items = [
     'Open-side video review',
-    'Rear-view video review',
     'Six-position mechanics breakdown',
     'Mechanics scorecard (6 categories)',
     'Athlete-provided velocity profile',
@@ -277,12 +276,6 @@ function CameraSetupPreview() {
       icon: '📹',
       description: 'Film from the pitcher\'s throwing-arm side, perpendicular to the direction of the pitch. Keep the full body visible.',
       tips: ['Camera at chest height', '120–240 fps recommended', 'Full body must be in frame'],
-    },
-    {
-      name: 'Rear View',
-      icon: '📷',
-      description: 'Place the camera behind the mound, centered with the target line. Stay far enough back for full body visibility.',
-      tips: ['Centered with the target', 'Stay stationary', 'Landing foot must be visible'],
     },
   ]
 
@@ -406,7 +399,6 @@ function PricingSection() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8">
             {[
               'Open-side video review',
-              'Rear-view video review',
               'Six-position mechanics breakdown',
               'Mechanics scorecard',
               'Velocity profile (athlete-provided)',

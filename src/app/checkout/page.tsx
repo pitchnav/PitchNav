@@ -11,7 +11,6 @@ import Link from 'next/link'
 
 const PACKAGE_ITEMS = [
   'Open-side video review',
-  'Rear-view video review',
   'Six-position mechanics breakdown',
   'Mechanics scorecard',
   'Three strengths & three development priorities',

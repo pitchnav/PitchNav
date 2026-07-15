@@ -10,7 +10,6 @@ export const metadata: Metadata = {
 
 const included = [
   { item: 'Open-side video review', note: null },
-  { item: 'Rear-view video review', note: null },
   { item: 'Six-position mechanics breakdown', note: 'Peak leg lift, hand separation, lead-foot contact, max external rotation, ball release, finish & deceleration' },
   { item: 'Mechanics scorecard', note: '6 categories scored 1–5, Delivery Score out of 30' },
   { item: 'Velocity profile', note: 'Based on athlete-provided readings with source clearly labeled' },

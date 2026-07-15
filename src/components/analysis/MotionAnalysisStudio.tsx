@@ -98,8 +98,8 @@ function buildCategoryFeedback(frames: FrameMetrics[], summary: ClipSummary): Ca
     {
       category: 'Direction', score: 3, confidence: 'Low',
       strength: 'The full stride remained visible for a directional checkpoint.',
-      development: 'Confirm the landing line from the rear-view clip before changing direction mechanics.',
-      evidence: 'A single open-side 2D view cannot reliably determine plate-line direction; this neutral score requires coach/rear-view confirmation.',
+      development: 'Treat direction as limited-confidence from a single side view and have staff confirm visible drift before changing mechanics.',
+      evidence: 'A single side-view 2D clip cannot reliably determine plate-line direction; this neutral score requires staff confirmation.',
     },
     {
       category: 'Lower-Half Sequencing', score: sequenceGap !== null && sequenceGap > 0 ? 4 : 2, confidence: quality,
@@ -352,6 +352,7 @@ type InitialVideo = {
   fileName: string
   mimeType: string
   storagePath: string
+  orderId: string
   athleteProfileId: string | null
   handedness: Handedness
 } | null
@@ -958,6 +959,14 @@ export function MotionAnalysisStudio({ initialVideo = null }: { initialVideo?: I
         development_priorities: immediatePriorities,
       }).select('id').single()
       if (analysisError) throw analysisError
+
+      if (initialVideo?.orderId) {
+        await supabase.from('orders').update({
+          status: 'in_analysis',
+          submitted_at: new Date().toISOString(),
+          delivery_estimate_text: 'Motion Lab processing complete. Staff verification will be completed within one business day.',
+        }).eq('id', initialVideo.orderId)
+      }
 
       const weeks = Array.from({ length: planWeeks }, (_, index) => ({
         week: index + 1,

@@ -31,7 +31,6 @@ const steps = [
     description: 'Follow the interactive camera-setup wizard before you film. Every angle has a diagram, distance recommendation, and a checklist you confirm before continuing.',
     details: [
       'Open-side view: film from the throwing-arm side, perpendicular to the pitch',
-      'Rear view: position behind the mound, centered with the target line',
       'Camera height: approximately chest-high for both angles',
       'Recommended frame rate: 120 or 240 fps if your device supports it',
       'Full body must remain in frame through release',
@@ -46,7 +45,6 @@ const steps = [
     description: 'Record directly from your device or upload existing videos from your camera roll. We support MP4, MOV, and most common formats.',
     details: [
       'One open-side video (required)',
-      'One rear-view video (required)',
       'Front-view video (optional)',
       'Radar screenshot or radar-backed video (optional)',
       'Previous delivery video for comparison (optional)',

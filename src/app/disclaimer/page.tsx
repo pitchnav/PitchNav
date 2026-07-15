@@ -62,7 +62,7 @@ export default function DisclaimerPage() {
             },
             {
               heading: 'Safe Filming Practices',
-              text: 'When filming from the rear view, the camera operator must never stand in the direct line of a thrown pitch. When filming from the front view, a tripod or safe mounting solution is strongly preferred. Pitch Nav is not responsible for injuries that occur during the filming process. Athletes and camera operators should follow safe practices at all times.',
+              text: 'Use a tripod or stable mounting solution for the throwing-arm side view, remain outside the path of thrown or batted balls, and follow safe filming practices at all times. Pitch Nav is not responsible for injuries that occur during filming.',
             },
             {
               heading: 'Parental Responsibility for Minor Athletes',

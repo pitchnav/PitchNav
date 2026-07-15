@@ -42,7 +42,7 @@ const FAQ_SECTIONS = [
       },
       {
         q: 'What video angles do I need to submit?',
-        a: 'The standard analysis requires two angles: open-side view (from the throwing-arm side, perpendicular to the pitch direction) and rear view (from directly behind the mound). Optional angles include front view, radar view, and a previous session for comparison.',
+        a: 'The standard analysis requires one throwing-arm side view, filmed approximately perpendicular to the pitch direction with the complete body visible. Radar-backed evidence can be uploaded separately when available.',
       },
       {
         q: 'What video format is accepted?',

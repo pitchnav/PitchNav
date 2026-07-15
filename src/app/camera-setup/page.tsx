@@ -5,11 +5,10 @@ import { CheckCircle, AlertCircle, Camera, Eye, ChevronRight } from 'lucide-reac
 import { cn } from '@/lib/utils'
 import { CameraAlignmentStudio } from '@/components/camera/CameraAlignmentStudio'
 
-type Angle = 'open_side' | 'rear'
+type Angle = 'open_side'
 
 const ANGLES: { key: Angle; label: string; icon: string }[] = [
   { key: 'open_side', label: 'Open-Side View', icon: '📹' },
-  { key: 'rear', label: 'Rear View', icon: '📷' },
 ]
 
 const CHECKLIST_ITEMS = [
@@ -19,6 +18,7 @@ const CHECKLIST_ITEMS = [
   'Video is not blurry or pixelated',
   'Camera does not move during the pitch',
   'Lighting is adequate — pitcher is not in shadow',
+  'Video was recorded using the phone Camera app’s SLO-MO mode',
   'Video is recorded at normal game or bullpen intensity',
   'The camera angle matches the selected guide above',
 ]
@@ -37,10 +37,10 @@ const GUIDE: Record<Angle, {
   open_side: {
     description: 'The open-side view films from the pitcher\'s throwing-arm side, approximately perpendicular to the direction of the pitch. This angle reveals hip and shoulder rotation, arm path, and release point.',
     position: 'Throwing-arm side, approximately perpendicular (90°) to the pitch direction.',
-    distance: '30–45 feet from the pitcher (full body must remain in frame).',
-    height: 'Approximately chest-high — roughly 4–5 feet off the ground.',
+    distance: '15 feet from the pitcher, measured from the throwing-arm side.',
+    height: '6 feet high with the lens level and the entire body visible.',
     orientation: 'Horizontal (landscape) is strongly preferred.',
-    frameRate: '120 fps or 240 fps when your device supports it. At minimum, use the highest frame rate available.',
+    frameRate: 'Use the Camera app’s SLO-MO recording mode. Select 240 FPS when available; 120 FPS is accepted.',
     lighting: 'Film with the sun or primary light source behind the camera, not behind the pitcher.',
     dos: [
       'Keep the full body — from the head to the landing foot — visible at all times',
@@ -55,27 +55,7 @@ const GUIDE: Record<Angle, {
       'Do not film from too close — the stride foot should not leave the frame',
     ],
   },
-  rear: {
-    description: 'The rear view is filmed from behind the mound, centered with the target line. This angle reveals direction, hip alignment, and landing foot position.',
-    position: 'Directly behind the pitcher, centered with the intended pitch direction.',
-    distance: '25–40 feet behind the mound, far enough that the full body is visible.',
-    height: 'Approximately chest-high — roughly 4–5 feet off the ground.',
-    orientation: 'Horizontal (landscape) is strongly preferred.',
-    frameRate: '120 fps or 240 fps when available.',
-    lighting: 'Natural lighting is fine. Avoid filming directly into the sun.',
-    dos: [
-      'Stay centered with the target line — not offset to either side',
-      'Ensure the landing foot stays in frame through and after release',
-      'Include at least one complete pitch from start through finish',
-      'Keep the camera completely stationary',
-    ],
-    donts: [
-      'Do not stand in the direct line of the thrown ball for safety',
-      'Do not move the camera while filming',
-      'Do not stand so close that the pitcher\'s body fills the entire frame',
-      'Do not allow the head or feet to leave the frame',
-    ],
-  },
+
 }
 
 export default function CameraSetupPage() {
@@ -98,6 +78,12 @@ export default function CameraSetupPage() {
             important factor in a thorough analysis.
           </p>
         </div>
+
+        <section className="card mb-10 overflow-hidden border-electric-blue/30">
+          <div className="mb-5"><p className="text-xs font-bold uppercase tracking-[0.2em] text-electric-blue-light">Required recording mode</p><h2 className="mt-1 text-2xl font-black text-white">Record with SLO-MO—not normal Video mode</h2><p className="mt-2 text-sm text-slate-400">On iPhone, set Settings → Camera → Record Slo-mo to 1080p at 240 FPS when available. Then open the Camera app and swipe to <strong className="text-white">SLO-MO</strong> before recording. Choosing a slower playback speed afterward does not create high-frame-rate footage.</p></div>
+          <img src="/pitch-nav-slow-motion-guide.png" alt="Pitch Nav iPhone instructions showing Settings, Camera, Record Slo-mo, and selection of 240 FPS or 120 FPS" className="w-full rounded-xl border border-surface-border" />
+          <div className="mt-4 grid gap-3 sm:grid-cols-3"><div className="rounded-lg bg-accent-green/10 p-3 text-sm font-bold text-accent-green">240 FPS · Preferred</div><div className="rounded-lg bg-electric-blue/10 p-3 text-sm font-bold text-electric-blue-light">120 FPS · Accepted</div><div className="rounded-lg bg-yellow-400/10 p-3 text-sm font-bold text-yellow-200">Below 120 · No velocity estimate</div></div>
+        </section>
 
         <CameraAlignmentStudio />
 
