@@ -5,7 +5,7 @@ import { SafetyDisclaimer } from '@/components/ui/SafetyDisclaimer'
 
 export const metadata: Metadata = {
   title: 'Pricing',
-  description: 'PitchFrame Complete Pitching Analysis — $49. Expert-reviewed mechanics breakdown, velocity profile, personalized drills, and a four-week development plan.',
+  description: 'Pitch Nav Complete Pitching Analysis — $49. Expert-reviewed mechanics breakdown, velocity profile, personalized drills, and a four-week development plan.',
 }
 
 const included = [
@@ -27,7 +27,7 @@ const included = [
 const faqs = [
   {
     q: 'Is there a money-back guarantee?',
-    a: 'If your reviewer determines that your submitted videos are unusable for analysis and replacement videos cannot be obtained, we will issue a full refund. Completed analyses are not eligible for refunds. Contact support@pitchframe.com with any concerns.',
+    a: 'If your reviewer determines that your submitted videos are unusable for analysis and replacement videos cannot be obtained, we will issue a full refund. Completed analyses are not eligible for refunds. Contact support@pitchnav.com with any concerns.',
   },
   {
     q: 'What if I need to submit replacement videos?',
@@ -97,7 +97,7 @@ export default function PricingPage() {
           </div>
 
           <p className="mt-4 text-xs text-slate-600 text-center">
-            Secure checkout powered by Stripe. PitchFrame does not store your card number.
+            Secure checkout powered by Stripe. Pitch Nav does not store your card number.
           </p>
         </div>
 

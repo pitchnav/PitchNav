@@ -62,14 +62,14 @@ export function StepVelocity({ initialData, athleteProfileId, onComplete, onBack
         <h2 className="text-xl font-bold text-white mb-1">Step 3: Velocity Profile</h2>
         <p className="text-sm text-slate-400">
           All velocity data is athlete-provided and will be clearly labeled as such in your report.
-          PitchFrame does not independently verify velocity readings.
+          Pitch Nav does not independently verify velocity readings.
         </p>
       </div>
 
       <div className="rounded-lg border border-electric-blue/20 bg-electric-blue/5 p-4">
         <p className="text-xs text-electric-blue-glow leading-relaxed">
           ℹ️ <strong>Athlete-Provided Velocity:</strong> All velocity information you enter here will
-          be labeled "athlete-provided" in your report. PitchFrame does not calculate velocity from
+          be labeled "athlete-provided" in your report. Pitch Nav does not calculate velocity from
           phone video without additional calibration data.
         </p>
       </div>

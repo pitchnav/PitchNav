@@ -172,7 +172,7 @@ function CheckoutContent() {
                   <Link href="/privacy" className="text-electric-blue-light hover:underline" target="_blank">Privacy Policy</Link>
                   , and{' '}
                   <Link href="/disclaimer" className="text-electric-blue-light hover:underline" target="_blank">Training Disclaimer</Link>.
-                  I understand that PitchFrame provides educational baseball training information and does
+                  I understand that Pitch Nav provides educational baseball training information and does
                   not provide medical advice, diagnose injuries, or guarantee specific velocity increases.
                 </span>
               </label>
@@ -219,7 +219,7 @@ function CheckoutContent() {
 
               <div className="flex items-center justify-center gap-2 text-xs text-slate-600">
                 <Shield className="h-3.5 w-3.5" />
-                Secured by Stripe · PitchFrame does not store your card
+                Secured by Stripe · Pitch Nav does not store your card
               </div>
 
               <hr className="my-4 border-surface-border" />

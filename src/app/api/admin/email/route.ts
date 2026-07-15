@@ -47,20 +47,20 @@ export async function POST(req: NextRequest) {
 
   try {
     await resend.emails.send({
-      from: `PitchFrame <${process.env.RESEND_FROM_EMAIL}>`,
+      from: `Pitch Nav <${process.env.RESEND_FROM_EMAIL}>`,
       to: recipientEmail,
       subject,
       html: `
         <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px;">
           <div style="background:#0f172a;border-radius:12px;padding:24px;margin-bottom:24px;">
-            <h1 style="color:#ffffff;margin:0;font-size:22px;">PitchFrame</h1>
+            <h1 style="color:#ffffff;margin:0;font-size:22px;">Pitch Nav</h1>
           </div>
           <p style="color:#334155;font-size:16px;">Hi ${recipientName},</p>
           <div style="color:#334155;font-size:15px;line-height:1.7;white-space:pre-wrap;margin-bottom:24px;">${body.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
           <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0;" />
           <p style="color:#94a3b8;font-size:12px;">
-            This message is from your PitchFrame analyst. Reply to this email to respond.<br /><br />
-            PitchFrame · pitchframe.com
+            This message is from your Pitch Nav analyst. Reply to this email to respond.<br /><br />
+            Pitch Nav · pitchnav.com
           </p>
         </div>
       `,

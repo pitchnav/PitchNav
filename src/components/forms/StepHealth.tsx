@@ -108,7 +108,7 @@ export function StepHealth({ initialData, athleteProfileId, onComplete, onBack }
                 Current Pain Reported
               </h3>
               <p className="text-sm text-slate-300 leading-relaxed">
-                <strong>PitchFrame cannot diagnose or treat injuries.</strong> Athletes
+                <strong>Pitch Nav cannot diagnose or treat injuries.</strong> Athletes
                 experiencing pain should <strong>stop throwing</strong> and speak with a parent,
                 athletic trainer, physical therapist, or qualified medical professional before
                 continuing. You may save your progress, but our team will review your submission
@@ -164,7 +164,7 @@ export function StepHealth({ initialData, athleteProfileId, onComplete, onBack }
 
       <div className="rounded-lg border border-slate-700/40 bg-navy-800 p-4">
         <p className="text-xs text-slate-500 leading-relaxed">
-          PitchFrame provides educational baseball training information only. Health-screening
+          Pitch Nav provides educational baseball training information only. Health-screening
           responses are not a medical evaluation and do not constitute medical clearance to throw.
           Athletes in pain should consult a qualified medical professional.
         </p>

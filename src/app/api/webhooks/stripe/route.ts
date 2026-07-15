@@ -92,7 +92,7 @@ export async function POST(request: NextRequest) {
           resend_id: emailResult.resendId,
           template: 'payment_confirmation',
           to_email: profile.athlete_email,
-          subject: `Payment confirmed — PitchFrame Order #${orderId.slice(0, 8).toUpperCase()}`,
+          subject: `Payment confirmed — Pitch Nav Order #${orderId.slice(0, 8).toUpperCase()}`,
           error: emailResult.error,
         })
       }

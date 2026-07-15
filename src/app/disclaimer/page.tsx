@@ -3,7 +3,7 @@ import { AlertTriangle } from 'lucide-react'
 
 export const metadata: Metadata = {
   title: 'Training & Medical Disclaimer',
-  description: 'PitchFrame training and medical disclaimer — important information about the nature and limitations of PitchFrame services.',
+  description: 'Pitch Nav training and medical disclaimer — important information about the nature and limitations of Pitch Nav services.',
 }
 
 export default function DisclaimerPage() {
@@ -22,10 +22,10 @@ export default function DisclaimerPage() {
             <AlertTriangle className="h-7 w-7 text-yellow-400 flex-shrink-0 mt-0.5" />
             <div>
               <h2 className="text-lg font-bold text-yellow-400 mb-3">
-                Please Read Before Using PitchFrame
+                Please Read Before Using Pitch Nav
               </h2>
               <p className="text-sm text-yellow-200/80 leading-relaxed">
-                PitchFrame provides educational baseball training information only.
+                Pitch Nav provides educational baseball training information only.
                 It does not provide medical care, diagnose injuries, calculate clinical
                 injury risk, or guarantee any outcome. Athletes experiencing pain should
                 stop throwing immediately and consult a qualified medical professional.
@@ -38,31 +38,31 @@ export default function DisclaimerPage() {
           {[
             {
               heading: 'Educational Purpose Only',
-              text: 'PitchFrame is an educational baseball training service. All content, analysis reports, mechanics scores, drill recommendations, and focus plans are provided for general educational and athletic development purposes only. Nothing provided by PitchFrame constitutes medical, clinical, or professional sports science advice.',
+              text: 'Pitch Nav is an educational baseball training service. All content, analysis reports, mechanics scores, drill recommendations, and focus plans are provided for general educational and athletic development purposes only. Nothing provided by Pitch Nav constitutes medical, clinical, or professional sports science advice.',
             },
             {
               heading: 'Not a Medical Service',
-              text: 'PitchFrame cannot and does not diagnose medical conditions, injuries, or physical abnormalities. PitchFrame cannot and does not provide injury treatment plans, rehabilitation programs, or injury-prevention protocols. Mechanics assessments and development scores are coaching opinions — not medical evaluations. If you believe an athlete may have a throwing-related injury, stop throwing and consult an athletic trainer, physical therapist, orthopedic physician, or other qualified medical professional.',
+              text: 'Pitch Nav cannot and does not diagnose medical conditions, injuries, or physical abnormalities. Pitch Nav cannot and does not provide injury treatment plans, rehabilitation programs, or injury-prevention protocols. Mechanics assessments and development scores are coaching opinions — not medical evaluations. If you believe an athlete may have a throwing-related injury, stop throwing and consult an athletic trainer, physical therapist, orthopedic physician, or other qualified medical professional.',
             },
             {
               heading: 'No Injury Risk Prediction',
-              text: 'The Delivery Score and mechanics scorecard in PitchFrame reports are internal coaching tools designed to track mechanical changes in the same athlete over time. They do not predict injury risk, measure clinical biomechanical stress, assess load on specific anatomical structures, or indicate whether an athlete is safe to throw. Do not interpret any PitchFrame score as a medical clearance or an injury-risk assessment.',
+              text: 'The Delivery Score and mechanics scorecard in Pitch Nav reports are internal coaching tools designed to track mechanical changes in the same athlete over time. They do not predict injury risk, measure clinical biomechanical stress, assess load on specific anatomical structures, or indicate whether an athlete is safe to throw. Do not interpret any Pitch Nav score as a medical clearance or an injury-risk assessment.',
             },
             {
               heading: 'No Performance Guarantees',
-              text: 'PitchFrame does not guarantee specific velocity increases, mechanical corrections, scholarship offers, roster spots, or any athletic outcomes. Results depend on many variables outside of PitchFrame\'s control, including the athlete\'s physical development, age, training consistency, rest, nutrition, coaching support, and individual biomechanical factors.',
+              text: 'Pitch Nav does not guarantee specific velocity increases, mechanical corrections, scholarship offers, roster spots, or any athletic outcomes. Results depend on many variables outside of Pitch Nav\'s control, including the athlete\'s physical development, age, training consistency, rest, nutrition, coaching support, and individual biomechanical factors.',
             },
             {
               heading: 'Velocity Information',
-              text: 'All velocity information included in PitchFrame reports is based on data submitted by the athlete or the athlete\'s representative and is clearly labeled as athlete-provided velocity. PitchFrame does not independently verify velocity readings. Standard phone video without calibration data cannot be used to accurately determine pitch velocity. If a reviewer includes video-based velocity estimates in a future report, they will be clearly labeled as estimates with stated assumptions and confidence levels.',
+              text: 'All velocity information included in Pitch Nav reports is based on data submitted by the athlete or the athlete\'s representative and is clearly labeled as athlete-provided velocity. Pitch Nav does not independently verify velocity readings. Standard phone video without calibration data cannot be used to accurately determine pitch velocity. If a reviewer includes video-based velocity estimates in a future report, they will be clearly labeled as estimates with stated assumptions and confidence levels.',
             },
             {
               heading: 'Health Screening Limitations',
-              text: 'The health and safety questions asked during the intake process are not a medical screening tool. They are intended only to inform the reviewer of relevant context. PitchFrame does not use health-screening responses to clear or disqualify an athlete from throwing. Any athlete who reports pain should consult a qualified medical professional regardless of the outcome of the intake process.',
+              text: 'The health and safety questions asked during the intake process are not a medical screening tool. They are intended only to inform the reviewer of relevant context. Pitch Nav does not use health-screening responses to clear or disqualify an athlete from throwing. Any athlete who reports pain should consult a qualified medical professional regardless of the outcome of the intake process.',
             },
             {
               heading: 'Safe Filming Practices',
-              text: 'When filming from the rear view, the camera operator must never stand in the direct line of a thrown pitch. When filming from the front view, a tripod or safe mounting solution is strongly preferred. PitchFrame is not responsible for injuries that occur during the filming process. Athletes and camera operators should follow safe practices at all times.',
+              text: 'When filming from the rear view, the camera operator must never stand in the direct line of a thrown pitch. When filming from the front view, a tripod or safe mounting solution is strongly preferred. Pitch Nav is not responsible for injuries that occur during the filming process. Athletes and camera operators should follow safe practices at all times.',
             },
             {
               heading: 'Parental Responsibility for Minor Athletes',

@@ -5,7 +5,7 @@ import { SafetyDisclaimer } from '@/components/ui/SafetyDisclaimer'
 
 export const metadata: Metadata = {
   title: 'How It Works',
-  description: 'Learn how PitchFrame works — create your profile, set up your camera, record your videos, submit payment, and receive your expert mechanics analysis.',
+  description: 'Learn how Pitch Nav works — create your profile, set up your camera, record your videos, submit payment, and receive your expert mechanics analysis.',
 }
 
 const steps = [
@@ -61,7 +61,7 @@ const steps = [
     description: 'Review your order summary, agree to the terms and disclaimer, and complete your secure checkout. Your order is created only after payment is confirmed.',
     details: [
       'Secure checkout powered by Stripe',
-      'PitchFrame does not store your card number',
+      'Pitch Nav does not store your card number',
       'One-time $49 payment — no subscription',
       'Order confirmation email sent immediately',
       'Order immediately enters the review queue',
@@ -106,7 +106,7 @@ export default function HowItWorksPage() {
         {/* Header */}
         <div className="text-center mb-20">
           <h1 className="text-4xl font-black tracking-tight text-white sm:text-5xl">
-            How PitchFrame Works
+            How Pitch Nav Works
           </h1>
           <p className="mt-4 text-lg text-slate-400 max-w-2xl mx-auto">
             From your first video to your completed mechanics report — a clear, step-by-step overview of the entire process.

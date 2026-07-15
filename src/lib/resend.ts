@@ -3,8 +3,8 @@ import { Resend } from 'resend'
 // Server-side only — never import on the client
 export const resend = new Resend(process.env.RESEND_API_KEY)
 
-const FROM = process.env.RESEND_FROM_EMAIL ?? 'PitchFrame <noreply@pitchframe.com>'
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://pitchframe.com'
+const FROM = process.env.RESEND_FROM_EMAIL ?? 'Pitch Nav <noreply@pitchnav.com>'
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://pitchnav.com'
 
 interface SendEmailOptions {
   to: string
@@ -57,20 +57,20 @@ const brandHeader = `
 const footer = `
   <hr style="border:none;border-top:1px solid #1e2d45;margin:32px 0;" />
   <p style="color:#64748b;font-size:12px;text-align:center;">
-    PitchFrame · <a href="${APP_URL}/privacy" style="color:#2563eb;text-decoration:none;">Privacy Policy</a> ·
+    Pitch Nav · <a href="${APP_URL}/privacy" style="color:#2563eb;text-decoration:none;">Privacy Policy</a> ·
     <a href="${APP_URL}/terms" style="color:#2563eb;text-decoration:none;">Terms of Service</a><br />
     This is an automated message — please do not reply directly to this email.<br />
-    For support, contact <a href="mailto:support@pitchframe.com" style="color:#2563eb;text-decoration:none;">support@pitchframe.com</a>
+    For support, contact <a href="mailto:support@pitchnav.com" style="color:#2563eb;text-decoration:none;">support@pitchnav.com</a>
   </p>
 `
 
 export async function sendVerificationEmail(to: string, verificationUrl: string) {
   return sendEmail({
     to,
-    subject: 'Verify your PitchFrame account',
+    subject: 'Verify your Pitch Nav account',
     html: `<div style="${baseStyle}">${brandHeader}
       <h2 style="color:#f1f5f9;font-size:22px;margin-bottom:8px;">Confirm your email address</h2>
-      <p style="color:#94a3b8;line-height:1.6;">Thanks for signing up for PitchFrame! Click the button below to verify your email address and activate your account.</p>
+      <p style="color:#94a3b8;line-height:1.6;">Thanks for signing up for Pitch Nav! Click the button below to verify your email address and activate your account.</p>
       <div style="text-align:center;margin:32px 0;">
         <a href="${verificationUrl}" style="background:#2563eb;color:#fff;text-decoration:none;padding:14px 32px;border-radius:8px;font-weight:700;font-size:16px;display:inline-block;">Verify Email Address</a>
       </div>
@@ -82,14 +82,14 @@ export async function sendVerificationEmail(to: string, verificationUrl: string)
 export async function sendWelcomeEmail(to: string, name: string) {
   return sendEmail({
     to,
-    subject: 'Welcome to PitchFrame',
+    subject: 'Welcome to Pitch Nav',
     html: `<div style="${baseStyle}">${brandHeader}
       <h2 style="color:#f1f5f9;font-size:22px;margin-bottom:8px;">Welcome, ${name}!</h2>
-      <p style="color:#94a3b8;line-height:1.6;">Your PitchFrame account is active. You're one step closer to understanding your delivery and developing your velocity.</p>
+      <p style="color:#94a3b8;line-height:1.6;">Your Pitch Nav account is active. You're one step closer to understanding your delivery and developing your velocity.</p>
       <div style="text-align:center;margin:32px 0;">
         <a href="${APP_URL}/start-analysis" style="background:#2563eb;color:#fff;text-decoration:none;padding:14px 32px;border-radius:8px;font-weight:700;font-size:16px;display:inline-block;">Start My Analysis</a>
       </div>
-      <p style="color:#64748b;font-size:13px;">If you have questions, reach out to <a href="mailto:support@pitchframe.com" style="color:#2563eb;">support@pitchframe.com</a>.</p>
+      <p style="color:#64748b;font-size:13px;">If you have questions, reach out to <a href="mailto:support@pitchnav.com" style="color:#2563eb;">support@pitchnav.com</a>.</p>
       ${footer}</div>`,
   })
 }
@@ -103,7 +103,7 @@ export async function sendPaymentConfirmationEmail(
   const amount = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amountCents / 100)
   return sendEmail({
     to,
-    subject: `Payment confirmed — PitchFrame Order #${orderId.slice(0, 8).toUpperCase()}`,
+    subject: `Payment confirmed — Pitch Nav Order #${orderId.slice(0, 8).toUpperCase()}`,
     html: `<div style="${baseStyle}">${brandHeader}
       <h2 style="color:#f1f5f9;font-size:22px;margin-bottom:8px;">Payment Confirmed ✓</h2>
       <p style="color:#94a3b8;line-height:1.6;">Thank you, ${name}. Your payment of <strong style="color:#f1f5f9;">${amount}</strong> has been received.</p>
@@ -123,7 +123,7 @@ export async function sendPaymentConfirmationEmail(
 export async function sendSubmissionConfirmationEmail(to: string, name: string, orderId: string) {
   return sendEmail({
     to,
-    subject: 'Videos received — your PitchFrame analysis is underway',
+    subject: 'Videos received — your Pitch Nav analysis is underway',
     html: `<div style="${baseStyle}">${brandHeader}
       <h2 style="color:#f1f5f9;font-size:22px;margin-bottom:8px;">Videos Received</h2>
       <p style="color:#94a3b8;line-height:1.6;">We have everything we need, ${name}. Your pitching videos have been securely uploaded and your analysis is in the queue.</p>
@@ -145,7 +145,7 @@ export async function sendStatusUpdateEmail(
 ) {
   return sendEmail({
     to,
-    subject: `PitchFrame status update: ${statusLabel}`,
+    subject: `Pitch Nav status update: ${statusLabel}`,
     html: `<div style="${baseStyle}">${brandHeader}
       <h2 style="color:#f1f5f9;font-size:22px;margin-bottom:8px;">Status Update</h2>
       <p style="color:#94a3b8;line-height:1.6;">Hi ${name}, here's the latest on your analysis:</p>
@@ -165,7 +165,7 @@ export async function sendStatusUpdateEmail(
 export async function sendAnalysisCompleteEmail(to: string, name: string, orderId: string) {
   return sendEmail({
     to,
-    subject: '🎯 Your PitchFrame analysis is ready!',
+    subject: '🎯 Your Pitch Nav analysis is ready!',
     html: `<div style="${baseStyle}">${brandHeader}
       <h2 style="color:#00e5a0;font-size:24px;margin-bottom:8px;">Your Analysis is Ready!</h2>
       <p style="color:#94a3b8;line-height:1.6;">Great news, ${name}. Your complete pitching mechanics report is now available in your dashboard.</p>
@@ -206,11 +206,11 @@ export async function sendReplacementVideoRequestEmail(
 export async function sendDeletionConfirmationEmail(to: string, name: string, requestType: string) {
   return sendEmail({
     to,
-    subject: 'PitchFrame data deletion request received',
+    subject: 'Pitch Nav data deletion request received',
     html: `<div style="${baseStyle}">${brandHeader}
       <h2 style="color:#f1f5f9;font-size:22px;margin-bottom:8px;">Deletion Request Received</h2>
       <p style="color:#94a3b8;line-height:1.6;">Hi ${name}, we've received your request to delete your ${requestType === 'all' ? 'account and all associated data' : requestType === 'videos' ? 'uploaded videos' : 'account'}.</p>
-      <p style="color:#94a3b8;line-height:1.6;">Our team will process your request within 30 days and send a confirmation when complete. If you have questions, contact <a href="mailto:support@pitchframe.com" style="color:#2563eb;">support@pitchframe.com</a>.</p>
+      <p style="color:#94a3b8;line-height:1.6;">Our team will process your request within 30 days and send a confirmation when complete. If you have questions, contact <a href="mailto:support@pitchnav.com" style="color:#2563eb;">support@pitchnav.com</a>.</p>
       ${footer}</div>`,
   })
 }

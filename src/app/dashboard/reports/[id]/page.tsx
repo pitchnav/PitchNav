@@ -346,7 +346,7 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
           <p className="text-sm text-slate-400">{report.reviewer_velocity_notes}</p>
           <p className="text-xs text-slate-600 mt-3">
             Velocity information in this report is based on athlete-provided readings unless otherwise noted.
-            PitchFrame does not verify velocity from standard phone video without calibration data.
+            Pitch Nav does not verify velocity from standard phone video without calibration data.
           </p>
         </div>
       )}

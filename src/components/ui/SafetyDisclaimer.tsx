@@ -13,7 +13,7 @@ export function SafetyDisclaimer({ compact = false, className }: SafetyDisclaime
         <div className="flex gap-3">
           <AlertTriangle className="h-5 w-5 text-yellow-400 flex-shrink-0 mt-0.5" />
           <p className="text-sm text-yellow-400/90 leading-relaxed">
-            <strong>PitchFrame provides educational baseball training information.</strong>{' '}
+            <strong>Pitch Nav provides educational baseball training information.</strong>{' '}
             It does not provide medical care, diagnose injuries, calculate clinical injury risk,
             or guarantee increases in velocity. Athletes experiencing pain should stop throwing
             and consult a qualified medical professional.
@@ -32,7 +32,7 @@ export function SafetyDisclaimer({ compact = false, className }: SafetyDisclaime
             Training & Safety Disclaimer
           </h3>
           <p className="text-sm text-slate-300 leading-relaxed">
-            PitchFrame provides educational baseball training information. It does not provide
+            Pitch Nav provides educational baseball training information. It does not provide
             medical care, diagnose injuries, calculate clinical injury risk, or guarantee
             increases in velocity. Mechanics scores and position analysis are coaching tools
             intended to track development in the same athlete over time — not medical scores
@@ -42,7 +42,7 @@ export function SafetyDisclaimer({ compact = false, className }: SafetyDisclaime
             Athletes experiencing pain while throwing, or who have experienced throwing-related
             pain in the past 30 days, should stop throwing and speak with a parent, athletic
             trainer, physical therapist, or qualified medical professional before continuing.
-            PitchFrame is not a medical service and cannot respond to medical emergencies.
+            Pitch Nav is not a medical service and cannot respond to medical emergencies.
           </p>
         </div>
       </div>

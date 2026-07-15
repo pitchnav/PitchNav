@@ -26,6 +26,12 @@ export default async function DashboardPage() {
 
   const activeOrders = orders?.filter((o) => !['complete', 'cancelled', 'refunded'].includes(o.status)) ?? []
   const completedOrders = orders?.filter((o) => o.status === 'complete') ?? []
+  const { data: motionAnalyses } = await supabase
+    .from('motion_analyses')
+    .select('id,title,status,delivery_score,velocity_estimate_low,velocity_estimate_high,velocity_confidence,coach_feedback,created_at,training_plans(duration_weeks,follow_up_date)')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false })
+    .limit(8)
 
   return (
     <div className="max-w-5xl mx-auto">
@@ -40,7 +46,7 @@ export default async function DashboardPage() {
       {/* Quick stats */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-8">
         {[
-          { label: 'Total Orders', value: orders?.length ?? 0 },
+          { label: 'Total Analyses', value: (orders?.length ?? 0) + (motionAnalyses?.length ?? 0) },
           { label: 'Active', value: activeOrders.length },
           { label: 'Completed', value: completedOrders.length },
         ].map(({ label, value }) => (
@@ -50,6 +56,33 @@ export default async function DashboardPage() {
           </div>
         ))}
       </div>
+
+      {!!motionAnalyses?.length && (
+        <div className="mb-8">
+          <h2 className="mb-4 text-lg font-bold text-white">Saved Motion Lab Analyses</h2>
+          <div className="grid gap-4 sm:grid-cols-2">
+            {motionAnalyses.map((analysis) => {
+              const plan = Array.isArray(analysis.training_plans) ? analysis.training_plans[0] : analysis.training_plans
+              return (
+                <div key={analysis.id} className="card">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="font-bold text-white">{analysis.title}</p>
+                      <p className="mt-1 text-xs capitalize text-slate-500">{analysis.status.replaceAll('_', ' ')}</p>
+                    </div>
+                    {analysis.delivery_score !== null && <span className="rounded-lg bg-electric-blue/10 px-3 py-1 text-sm font-black text-electric-blue-light">{analysis.delivery_score}/30</span>}
+                  </div>
+                  <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+                    <div className="rounded-lg bg-navy-950 p-3"><p className="text-xs text-slate-500">Velocity estimate</p><p className="mt-1 font-bold text-white">{analysis.velocity_estimate_low !== null ? `${Math.round(analysis.velocity_estimate_low)}–${Math.round(analysis.velocity_estimate_high)} mph` : '—'}</p></div>
+                    <div className="rounded-lg bg-navy-950 p-3"><p className="text-xs text-slate-500">Training plan</p><p className="mt-1 font-bold text-white">{plan?.duration_weeks ? `${plan.duration_weeks} weeks` : 'Pending coach'}</p></div>
+                  </div>
+                  {analysis.coach_feedback && <p className="mt-4 line-clamp-3 text-sm text-slate-300">{analysis.coach_feedback}</p>}
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Active orders */}
       {activeOrders.length > 0 && (
@@ -115,7 +148,7 @@ export default async function DashboardPage() {
       )}
 
       {/* Empty state */}
-      {!orders?.length && (
+      {!orders?.length && !motionAnalyses?.length && (
         <div className="card text-center py-16">
           <div className="text-5xl mb-4">⚾</div>
           <h2 className="text-xl font-bold text-white mb-2">No analyses yet</h2>
@@ -129,7 +162,7 @@ export default async function DashboardPage() {
       )}
 
       {/* CTA to start new */}
-      {(orders?.length ?? 0) > 0 && (
+      {((orders?.length ?? 0) > 0 || (motionAnalyses?.length ?? 0) > 0) && (
         <div className="card border-electric-blue/20 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div>
             <h3 className="font-semibold text-white">Ready for a follow-up?</h3>

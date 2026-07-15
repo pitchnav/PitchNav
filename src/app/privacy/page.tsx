@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
   title: 'Privacy Policy',
-  description: 'PitchFrame Privacy Policy — how we collect, use, and protect your information.',
+  description: 'Pitch Nav Privacy Policy — how we collect, use, and protect your information.',
 }
 
 export default function PrivacyPage() {
@@ -31,7 +31,7 @@ export default function PrivacyPage() {
           <section className="card">
             <h2 className="text-xl font-bold text-white mb-4">1. Who We Are</h2>
             <p className="text-slate-400 leading-relaxed">
-              PitchFrame ("we," "our," or "us") is a baseball pitching mechanics analysis
+              Pitch Nav ("we," "our," or "us") is a baseball pitching mechanics analysis
               service operated by [PLACEHOLDER — legal entity name and address must be inserted
               before launch]. We provide remote pitching analysis services to athletes and their
               families.
@@ -72,7 +72,7 @@ export default function PrivacyPage() {
               <div>
                 <h3 className="text-white font-semibold mb-2">Video Submissions</h3>
                 <p>
-                  Pitching videos you upload through the PitchFrame platform. These are stored in a
+                  Pitching videos you upload through the Pitch Nav platform. These are stored in a
                   private, access-controlled storage bucket and are accessible only to you and your
                   assigned reviewer.
                 </p>
@@ -80,7 +80,7 @@ export default function PrivacyPage() {
               <div>
                 <h3 className="text-white font-semibold mb-2">Payment Information</h3>
                 <p>
-                  Payments are processed by Stripe. PitchFrame does not store your full card number
+                  Payments are processed by Stripe. Pitch Nav does not store your full card number
                   or CVV. We receive a payment confirmation and amount from Stripe after a successful
                   transaction.
                 </p>
@@ -126,7 +126,7 @@ export default function PrivacyPage() {
             </p>
             <p className="text-sm text-slate-400 leading-relaxed mt-3">
               You may request deletion of your uploaded videos at any time through your dashboard
-              or by contacting support@pitchframe.com.
+              or by contacting support@pitchnav.com.
             </p>
           </section>
 
@@ -159,7 +159,7 @@ export default function PrivacyPage() {
             <p className="text-sm text-slate-400 mt-3">
               <strong className="text-white">These permissions are entirely optional</strong> and are not
               required to purchase or use the service. You may withdraw consent at any time by
-              contacting support@pitchframe.com.
+              contacting support@pitchnav.com.
             </p>
           </section>
 
@@ -172,7 +172,7 @@ export default function PrivacyPage() {
             <ul className="space-y-2 text-sm text-slate-400 mt-3 list-disc pl-4">
               <li>You can update your profile information in your dashboard at any time.</li>
               <li>You can request deletion of your uploaded videos from your dashboard.</li>
-              <li>You can request deletion of your entire account and associated data from your dashboard or by emailing support@pitchframe.com.</li>
+              <li>You can request deletion of your entire account and associated data from your dashboard or by emailing support@pitchnav.com.</li>
               <li>Deletion requests are processed within 30 days.</li>
             </ul>
             <p className="text-sm text-slate-400 mt-3">
@@ -185,7 +185,7 @@ export default function PrivacyPage() {
           <section className="card">
             <h2 className="text-xl font-bold text-white mb-4">8. Children's Privacy</h2>
             <p className="text-sm text-slate-400 leading-relaxed">
-              PitchFrame does not accept registrations from athletes under 13. For athletes
+              Pitch Nav does not accept registrations from athletes under 13. For athletes
               between 13 and 17, we require a parent or guardian to complete the consent process
               during intake. Parent or guardian consent is required before any video is submitted
               or payment is made on behalf of a minor athlete.
@@ -202,7 +202,7 @@ export default function PrivacyPage() {
               We use industry-standard security measures including encrypted connections (HTTPS),
               access-controlled storage buckets, row-level security on our database, and secure
               authentication through Supabase. However, no system is perfectly secure. If you
-              become aware of a security issue, please contact support@pitchframe.com immediately.
+              become aware of a security issue, please contact support@pitchnav.com immediately.
             </p>
           </section>
 
@@ -223,7 +223,7 @@ export default function PrivacyPage() {
             <p className="text-sm text-slate-300 mt-2">
               [PLACEHOLDER — legal entity name]<br />
               [PLACEHOLDER — mailing address]<br />
-              support@pitchframe.com
+              support@pitchnav.com
             </p>
           </section>
         </div>

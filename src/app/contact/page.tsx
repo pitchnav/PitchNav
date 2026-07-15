@@ -60,7 +60,7 @@ export default function ContactPage() {
             <AlertTriangle className="h-6 w-6 text-red-400 flex-shrink-0 mt-0.5" />
             <div>
               <h3 className="text-base font-semibold text-red-400 mb-1">
-                PitchFrame is not a medical or emergency service.
+                Pitch Nav is not a medical or emergency service.
               </h3>
               <p className="text-sm text-slate-400 leading-relaxed">
                 If you or an athlete is experiencing a medical emergency, call 911 or go to
@@ -77,8 +77,8 @@ export default function ContactPage() {
             <div className="card">
               <Mail className="h-6 w-6 text-electric-blue-light mb-3" />
               <h3 className="text-base font-semibold text-white mb-1">Email Support</h3>
-              <a href="mailto:support@pitchframe.com" className="text-sm text-electric-blue-light hover:underline">
-                support@pitchframe.com
+              <a href="mailto:support@pitchnav.com" className="text-sm text-electric-blue-light hover:underline">
+                support@pitchnav.com
               </a>
               <p className="text-xs text-slate-500 mt-2">[PLACEHOLDER — replace with real support email before launch]</p>
             </div>

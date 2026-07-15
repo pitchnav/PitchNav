@@ -206,10 +206,10 @@ export function StepContact({ initialData, userId, onComplete }: Props) {
           <p className="text-xs text-slate-500 mt-1">These are completely optional and not required to use the service.</p>
         </div>
         {[
-          { name: 'consentAnonymousClips', label: 'PitchFrame may use anonymous clips from my analysis for educational or instructional content.' },
-          { name: 'consentAthleteName', label: "PitchFrame may use the athlete's name in connection with educational content." },
-          { name: 'consentTestimonial', label: 'PitchFrame may use a testimonial from this athlete.' },
-          { name: 'consentBeforeAfter', label: 'PitchFrame may use before-and-after comparison clips.' },
+          { name: 'consentAnonymousClips', label: 'Pitch Nav may use anonymous clips from my analysis for educational or instructional content.' },
+          { name: 'consentAthleteName', label: "Pitch Nav may use the athlete's name in connection with educational content." },
+          { name: 'consentTestimonial', label: 'Pitch Nav may use a testimonial from this athlete.' },
+          { name: 'consentBeforeAfter', label: 'Pitch Nav may use before-and-after comparison clips.' },
         ].map(({ name, label }) => (
           <label key={name} className="flex items-start gap-3 cursor-pointer">
             <input

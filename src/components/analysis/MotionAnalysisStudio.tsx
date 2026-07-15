@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Activity, AlertTriangle, Download, Pause, Play, RotateCcw, Upload, Video } from 'lucide-react'
 import type { NormalizedLandmark, PoseLandmarker } from '@mediapipe/tasks-vision'
+import { createClient } from '@/lib/supabase/client'
 
 type Handedness = 'right' | 'left'
 type SelectionMode = 'calibrationA' | 'calibrationB' | 'ballStart' | 'ballEnd' | null
@@ -294,6 +295,8 @@ export function MotionAnalysisStudio() {
   const exportingRef = useRef(false)
   const exportStyleRef = useRef(false)
   const exportWatchdogRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const selectedFileRef = useRef<File | null>(null)
+  const renderedBlobRef = useRef<Blob | null>(null)
 
   const [fileUrl, setFileUrl] = useState<string | null>(null)
   const [fileName, setFileName] = useState('')
@@ -314,6 +317,10 @@ export function MotionAnalysisStudio() {
   const [calibrationFeet, setCalibrationFeet] = useState(6)
   const [captureFps, setCaptureFps] = useState(240)
   const [setupConfirmed, setSetupConfirmed] = useState(false)
+  const [planWeeks, setPlanWeeks] = useState<4 | 8>(4)
+  const [savingAnalysis, setSavingAnalysis] = useState(false)
+  const [saveMessage, setSaveMessage] = useState('')
+  const supabase = useMemo(() => createClient(), [])
 
   const initializeModel = useCallback(async () => {
     if (landmarkerRef.current) return landmarkerRef.current
@@ -489,6 +496,8 @@ export function MotionAnalysisStudio() {
     }
     if (fileUrl) URL.revokeObjectURL(fileUrl)
     setFileUrl(URL.createObjectURL(file))
+    selectedFileRef.current = file
+    renderedBlobRef.current = null
     setFileName(file.name)
     analyzingRef.current = false
     exportingRef.current = false
@@ -604,6 +613,7 @@ export function MotionAnalysisStudio() {
         exportWatchdogRef.current = null
       }
       const blob = new Blob(recordedChunksRef.current, { type: 'video/webm' })
+      renderedBlobRef.current = blob
       const url = URL.createObjectURL(blob)
       const anchor = document.createElement('a')
       anchor.href = url
@@ -650,6 +660,7 @@ export function MotionAnalysisStudio() {
   }
 
   const velocityEstimate = useMemo(() => {
+    if (captureFps < 120) return null
     if (!calibrationA || !calibrationB || !ballStart || !ballEnd || calibrationFeet <= 0) return null
     const calibrationPixels = Math.hypot(calibrationB.x - calibrationA.x, calibrationB.y - calibrationA.y)
     const ballPixels = Math.hypot(ballEnd.x - ballStart.x, ballEnd.y - ballStart.y)
@@ -668,6 +679,70 @@ export function MotionAnalysisStudio() {
       confidence: setupConfirmed && measuredFrames >= 4 ? 'Moderate' : 'Low',
     }
   }, [calibrationA, calibrationB, ballStart, ballEnd, calibrationFeet, captureFps, setupConfirmed])
+
+  async function saveAnalysisToDashboard() {
+    if (!summary || !selectedFileRef.current) return
+    setSavingAnalysis(true)
+    setSaveMessage('')
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Please sign in again.')
+      const analysisId = crypto.randomUUID()
+      const source = selectedFileRef.current
+      const extension = source.name.split('.').pop()?.toLowerCase() || 'mp4'
+      const sourcePath = `${user.id}/motion-lab/${analysisId}/source.${extension}`
+      const { error: sourceError } = await supabase.storage.from('pitch-videos').upload(sourcePath, source, { upsert: false, contentType: source.type })
+      if (sourceError) throw sourceError
+
+      let renderedPath: string | null = null
+      if (renderedBlobRef.current) {
+        renderedPath = `${user.id}/motion-lab/${analysisId}/skeleton.webm`
+        const { error: renderError } = await supabase.storage.from('pitch-videos').upload(renderedPath, renderedBlobRef.current, { upsert: true, contentType: 'video/webm' })
+        if (renderError) throw renderError
+      }
+
+      const { data: analysis, error: analysisError } = await supabase.from('motion_analyses').insert({
+        id: analysisId,
+        user_id: user.id,
+        title: fileName.replace(/\.[^.]+$/, '') || 'Motion Lab Analysis',
+        status: 'submitted_for_review',
+        source_video_storage_path: sourcePath,
+        rendered_video_storage_path: renderedPath,
+        capture_fps: captureFps,
+        calibration_passed: setupConfirmed,
+        velocity_estimate_low: velocityEstimate?.low ?? null,
+        velocity_estimate_high: velocityEstimate?.high ?? null,
+        velocity_confidence: velocityEstimate?.confidence ?? null,
+        velocity_assumptions: velocityEstimate ? `${captureFps} FPS; fixed side view; ${calibrationFeet} ft calibration marker; video-based estimate` : null,
+        mechanics_metrics: metrics ?? {},
+        clip_summary: summary,
+      }).select('id').single()
+      if (analysisError) throw analysisError
+
+      const weeks = Array.from({ length: planWeeks }, (_, index) => ({
+        week: index + 1,
+        priority: index < 2 ? 'Movement quality and repeatability' : index < 4 ? 'Progressive intent and constraint drills' : 'Transfer, command, and retest preparation',
+        completed: false,
+      }))
+      const followUp = new Date()
+      followUp.setDate(followUp.getDate() + planWeeks * 7)
+      const { error: planError } = await supabase.from('training_plans').insert({
+        motion_analysis_id: analysis.id,
+        user_id: user.id,
+        duration_weeks: planWeeks,
+        title: `${planWeeks}-Week Pitching Development Plan`,
+        weeks,
+        follow_up_date: followUp.toISOString().slice(0, 10),
+      })
+      if (planError) throw planError
+      setSaveMessage('Saved to your dashboard and submitted for coach review.')
+    } catch (reason) {
+      console.error(reason)
+      setSaveMessage(reason instanceof Error ? reason.message : 'Could not save this analysis.')
+    } finally {
+      setSavingAnalysis(false)
+    }
+  }
 
   const metricCards = useMemo(() => [
     { label: 'Throwing elbow', value: formatAngle(metrics?.throwingElbow ?? null) },
@@ -849,7 +924,7 @@ export function MotionAnalysisStudio() {
               <select className="input" value={captureFps} onChange={(event) => setCaptureFps(Number(event.target.value))}>
                 <option value={240}>240 FPS</option>
                 <option value={120}>120 FPS</option>
-                <option value={60}>60 FPS (low confidence)</option>
+                <option value={60}>60 FPS (mechanics only)</option>
               </select>
             </label>
             <label>
@@ -865,7 +940,9 @@ export function MotionAnalysisStudio() {
             <PointButton label="Set ball position 2" complete={!!ballEnd} active={selectionMode === 'ballEnd'} onClick={() => setSelectionMode('ballEnd')} detail={ballEnd ? `${ballEnd.time.toFixed(3)}s` : 'Advance at least 4 frames'} />
             <div className="rounded-xl border border-surface-border bg-navy-900 p-4 sm:col-span-2">
               <p className="text-xs uppercase tracking-wider text-slate-500">Video-estimated velocity</p>
-              {velocityEstimate ? (
+              {captureFps < 120 ? (
+                <p className="mt-2 text-sm font-semibold text-yellow-300">Velocity calculation unavailable at 60 FPS. Mechanics analysis remains available.</p>
+              ) : velocityEstimate ? (
                 <>
                   <p className="mt-1 text-3xl font-black text-white">{Math.round(velocityEstimate.low)}–{Math.round(velocityEstimate.high)} mph</p>
                   <p className="mt-1 text-xs text-slate-400">Center estimate {velocityEstimate.mph.toFixed(1)} mph · {velocityEstimate.frames} frames · {velocityEstimate.confidence} confidence</p>
@@ -876,7 +953,7 @@ export function MotionAnalysisStudio() {
             </div>
           </div>
           {selectionMode && <p role="status" className="mt-4 rounded-lg bg-electric-blue/10 p-3 text-sm text-electric-blue-light">Click the requested point directly on the paused video.</p>}
-          <p className="mt-4 text-xs leading-relaxed text-slate-500">This calculation assumes the calibration marker and baseball path occupy the same image plane. Perspective, lens distortion, motion blur, incorrect FPS metadata, and point-selection error can materially affect the result. Radar remains the verified measurement.</p>
+          <p className="mt-4 text-xs leading-relaxed text-slate-500">240 FPS is recommended. 120 FPS is accepted with reduced confidence. 60 FPS is mechanics-only and never produces a velocity calculation. This calculation assumes the calibration marker and baseball path occupy the same image plane. Perspective, lens distortion, motion blur, incorrect FPS metadata, and point-selection error can materially affect the result. Radar remains the verified measurement.</p>
         </section>
       )}
 
@@ -904,6 +981,21 @@ export function MotionAnalysisStudio() {
           <p className="mt-2 text-xs leading-relaxed text-slate-500">
             The downloaded visualization uses a dark motion-capture stage and a 2D pose skeleton without the original video background. Keep this tab visible while the full clip renders in real time.
           </p>
+          <div className="mt-6 rounded-xl border border-surface-border bg-navy-950 p-4">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+              <label>
+                <span className="label">Development-plan length</span>
+                <select className="input min-w-52" value={planWeeks} onChange={(event) => setPlanWeeks(Number(event.target.value) as 4 | 8)}>
+                  <option value={4}>4-week plan</option>
+                  <option value={8}>8-week plan</option>
+                </select>
+              </label>
+              <button type="button" onClick={saveAnalysisToDashboard} disabled={savingAnalysis} className="btn-accent">
+                {savingAnalysis ? 'Saving securely…' : 'Save analysis and request coach review'}
+              </button>
+            </div>
+            {saveMessage && <p role="status" className="mt-3 text-sm text-slate-300">{saveMessage}</p>}
+          </div>
         </section>
       )}
 

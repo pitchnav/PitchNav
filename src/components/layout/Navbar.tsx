@@ -7,6 +7,7 @@ import { Menu, X, ChevronDown, User, LogOut, LayoutDashboard, Settings } from 'l
 import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
 import type { Profile } from '@/types/database'
+import type { User as AuthUser } from '@supabase/supabase-js'
 
 const NAV_LINKS = [
   { href: '/how-it-works', label: 'How It Works' },
@@ -18,6 +19,7 @@ const NAV_LINKS = [
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false)
   const [userProfile, setUserProfile] = useState<Profile | null>(null)
+  const [authUser, setAuthUser] = useState<AuthUser | null>(null)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const pathname = usePathname()
@@ -33,6 +35,7 @@ export function Navbar() {
   useEffect(() => {
     async function loadUser() {
       const { data: { user } } = await supabase.auth.getUser()
+      setAuthUser(user)
       if (user) {
         const { data } = await supabase
           .from('profiles')
@@ -40,19 +43,23 @@ export function Navbar() {
           .eq('id', user.id)
           .single()
         setUserProfile(data)
+      } else {
+        setUserProfile(null)
       }
     }
     loadUser()
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setAuthUser(session?.user ?? null)
       loadUser()
     })
     return () => subscription.unsubscribe()
-  }, [])
+  }, [supabase, pathname])
 
   async function handleSignOut() {
     await supabase.auth.signOut()
     setUserProfile(null)
+    setAuthUser(null)
     setUserMenuOpen(false)
     router.push('/')
     router.refresh()
@@ -104,9 +111,9 @@ export function Navbar() {
 
           {/* Desktop CTA / User */}
           <div className="hidden md:flex items-center gap-3">
-            {userProfile ? (
+            {authUser ? (
               <>
-                {userProfile.is_admin && (
+                {userProfile?.is_admin && (
                   <Link
                     href="/admin"
                     className="text-sm font-medium text-slate-400 hover:text-white transition-colors"
@@ -123,7 +130,7 @@ export function Navbar() {
                   >
                     <User className="h-4 w-4 text-electric-blue-glow" />
                     <span className="max-w-[120px] truncate">
-                      {userProfile.full_name ?? userProfile.email}
+                      {userProfile?.full_name ?? authUser.email ?? 'Account'}
                     </span>
                     <ChevronDown className={cn('h-4 w-4 text-slate-400 transition-transform', userMenuOpen && 'rotate-180')} />
                   </button>
@@ -198,9 +205,9 @@ export function Navbar() {
               </Link>
             ))}
 
-            {userProfile ? (
+            {authUser ? (
               <>
-                {userProfile.is_admin && (
+                {userProfile?.is_admin && (
                   <Link
                     href="/admin"
                     className="block rounded-lg px-4 py-3 text-base font-medium text-slate-400 hover:bg-surface-card hover:text-white transition-colors"

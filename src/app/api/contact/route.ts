@@ -26,14 +26,14 @@ export async function POST(req: NextRequest) {
 
   try {
     await resend.emails.send({
-      from: `PitchFrame <${process.env.RESEND_FROM_EMAIL}>`,
+      from: `Pitch Nav <${process.env.RESEND_FROM_EMAIL}>`,
       to: process.env.CONTACT_DESTINATION_EMAIL ?? process.env.RESEND_FROM_EMAIL!,
       replyTo: email,
-      subject: `[PitchFrame Contact] ${subject}`,
+      subject: `[Pitch Nav Contact] ${subject}`,
       html: `
         <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px;">
           <h2 style="color:#0f172a;margin-bottom:4px;">New Contact Form Submission</h2>
-          <p style="color:#64748b;font-size:14px;margin-bottom:24px;">Received from pitchframe.com/contact</p>
+          <p style="color:#64748b;font-size:14px;margin-bottom:24px;">Received from pitchnav.com/contact</p>
 
           <table style="width:100%;border-collapse:collapse;margin-bottom:24px;">
             <tr>
@@ -54,16 +54,16 @@ export async function POST(req: NextRequest) {
           <div style="background:#f8fafc;border-radius:8px;padding:16px;color:#334155;font-size:14px;line-height:1.6;white-space:pre-wrap;">${message.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
 
           <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0;" />
-          <p style="color:#94a3b8;font-size:12px;">This message was sent via the PitchFrame contact form. Reply directly to respond to ${name}.</p>
+          <p style="color:#94a3b8;font-size:12px;">This message was sent via the Pitch Nav contact form. Reply directly to respond to ${name}.</p>
         </div>
       `,
     })
 
     // Auto-reply to sender
     await resend.emails.send({
-      from: `PitchFrame <${process.env.RESEND_FROM_EMAIL}>`,
+      from: `Pitch Nav <${process.env.RESEND_FROM_EMAIL}>`,
       to: email,
-      subject: 'We received your message — PitchFrame',
+      subject: 'We received your message — Pitch Nav',
       html: `
         <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px;">
           <h2 style="color:#0f172a;">Thanks for reaching out, ${name}!</h2>
@@ -76,7 +76,7 @@ export async function POST(req: NextRequest) {
           </p>
           <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0;" />
           <p style="color:#94a3b8;font-size:12px;">
-            PitchFrame is not a medical or emergency service. If you or an athlete are experiencing a medical emergency, call 911.
+            Pitch Nav is not a medical or emergency service. If you or an athlete are experiencing a medical emergency, call 911.
           </p>
         </div>
       `,

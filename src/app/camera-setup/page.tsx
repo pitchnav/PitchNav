@@ -243,7 +243,7 @@ export default function CameraSetupPage() {
         <div className="card border-electric-blue/20 mb-8">
           <h3 className="text-base font-semibold text-white mb-2">Camera Alignment Tip</h3>
           <p className="text-sm text-slate-400 leading-relaxed">
-            When using the PitchFrame recording screen, a framing overlay will appear to help you
+            When using the Pitch Nav recording screen, a framing overlay will appear to help you
             center the pitcher and ensure the full body stays inside the frame. Use the overlay
             guides to position your phone before starting your session.
           </p>

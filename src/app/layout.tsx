@@ -10,10 +10,10 @@ const inter = Inter({
 })
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? 'https://pitchframe.com'),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? 'https://pitchnav.com'),
   title: {
-    default: 'PitchFrame | Baseball Pitching Mechanics Analysis',
-    template: '%s | PitchFrame',
+    default: 'Pitch Nav | Baseball Pitching Mechanics Analysis',
+    template: '%s | Pitch Nav',
   },
   description:
     'Upload your pitching videos and receive a comprehensive breakdown of your mechanics, velocity-development opportunities, personalized drills, and training priorities from expert reviewers.',
@@ -31,8 +31,8 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'en_US',
     url: '/',
-    siteName: 'PitchFrame',
-    title: 'PitchFrame | Baseball Pitching Mechanics Analysis',
+    siteName: 'Pitch Nav',
+    title: 'Pitch Nav | Baseball Pitching Mechanics Analysis',
     description:
       'Upload your pitching videos and receive an easy-to-understand breakdown of your mechanics, velocity-development opportunities, personalized drills, and training priorities.',
     images: [
@@ -40,13 +40,13 @@ export const metadata: Metadata = {
         url: '/og-image.png',
         width: 1200,
         height: 630,
-        alt: 'PitchFrame — Baseball Pitching Mechanics Analysis',
+        alt: 'Pitch Nav — Baseball Pitching Mechanics Analysis',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'PitchFrame | Baseball Pitching Mechanics Analysis',
+    title: 'Pitch Nav | Baseball Pitching Mechanics Analysis',
     description:
       'Upload your pitching videos and receive a comprehensive mechanics analysis from expert reviewers.',
     images: ['/og-image.png'],

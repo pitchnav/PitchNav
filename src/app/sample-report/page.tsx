@@ -5,7 +5,7 @@ import { ProgressBar } from '@/components/ui/ProgressBar'
 
 export const metadata: Metadata = {
   title: 'Sample Report',
-  description: 'View a sample PitchFrame pitching mechanics analysis report — fictional demo athlete showing the scorecard, position breakdown, drills, and development plan format.',
+  description: 'View a sample Pitch Nav pitching mechanics analysis report — fictional demo athlete showing the scorecard, position breakdown, drills, and development plan format.',
 }
 
 // Demo data — clearly labeled as fictional
@@ -92,7 +92,7 @@ export default function SampleReportPage() {
           <AlertTriangle className="h-5 w-5 text-yellow-400 flex-shrink-0 mt-0.5" />
           <p className="text-sm text-yellow-400/90">
             <strong>Sample Report — All data on this page is fictional.</strong> This is a
-            demonstration of the PitchFrame report format using a fictional athlete. Real reports
+            demonstration of the Pitch Nav report format using a fictional athlete. Real reports
             include actual video screenshots, personalized analysis, and athlete-specific drills.
           </p>
         </div>
@@ -140,7 +140,7 @@ export default function SampleReportPage() {
               <p className="text-2xl font-black text-accent-green">{DEMO_ATHLETE.goalVelocity} <span className="text-base font-normal text-slate-400">mph</span></p>
             </div>
           </div>
-          <p className="text-xs text-slate-600 mt-2">Velocity is athlete-provided and not independently verified by PitchFrame.</p>
+          <p className="text-xs text-slate-600 mt-2">Velocity is athlete-provided and not independently verified by Pitch Nav.</p>
         </div>
 
         {/* Scorecard */}

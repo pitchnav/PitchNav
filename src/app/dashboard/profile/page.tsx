@@ -97,7 +97,7 @@ export default function ProfilePage() {
       <div className="card mb-6">
         <h2 className="text-lg font-semibold text-white mb-2">Communication Preferences</h2>
         <p className="text-sm text-slate-400">
-          PitchFrame sends transactional emails only (order confirmation, status updates, analysis complete).
+          Pitch Nav sends transactional emails only (order confirmation, status updates, analysis complete).
           We do not send marketing emails without your explicit consent.
         </p>
       </div>

@@ -85,8 +85,8 @@ function SuccessContent() {
 
         <p className="mt-8 text-xs text-slate-600">
           Questions? Contact{' '}
-          <a href="mailto:support@pitchframe.com" className="text-electric-blue-light hover:underline">
-            support@pitchframe.com
+          <a href="mailto:support@pitchnav.com" className="text-electric-blue-light hover:underline">
+            support@pitchnav.com
           </a>
         </p>
       </div>

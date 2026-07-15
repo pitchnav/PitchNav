@@ -12,16 +12,16 @@ const FAQ_SECTIONS = [
     category: 'Getting Started',
     questions: [
       {
-        q: 'What is PitchFrame?',
-        a: 'PitchFrame is a remote pitching mechanics analysis service. You upload pitching videos from your device, and an experienced pitching coach reviews them manually and delivers a comprehensive report including a mechanics scorecard, position-by-position breakdown, personalized drills, and a four-week focus plan.',
+        q: 'What is Pitch Nav?',
+        a: 'Pitch Nav is a remote pitching mechanics analysis service. You upload pitching videos from your device, and an experienced pitching coach reviews them manually and delivers a comprehensive report including a mechanics scorecard, position-by-position breakdown, personalized drills, and a four-week focus plan.',
       },
       {
-        q: 'Who is PitchFrame for?',
-        a: 'PitchFrame is designed for baseball pitchers from middle school through adult recreational levels. Whether you\'re a high school pitcher working toward a showcase, a travel ball player developing your secondary pitches, or an adult league pitcher looking to stay healthy and improve, PitchFrame can help you understand your delivery.',
+        q: 'Who is Pitch Nav for?',
+        a: 'Pitch Nav is designed for baseball pitchers from middle school through adult recreational levels. Whether you\'re a high school pitcher working toward a showcase, a travel ball player developing your secondary pitches, or an adult league pitcher looking to stay healthy and improve, Pitch Nav can help you understand your delivery.',
       },
       {
         q: 'Is there an age requirement?',
-        a: 'Yes. PitchFrame does not accept submissions for athletes under 13. Athletes under 18 must have a parent or guardian complete the consent process during intake. Marketing permissions are optional and not required to use the service.',
+        a: 'Yes. Pitch Nav does not accept submissions for athletes under 13. Athletes under 18 must have a parent or guardian complete the consent process during intake. Marketing permissions are optional and not required to use the service.',
       },
       {
         q: 'Do I need to visit a facility?',
@@ -59,15 +59,15 @@ const FAQ_SECTIONS = [
     questions: [
       {
         q: 'Who reviews my videos?',
-        a: 'Your videos are reviewed by a human pitching coach — not automated software. PitchFrame does not claim to use laboratory-grade automatic biomechanics analysis. Every report is the product of a human reviewer watching your delivery frame by frame.',
+        a: 'Your videos are reviewed by a human pitching coach — not automated software. Pitch Nav does not claim to use laboratory-grade automatic biomechanics analysis. Every report is the product of a human reviewer watching your delivery frame by frame.',
       },
       {
         q: 'What is the Delivery Score?',
         a: 'The Delivery Score (out of 30) is an internal coaching tool calculated from six categories, each scored 1–5. It is designed to track development in the same athlete over time. It is not a medical score, a laboratory biomechanics measurement, or a prediction of injury risk or future performance.',
       },
       {
-        q: 'Can PitchFrame tell me my velocity?',
-        a: 'No. PitchFrame cannot accurately determine pitch velocity from a regular phone video without calibration data. All velocity information in your report comes from readings you provide yourself. These are clearly labeled as athlete-provided velocity. If you include radar-backed video or a radar screenshot, your reviewer may note that in the report.',
+        q: 'Can Pitch Nav tell me my velocity?',
+        a: 'No. Pitch Nav cannot accurately determine pitch velocity from a regular phone video without calibration data. All velocity information in your report comes from readings you provide yourself. These are clearly labeled as athlete-provided velocity. If you include radar-backed video or a radar screenshot, your reviewer may note that in the report.',
       },
       {
         q: 'How long does the analysis take?',
@@ -83,12 +83,12 @@ const FAQ_SECTIONS = [
     category: 'Health & Safety',
     questions: [
       {
-        q: 'Can PitchFrame diagnose or treat injuries?',
-        a: 'No. PitchFrame provides educational baseball training information and cannot diagnose injuries, calculate clinical injury risk, or treat any medical condition. If you are experiencing pain while throwing, stop throwing immediately and consult an athletic trainer, physical therapist, or physician.',
+        q: 'Can Pitch Nav diagnose or treat injuries?',
+        a: 'No. Pitch Nav provides educational baseball training information and cannot diagnose injuries, calculate clinical injury risk, or treat any medical condition. If you are experiencing pain while throwing, stop throwing immediately and consult an athletic trainer, physical therapist, or physician.',
       },
       {
         q: 'What if I report pain during the health screening?',
-        a: 'If you report current throwing-related pain during the intake process, PitchFrame will display a clear warning and flag your submission for admin review. You will not be prevented from saving your intake form, but our team will review the flag before proceeding with your analysis.',
+        a: 'If you report current throwing-related pain during the intake process, Pitch Nav will display a clear warning and flag your submission for admin review. You will not be prevented from saving your intake form, but our team will review the flag before proceeding with your analysis.',
       },
       {
         q: 'What does the health screening ask?',
@@ -101,7 +101,7 @@ const FAQ_SECTIONS = [
     questions: [
       {
         q: 'Who can access my videos?',
-        a: 'Only you and your assigned reviewer can access your uploaded videos. PitchFrame uses private, access-controlled storage with row-level security. No other user can see your files.',
+        a: 'Only you and your assigned reviewer can access your uploaded videos. Pitch Nav uses private, access-controlled storage with row-level security. No other user can see your files.',
       },
       {
         q: 'How long are my videos retained?',
@@ -109,11 +109,11 @@ const FAQ_SECTIONS = [
       },
       {
         q: 'Will my data be sold?',
-        a: 'No. PitchFrame does not sell athlete data. Please review the full privacy policy for details on data collection, storage, and sharing.',
+        a: 'No. Pitch Nav does not sell athlete data. Please review the full privacy policy for details on data collection, storage, and sharing.',
       },
       {
         q: 'How do I delete my account?',
-        a: 'You can request account deletion from your dashboard or by contacting support@pitchframe.com. Your account and associated data will be processed within 30 days. You\'ll receive a confirmation email when the deletion is complete.',
+        a: 'You can request account deletion from your dashboard or by contacting support@pitchnav.com. Your account and associated data will be processed within 30 days. You\'ll receive a confirmation email when the deletion is complete.',
       },
     ],
   },
@@ -122,11 +122,11 @@ const FAQ_SECTIONS = [
     questions: [
       {
         q: 'What payment methods are accepted?',
-        a: 'PitchFrame accepts all major credit and debit cards through Stripe. We do not accept cash, checks, or cryptocurrency. PitchFrame does not store your card number — it is handled securely by Stripe.',
+        a: 'Pitch Nav accepts all major credit and debit cards through Stripe. We do not accept cash, checks, or cryptocurrency. Pitch Nav does not store your card number — it is handled securely by Stripe.',
       },
       {
         q: 'Can I get a refund?',
-        a: 'If your submitted videos are unusable for analysis and a replacement cannot be obtained, we will issue a full refund. Completed analyses are not eligible for refunds. Contact support@pitchframe.com with any billing questions.',
+        a: 'If your submitted videos are unusable for analysis and a replacement cannot be obtained, we will issue a full refund. Completed analyses are not eligible for refunds. Contact support@pitchnav.com with any billing questions.',
       },
       {
         q: 'How much does a follow-up analysis cost?',

@@ -61,12 +61,35 @@ function Hero() {
       </div>
 
       {/* ── Right panel — hero image ── */}
-      <div className="relative w-full overflow-hidden bg-[#020817] aspect-[3/2] lg:aspect-auto lg:w-1/2 lg:min-h-screen">
-        <img
-          src="/pitcher-hero-v2.jpg"
-          alt="Pitcher in Pitch Nav jersey throwing from the mound"
-          className="absolute inset-0 h-full w-full object-contain object-center"
-        />
+      <div className="flex w-full flex-col overflow-hidden bg-[#020817] lg:w-1/2 lg:min-h-screen">
+        <div className="border-b border-electric-blue/15 px-6 py-6 sm:px-10 lg:px-8 xl:px-12">
+          <p className="text-xs font-bold uppercase tracking-[0.22em] text-electric-blue-light">Your delivery, translated</p>
+          <div className="mt-2 flex flex-col gap-2 xl:flex-row xl:items-end xl:justify-between">
+            <h2 className="text-2xl font-black uppercase text-white sm:text-3xl">See what the reviewer sees.</h2>
+            <p className="max-w-sm text-sm leading-relaxed text-slate-400">Key positions, video-based estimates, coaching context, and a practical development plan in one report.</p>
+          </div>
+        </div>
+
+        <div className="relative min-h-[340px] flex-1 sm:min-h-[480px] lg:min-h-0">
+          <img
+            src="/pitcher-hero-v2.jpg"
+            alt="Pitcher in Pitch Nav jersey with an example delivery-analysis breakdown"
+            className="absolute inset-0 h-full w-full object-contain object-center"
+          />
+        </div>
+
+        <div className="grid grid-cols-1 border-t border-electric-blue/15 sm:grid-cols-3">
+          {[
+            ['HUMAN REVIEWED', 'Coaching context—not automated claims'],
+            ['SIX POSITIONS', 'Delivery checkpoints connected to video'],
+            ['CLEAR NEXT STEPS', 'Strengths, priorities, drills, and plan'],
+          ].map(([title, detail]) => (
+            <div key={title} className="border-b border-electric-blue/10 px-6 py-5 last:border-b-0 sm:border-b-0 sm:border-r sm:last:border-r-0">
+              <p className="text-xs font-black tracking-widest text-white">{title}</p>
+              <p className="mt-1 text-xs leading-relaxed text-slate-500">{detail}</p>
+            </div>
+          ))}
+        </div>
       </div>
 
     </section>
@@ -300,9 +323,9 @@ function CameraSetupPreview() {
   )
 }
 
-// ── Why PitchFrame ────────────────────────────────────────────
+// ── Why Pitch Nav ────────────────────────────────────────────
 
-function WhyPitchFrame() {
+function WhyPitchNav() {
   const reasons = [
     {
       icon: <Shield className="h-6 w-6" />,
@@ -330,7 +353,7 @@ function WhyPitchFrame() {
     <section className="py-24 bg-navy-950">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
-          <h2 className="section-heading">Why PitchFrame</h2>
+          <h2 className="section-heading">Why Pitch Nav</h2>
           <p className="section-subheading">
             Built with transparency, safety, and athlete development as the priority.
           </p>
@@ -406,7 +429,7 @@ function PricingSection() {
         </div>
 
         <p className="mt-6 text-xs text-slate-600">
-          Secure payment powered by Stripe. PitchFrame does not store your payment information.
+          Secure payment powered by Stripe. Pitch Nav does not store your payment information.
         </p>
       </div>
     </section>
@@ -488,7 +511,7 @@ function FAQPreview() {
     },
     {
       q: 'Can I submit for a younger pitcher?',
-      a: 'Yes, with some important restrictions. PitchFrame does not accept submissions for athletes under 13. Athletes under 18 require a parent or guardian to complete the consent process during intake.',
+      a: 'Yes, with some important restrictions. Pitch Nav does not accept submissions for athletes under 13. Athletes under 18 require a parent or guardian to complete the consent process during intake.',
     },
   ]
 
@@ -527,7 +550,7 @@ export default function HomePage() {
       <HowItWorks />
       <WhatIsIncluded />
       <CameraSetupPreview />
-      <WhyPitchFrame />
+      <WhyPitchNav />
       <PricingSection />
       <Testimonials />
       <FAQPreview />

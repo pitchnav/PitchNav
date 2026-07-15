@@ -1,6 +1,6 @@
 import type { MetadataRoute } from 'next'
 
-const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://pitchframe.com'
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://pitchnav.com'
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const staticPages: MetadataRoute.Sitemap = [

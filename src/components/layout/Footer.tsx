@@ -42,7 +42,7 @@ export function Footer() {
             {/* Safety disclaimer */}
             <div className="mt-6 rounded-lg border border-yellow-500/20 bg-yellow-500/5 p-4">
               <p className="text-xs text-yellow-400/80 leading-relaxed">
-                <strong className="text-yellow-400">Safety Notice:</strong> PitchFrame provides
+                <strong className="text-yellow-400">Safety Notice:</strong> Pitch Nav provides
                 educational baseball training information. It does not diagnose injuries,
                 calculate clinical injury risk, or guarantee velocity increases. Athletes
                 experiencing pain should stop throwing and consult a medical professional.
@@ -137,10 +137,10 @@ export function Footer() {
 
         <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-xs text-slate-500">
-            &copy; {new Date().getFullYear()} PitchFrame. All rights reserved.
+            &copy; {new Date().getFullYear()} Pitch Nav. All rights reserved.
           </p>
           <p className="text-xs text-slate-600">
-            PitchFrame is not affiliated with any professional baseball organization, school,
+            Pitch Nav is not affiliated with any professional baseball organization, school,
             or athletic program.
           </p>
         </div>
