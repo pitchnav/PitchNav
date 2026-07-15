@@ -70,7 +70,10 @@ export function StepContact({ initialData, userId, onComplete }: Props) {
       if (error) throw error
       onComplete(data, profile.id)
     } catch (err: unknown) {
-      setServerError('Could not save your information. Please try again.')
+      const databaseError = err as { code?: string; message?: string }
+      setServerError(
+        `Could not save your information. ${databaseError.code ? `Error ${databaseError.code}: ` : ''}${databaseError.message ?? 'Please try again.'}`
+      )
       console.error(err)
     } finally {
       setLoading(false)
