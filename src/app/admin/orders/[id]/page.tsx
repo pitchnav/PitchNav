@@ -17,6 +17,49 @@ import type {
 } from '@/types/database'
 import { Video, CheckCircle, XCircle, Upload, Plus, Trash2, Save, Send } from 'lucide-react'
 
+type AutomatedCategory = {
+  category: string
+  score: number
+  confidence: 'Low' | 'Moderate' | 'High'
+  strength: string
+  development: string
+  evidence: string
+}
+
+type AutomatedPhase = {
+  key: string
+  label: string
+  time: number
+  storage_path: string
+  confidence_note: string
+}
+
+type AutomatedAnalysis = {
+  id: string
+  delivery_score: number | null
+  category_scores: AutomatedCategory[]
+  phase_snapshots: AutomatedPhase[]
+  strengths: string[]
+  development_priorities: string[]
+  coach_feedback: string | null
+  velocity_estimate_low: number | null
+  velocity_estimate_high: number | null
+  velocity_confidence: string | null
+}
+
+const POSITION_FROM_AUTOMATED: Record<string, string> = {
+  peak_leg_lift: 'peak_leg_lift',
+  hand_separation: 'hand_separation',
+  lead_foot_contact: 'lead_foot_contact',
+  maximum_external_rotation: 'max_external_rotation',
+  ball_release: 'ball_release',
+  finish: 'finish_deceleration',
+}
+
+function scorecardKey(category: string) {
+  return category.toLowerCase().replace(/[–—-]+/g, '_').replace(/\s+/g, '_')
+}
+
 const STATUS_OPTIONS: OrderStatus[] = [
   'submitted', 'video_quality_review', 'in_analysis',
   'additional_video_requested', 'report_being_prepared',
@@ -38,6 +81,9 @@ export default function AdminOrderDetailPage() {
   const [assigned, setAssigned] = useState<AssignedDrill[]>([])
   const [scorecard, setScorecard] = useState<ScorecardCategory[]>([])
   const [positions, setPositions] = useState<PositionScreenshot[]>([])
+  const [automatedAnalysis, setAutomatedAnalysis] = useState<AutomatedAnalysis | null>(null)
+  const [phaseUrls, setPhaseUrls] = useState<Record<string, string>>({})
+  const [draftMessage, setDraftMessage] = useState('')
   const [saving, setSaving] = useState(false)
   const [statusNote, setStatusNote] = useState('')
   const [reportNotes, setReportNotes] = useState('')
@@ -64,6 +110,27 @@ export default function AdminOrderDetailPage() {
     setProfile(orderData.athlete_profiles as AthleteProfile)
     setVideos((orderData.video_submissions as VideoSubmission[]) ?? [])
     setNewStatus(orderData.status as OrderStatus)
+
+    const athleteProfileId = orderData.athlete_profiles?.id
+    if (athleteProfileId) {
+      const { data: automated } = await supabase
+        .from('motion_analyses')
+        .select('id,delivery_score,category_scores,phase_snapshots,strengths,development_priorities,coach_feedback,velocity_estimate_low,velocity_estimate_high,velocity_confidence')
+        .eq('athlete_profile_id', athleteProfileId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+      const typed = automated as AutomatedAnalysis | null
+      setAutomatedAnalysis(typed)
+      const snapshots = Array.isArray(typed?.phase_snapshots) ? typed.phase_snapshots : []
+      const signed: Record<string, string> = {}
+      for (const snapshot of snapshots) {
+        if (!snapshot.storage_path) continue
+        const { data } = await supabase.storage.from('analysis-assets').createSignedUrl(snapshot.storage_path, 3600)
+        if (data?.signedUrl) signed[snapshot.key] = data.signedUrl
+      }
+      setPhaseUrls(signed)
+    }
 
     // Report fields
     const { data: report } = await supabase
@@ -157,6 +224,58 @@ export default function AdminOrderDetailPage() {
       score,
       notes: note,
     }, { onConflict: 'report_id,category' })
+  }
+
+  async function applyAutomatedDraft() {
+    if (!automatedAnalysis) return
+    setSaving(true)
+    setDraftMessage('')
+    try {
+      const categories = Array.isArray(automatedAnalysis.category_scores) ? automatedAnalysis.category_scores : []
+      const phases = Array.isArray(automatedAnalysis.phase_snapshots) ? automatedAnalysis.phase_snapshots : []
+      const velocityRange = automatedAnalysis.velocity_estimate_low !== null && automatedAnalysis.velocity_estimate_high !== null
+        ? `Video-estimated range: ${automatedAnalysis.velocity_estimate_low.toFixed(1)}–${automatedAnalysis.velocity_estimate_high.toFixed(1)} mph (${automatedAnalysis.velocity_confidence ?? 'limited'} confidence). Not radar verified.`
+        : 'No video velocity range was produced. Do not infer exact velocity from mechanics scores.'
+      const { data: report, error: reportError } = await supabase.from('analysis_reports').upsert({
+        order_id: id,
+        delivery_score: automatedAnalysis.delivery_score,
+        three_strengths: automatedAnalysis.strengths?.slice(0, 3) ?? [],
+        three_priorities: automatedAnalysis.development_priorities?.slice(0, 3) ?? [],
+        overall_assessment: automatedAnalysis.coach_feedback ?? 'Automated video draft prepared for staff verification.',
+        velocity_notes: velocityRange,
+      }, { onConflict: 'order_id' }).select('id').single()
+      if (reportError || !report) throw reportError ?? new Error('Could not create report draft.')
+
+      for (const category of categories) {
+        const key = scorecardKey(category.category)
+        await supabase.from('scorecard_categories').upsert({
+          report_id: report.id,
+          category: key,
+          score: Math.max(1, Math.min(5, Number(category.score) || 3)),
+          notes: `${category.strength} ${category.development} Evidence: ${category.evidence} Confidence: ${category.confidence}.`,
+        }, { onConflict: 'report_id,category' })
+      }
+
+      for (let index = 0; index < phases.length; index += 1) {
+        const phase = phases[index]
+        const position = POSITION_FROM_AUTOMATED[phase.key]
+        if (!position || !phase.storage_path) continue
+        await supabase.from('position_screenshots').upsert({
+          report_id: report.id,
+          position,
+          storage_path: phase.storage_path,
+          reviewer_notes: `Automatically selected at ${Number(phase.time).toFixed(2)} seconds. Staff must verify this event before release.`,
+          quality_note: phase.confidence_note,
+          sort_order: index,
+        }, { onConflict: 'report_id,position' })
+      }
+      setDraftMessage('Automated draft applied. Verify every score and phase frame before publishing.')
+      await loadData()
+    } catch (reason) {
+      setDraftMessage(reason instanceof Error ? reason.message : 'Could not apply the automated draft.')
+    } finally {
+      setSaving(false)
+    }
   }
 
   async function addDrill(drillId: string) {
@@ -397,17 +516,33 @@ export default function AdminOrderDetailPage() {
       {/* ---- REPORT TAB ---- */}
       {activeTab === 'report' && (
         <div className="space-y-6">
+          <div className="card border-electric-blue-light/30 bg-electric-blue/5">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.18em] text-electric-blue-light">Automated review draft</p>
+                <h2 className="mt-1 text-lg font-bold text-white">AI prepares the report; staff verifies it</h2>
+                <p className="mt-2 max-w-3xl text-sm text-slate-400">Pose tracking can generate score candidates and six phase images. Peak leg lift and finish are stronger candidates. Hand separation, foot contact, maximum external rotation, and ball release must be visually confirmed; ordinary 2D phone video cannot identify all of those events exactly.</p>
+              </div>
+              <button onClick={applyAutomatedDraft} disabled={!automatedAnalysis || saving} className="btn-primary shrink-0">
+                <CheckCircle className="h-4 w-4" /> {saving ? 'Applying…' : 'Apply automated draft'}
+              </button>
+            </div>
+            {!automatedAnalysis && <p className="mt-3 text-sm text-yellow-300">No saved Motion Lab result is connected to this athlete yet. Run and save Motion Lab processing before an automatic draft can be generated.</p>}
+            {draftMessage && <p className="mt-3 text-sm text-accent-green">{draftMessage}</p>}
+          </div>
           {/* Scorecard */}
           <div className="card">
             <h2 className="text-base font-semibold text-white mb-6">Scorecard (1–5 each)</h2>
             <div className="space-y-4">
               {SCORECARD_CATEGORIES.map(({ key, label }) => {
                 const existing = scorecard.find((s) => s.category === key)
+                const automatic = automatedAnalysis?.category_scores?.find((item) => scorecardKey(item.category) === key)
                 return (
                   <div key={key} className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-start">
                     <label className="text-sm text-slate-300 pt-2">{label}</label>
                     <select
-                      defaultValue={existing?.score ?? ''}
+                      data-key={key}
+                      defaultValue={existing?.score ?? automatic?.score ?? ''}
                       onChange={(e) => {
                         const score = parseInt(e.target.value)
                         const note = (document.getElementById(`note-${key}`) as HTMLTextAreaElement)?.value ?? ''
@@ -423,7 +558,7 @@ export default function AdminOrderDetailPage() {
                     <input
                       id={`note-${key}`}
                       type="text"
-                      defaultValue={existing?.notes ?? ''}
+                      defaultValue={existing?.notes ?? (automatic ? `${automatic.strength} ${automatic.development} Evidence: ${automatic.evidence} Confidence: ${automatic.confidence}.` : '')}
                       placeholder="Coach note…"
                       onBlur={(e) => {
                         const score = parseInt(
@@ -448,12 +583,21 @@ export default function AdminOrderDetailPage() {
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
               {Object.entries(PITCH_POSITION_LABELS).map(([pos, label]) => {
                 const existing = positions.find((p) => p.position === pos)
+                const autoPhase = automatedAnalysis?.phase_snapshots?.find((phase) => POSITION_FROM_AUTOMATED[phase.key] === pos)
+                const imageUrl = autoPhase ? phaseUrls[autoPhase.key] : undefined
+                const limited = ['hand_separation', 'max_external_rotation', 'ball_release'].includes(pos)
                 return (
                   <div key={pos} className="rounded-lg border border-surface-border bg-navy-800 p-3">
                     <p className="text-xs text-slate-400 mb-2">{label}</p>
+                    {imageUrl && <img src={imageUrl} alt={`${label} automatically selected candidate frame`} className="mb-3 aspect-video w-full rounded-md object-contain bg-black" />}
                     {existing?.storage_path ? (
                       <div className="flex items-center gap-1 text-xs text-accent-green">
                         <CheckCircle className="h-3.5 w-3.5" /> Uploaded
+                      </div>
+                    ) : autoPhase ? (
+                      <div>
+                        <div className="flex items-center gap-1 text-xs text-electric-blue-light"><CheckCircle className="h-3.5 w-3.5" /> Automated candidate</div>
+                        <p className={`mt-2 text-[11px] ${limited ? 'text-yellow-300' : 'text-slate-500'}`}>{limited ? 'Limited-confidence event — staff confirmation required.' : autoPhase.confidence_note}</p>
                       </div>
                     ) : (
                       <div className="flex items-center gap-1 text-xs text-slate-600">
