@@ -1,33 +1,50 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
-import { createAdminClient, createClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
 
+const nullableText = z.union([z.string(), z.null(), z.undefined()])
 const schema = z.object({
-  athleteProfileId: z.string().uuid(), currentAvgVelocity: z.number().int().min(40).max(110),
-  currentMaxVelocity: z.number().int().min(40).max(110), goalVelocity: z.number().int().min(40).max(110),
-  velocitySource: z.enum(['pocket_radar','stalker','rapsodo','trackman','stadium_radar','coach_provided','estimated','other']),
-  velocityMeasuredAt: z.string().nullable().optional(), bullpenIntensity: z.string().nullable().optional(), pitchesPerWeek: z.number().int().min(0).max(1000).nullable().optional(),
+  athleteProfileId: z.string().min(1),
+  currentAvgVelocity: z.coerce.number().int().min(40).max(110),
+  currentMaxVelocity: z.coerce.number().int().min(40).max(110),
+  goalVelocity: z.coerce.number().int().min(40).max(110),
+  velocitySource: z.enum(['pocket_radar', 'stalker', 'rapsodo', 'trackman', 'stadium_radar', 'coach_provided', 'estimated', 'other']),
+  velocityMeasuredAt: nullableText,
+  bullpenIntensity: nullableText,
+  pitchesPerWeek: z.union([z.coerce.number().int().min(0).max(1000), z.null(), z.undefined()]),
 })
 
 export async function POST(request: NextRequest) {
   try {
-    const body = schema.parse(await request.json())
+    const parsed = schema.safeParse(await request.json())
+    if (!parsed.success) {
+      const message = parsed.error.issues[0]?.message || 'Check the velocity fields.'
+      return NextResponse.json({ error: message }, { status: 400 })
+    }
+    const body = parsed.data
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ error: 'Please sign in again.' }, { status: 401 })
-    const { data: owned } = await supabase.from('athlete_profiles').select('id').eq('id', body.athleteProfileId).eq('user_id', user.id).single()
-    if (!owned) return NextResponse.json({ error: 'Athlete profile was not found for this account.' }, { status: 403 })
-    const admin = createAdminClient()
-    const { error } = await admin.from('athlete_profiles').update({
-      current_avg_velocity: body.currentAvgVelocity, current_max_velocity: body.currentMaxVelocity,
-      goal_velocity: body.goalVelocity, velocity_source: body.velocitySource,
-      velocity_measured_at: body.velocityMeasuredAt || null, bullpen_intensity: body.bullpenIntensity || null,
+    if (!user) return NextResponse.json({ error: 'Your session expired. Sign in again.' }, { status: 401 })
+
+    // Use the signed-in user's session so Supabase RLS remains the final authorization boundary.
+    const { data: updated, error } = await supabase.from('athlete_profiles').update({
+      current_avg_velocity: body.currentAvgVelocity,
+      current_max_velocity: body.currentMaxVelocity,
+      goal_velocity: body.goalVelocity,
+      velocity_source: body.velocitySource,
+      velocity_measured_at: body.velocityMeasuredAt || null,
+      bullpen_intensity: body.bullpenIntensity || null,
       pitches_per_week: body.pitchesPerWeek ?? null,
-    }).eq('id', body.athleteProfileId)
-    if (error) return NextResponse.json({ error: 'Velocity profile could not be saved.' }, { status: 500 })
+    }).eq('id', body.athleteProfileId).eq('user_id', user.id).select('id').maybeSingle()
+
+    if (error) {
+      console.error('Velocity profile database error', error)
+      return NextResponse.json({ error: `Could not save velocity profile (${error.code}).` }, { status: 500 })
+    }
+    if (!updated) return NextResponse.json({ error: 'This athlete profile was not found for your account.' }, { status: 404 })
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Velocity profile error', error)
-    return NextResponse.json({ error: 'Check the velocity fields and try again.' }, { status: 400 })
+    console.error('Velocity profile request error', error)
+    return NextResponse.json({ error: 'Could not process the velocity profile.' }, { status: 400 })
   }
 }
