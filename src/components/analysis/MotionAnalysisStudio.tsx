@@ -282,7 +282,16 @@ function drawAnatomicalSkeleton(
   )
 }
 
-export function MotionAnalysisStudio() {
+type InitialVideo = {
+  signedUrl: string
+  fileName: string
+  mimeType: string
+  storagePath: string
+  athleteProfileId: string | null
+  handedness: Handedness
+} | null
+
+export function MotionAnalysisStudio({ initialVideo = null }: { initialVideo?: InitialVideo }) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const landmarkerRef = useRef<PoseLandmarker | null>(null)
@@ -297,6 +306,8 @@ export function MotionAnalysisStudio() {
   const exportWatchdogRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const selectedFileRef = useRef<File | null>(null)
   const renderedBlobRef = useRef<Blob | null>(null)
+  const existingSourcePathRef = useRef<string | null>(initialVideo?.storagePath ?? null)
+  const initialVideoLoadedRef = useRef(false)
 
   const [fileUrl, setFileUrl] = useState<string | null>(null)
   const [fileName, setFileName] = useState('')
@@ -515,6 +526,21 @@ export function MotionAnalysisStudio() {
     await initializeModel()
   }
 
+  useEffect(() => {
+    if (!initialVideo || initialVideoLoadedRef.current) return
+    initialVideoLoadedRef.current = true
+    setHandedness(initialVideo.handedness)
+    fetch(initialVideo.signedUrl)
+      .then((response) => {
+        if (!response.ok) throw new Error('The secure video link expired. Return to the order and open Motion Lab again.')
+        return response.blob()
+      })
+      .then((blob) => handleFile(new File([blob], initialVideo.fileName, { type: initialVideo.mimeType || blob.type || 'video/mp4' })))
+      .catch((reason) => setError(reason instanceof Error ? reason.message : 'Could not load the submitted video.'))
+  // Load the selected private submission only once.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialVideo?.signedUrl])
+
   async function togglePlayback() {
     const video = videoRef.current
     if (!video || !fileUrl) return
@@ -689,10 +715,20 @@ export function MotionAnalysisStudio() {
       if (!user) throw new Error('Please sign in again.')
       const analysisId = crypto.randomUUID()
       const source = selectedFileRef.current
+      const immediateStrengths = [
+        summary.averageConfidence >= 0.7 ? 'Consistent full-body landmark visibility supports repeatable frame review.' : 'A complete delivery was captured for frame-by-frame review.',
+        summary.peakLegLiftTime !== null ? 'Peak leg lift was identified as a repeatable comparison checkpoint.' : 'The delivery can be reviewed through the visible movement sequence.',
+      ]
+      const immediatePriorities = [
+        summary.averageConfidence < 0.7 ? 'Improve lighting and full-body framing to raise measurement confidence.' : 'Compare posture and direction at lead-foot contact across future clips.',
+        'Use the same camera angle and intensity during the follow-up recording.',
+      ]
       const extension = source.name.split('.').pop()?.toLowerCase() || 'mp4'
-      const sourcePath = `${user.id}/motion-lab/${analysisId}/source.${extension}`
-      const { error: sourceError } = await supabase.storage.from('pitch-videos').upload(sourcePath, source, { upsert: false, contentType: source.type })
-      if (sourceError) throw sourceError
+      const sourcePath = existingSourcePathRef.current ?? `${user.id}/motion-lab/${analysisId}/source.${extension}`
+      if (!existingSourcePathRef.current) {
+        const { error: sourceError } = await supabase.storage.from('pitch-videos').upload(sourcePath, source, { upsert: false, contentType: source.type })
+        if (sourceError) throw sourceError
+      }
 
       let renderedPath: string | null = null
       if (renderedBlobRef.current) {
@@ -704,6 +740,7 @@ export function MotionAnalysisStudio() {
       const { data: analysis, error: analysisError } = await supabase.from('motion_analyses').insert({
         id: analysisId,
         user_id: user.id,
+        athlete_profile_id: initialVideo?.athleteProfileId ?? null,
         title: fileName.replace(/\.[^.]+$/, '') || 'Motion Lab Analysis',
         status: 'submitted_for_review',
         source_video_storage_path: sourcePath,
@@ -716,12 +753,16 @@ export function MotionAnalysisStudio() {
         velocity_assumptions: velocityEstimate ? `${captureFps} FPS; fixed side view; ${calibrationFeet} ft calibration marker; video-based estimate` : null,
         mechanics_metrics: metrics ?? {},
         clip_summary: summary,
+        strengths: immediateStrengths,
+        development_priorities: immediatePriorities,
       }).select('id').single()
       if (analysisError) throw analysisError
 
       const weeks = Array.from({ length: planWeeks }, (_, index) => ({
         week: index + 1,
         priority: index < 2 ? 'Movement quality and repeatability' : index < 4 ? 'Progressive intent and constraint drills' : 'Transfer, command, and retest preparation',
+        coaching_cue: index < 2 ? 'Move smoothly, finish under control, and keep each repetition repeatable.' : 'Preserve the same movement pattern as intent increases.',
+        prescription: index < 2 ? '2 sessions; 3 sets of 5 controlled repetitions' : '2 bullpen or throwing sessions with video checkpoints',
         completed: false,
       }))
       const followUp = new Date()
@@ -735,7 +776,7 @@ export function MotionAnalysisStudio() {
         follow_up_date: followUp.toISOString().slice(0, 10),
       })
       if (planError) throw planError
-      setSaveMessage('Saved to your dashboard and submitted for coach review.')
+      setSaveMessage('Immediate feedback and your training plan are now saved on your dashboard. A coach can review and refine them later.')
     } catch (reason) {
       console.error(reason)
       setSaveMessage(reason instanceof Error ? reason.message : 'Could not save this analysis.')
@@ -991,7 +1032,7 @@ export function MotionAnalysisStudio() {
                 </select>
               </label>
               <button type="button" onClick={saveAnalysisToDashboard} disabled={savingAnalysis} className="btn-accent">
-                {savingAnalysis ? 'Saving securely…' : 'Save analysis and request coach review'}
+                {savingAnalysis ? 'Saving securely…' : 'Save immediate feedback & plan'}
               </button>
             </div>
             {saveMessage && <p role="status" className="mt-3 text-sm text-slate-300">{saveMessage}</p>}

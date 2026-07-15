@@ -19,7 +19,7 @@ export default async function DashboardPage() {
 
   const { data: orders } = await supabase
     .from('orders')
-    .select('*, athlete_profiles(athlete_full_name, playing_level, throwing_hand, current_avg_velocity)')
+    .select('*, athlete_profiles(athlete_full_name, playing_level, throwing_hand, current_avg_velocity), video_submissions(id,angle)')
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })
     .limit(5)
@@ -28,7 +28,7 @@ export default async function DashboardPage() {
   const completedOrders = orders?.filter((o) => o.status === 'complete') ?? []
   const { data: motionAnalyses } = await supabase
     .from('motion_analyses')
-    .select('id,title,status,delivery_score,velocity_estimate_low,velocity_estimate_high,velocity_confidence,coach_feedback,created_at,training_plans(duration_weeks,follow_up_date)')
+    .select('id,title,status,delivery_score,velocity_estimate_low,velocity_estimate_high,velocity_confidence,strengths,development_priorities,coach_feedback,created_at,training_plans(duration_weeks,follow_up_date,weeks,title)')
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })
     .limit(8)
@@ -58,8 +58,14 @@ export default async function DashboardPage() {
       </div>
 
       {!!motionAnalyses?.length && (
-        <div className="mb-8">
-          <h2 className="mb-4 text-lg font-bold text-white">Saved Motion Lab Analyses</h2>
+        <div id="feedback-plan" className="mb-8 scroll-mt-24">
+          <div className="mb-4 flex items-end justify-between gap-4">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-accent-green">Available immediately</p>
+              <h2 className="mt-1 text-lg font-bold text-white">Your Feedback & Training Plan</h2>
+              <p className="mt-1 text-sm text-slate-400">Video-generated coaching estimates appear here as soon as you save a Motion Lab analysis. Coach refinements are added separately.</p>
+            </div>
+          </div>
           <div className="grid gap-4 sm:grid-cols-2">
             {motionAnalyses.map((analysis) => {
               const plan = Array.isArray(analysis.training_plans) ? analysis.training_plans[0] : analysis.training_plans
@@ -77,6 +83,15 @@ export default async function DashboardPage() {
                     <div className="rounded-lg bg-navy-950 p-3"><p className="text-xs text-slate-500">Training plan</p><p className="mt-1 font-bold text-white">{plan?.duration_weeks ? `${plan.duration_weeks} weeks` : 'Pending coach'}</p></div>
                   </div>
                   {analysis.coach_feedback && <p className="mt-4 line-clamp-3 text-sm text-slate-300">{analysis.coach_feedback}</p>}
+                  {!!analysis.strengths?.length && <p className="mt-4 text-sm text-slate-300"><span className="font-semibold text-accent-green">Starting strength:</span> {analysis.strengths[0]}</p>}
+                  {!!analysis.development_priorities?.length && <p className="mt-2 text-sm text-slate-300"><span className="font-semibold text-electric-blue-light">First priority:</span> {analysis.development_priorities[0]}</p>}
+                  {plan?.weeks?.length > 0 && (
+                    <div className="mt-4 rounded-lg border border-surface-border bg-navy-950 p-3">
+                      <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Week 1</p>
+                      <p className="mt-1 text-sm text-white">{plan.weeks[0]?.priority}</p>
+                    </div>
+                  )}
+                  <Link href="/dashboard/motion-lab" className="mt-4 inline-flex text-sm font-semibold text-electric-blue-light hover:text-white">Open Motion Lab <ArrowRight className="ml-1 h-4 w-4" /></Link>
                 </div>
               )
             })}
@@ -91,6 +106,8 @@ export default async function DashboardPage() {
           <div className="space-y-3">
             {activeOrders.map((order) => {
               const ap = order.athlete_profiles as Partial<AthleteProfile>
+              const submittedVideos = (order.video_submissions ?? []) as Array<{ id: string; angle: string }>
+              const openSideVideo = submittedVideos.find((video) => video.angle === 'open_side')
               return (
                 <div key={order.id} className="card flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                   <div>
@@ -100,15 +117,13 @@ export default async function DashboardPage() {
                     </div>
                     <p className="text-xs text-slate-500">
                       Submitted {formatDateShort(order.created_at)} ·{' '}
-                      {order.delivery_estimate_text ?? 'Delivery within 5–7 business days'}
+                      Automated Motion Lab feedback is available immediately after video analysis
                     </p>
                   </div>
-                  <Link
-                    href={`/dashboard/orders/${order.id}`}
-                    className="btn-secondary text-sm px-4 py-2 flex-shrink-0"
-                  >
-                    View Details <ArrowRight className="h-4 w-4" />
-                  </Link>
+                  <div className="flex flex-wrap gap-2">
+                    {openSideVideo && <Link href={`/dashboard/motion-lab?videoId=${openSideVideo.id}`} className="btn-primary text-sm px-4 py-2">Analyze Now <ArrowRight className="h-4 w-4" /></Link>}
+                    <Link href={`/dashboard/orders/${order.id}`} className="btn-secondary text-sm px-4 py-2 flex-shrink-0">View Details <ArrowRight className="h-4 w-4" /></Link>
+                  </div>
                 </div>
               )
             })}

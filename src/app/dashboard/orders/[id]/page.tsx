@@ -1,6 +1,6 @@
 import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowRight, Video } from 'lucide-react'
+import { Activity, ArrowRight, Video } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { OrderStatusBadge } from '@/components/ui/Badge'
 import { StatusTimeline } from '@/components/ui/StatusTimeline'
@@ -138,6 +138,9 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                     {video.quality_rejection_reason && (
                       <p className="text-xs text-red-400 mt-2">{video.quality_rejection_reason}</p>
                     )}
+                    <Link href={`/dashboard/motion-lab?videoId=${video.id}`} className="btn-primary mt-3 w-full justify-center text-sm">
+                      <Activity className="h-4 w-4" /> Open in Motion Lab
+                    </Link>
                   </div>
                 ))}
               </div>
