@@ -1,11 +1,12 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { LayoutDashboard, FileBarChart2, User, Settings, ClipboardList } from 'lucide-react'
+import { Activity, LayoutDashboard, Settings, ClipboardList } from 'lucide-react'
 
 const DASHBOARD_NAV = [
   { href: '/dashboard', label: 'Overview', icon: LayoutDashboard },
   { href: '/dashboard/orders', label: 'My Orders', icon: ClipboardList },
+  { href: '/dashboard/motion-lab', label: 'Motion Lab', icon: Activity },
   { href: '/dashboard/profile', label: 'Profile Settings', icon: Settings },
 ]
 
