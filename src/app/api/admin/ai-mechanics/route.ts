@@ -40,9 +40,10 @@ export async function POST(request: Request) {
     if (!analysisId) return NextResponse.json({ error: 'Missing analysis ID.' }, { status: 400 })
 
     const admin = createAdminClient()
-    const { data: analysis } = await admin.from('motion_analyses')
-      .select('id,mechanics_metrics,clip_summary,category_scores,phase_snapshots,capture_fps,athlete_profiles(age,height_feet,height_inches,weight_lbs,throwing_hand,playing_level,current_avg_velocity,current_max_velocity,goal_velocity,main_goal,biggest_mechanical_concern)')
+    const { data: analysis, error: analysisError } = await admin.from('motion_analyses')
+      .select('id,mechanics_metrics,clip_summary,category_scores,phase_snapshots,capture_fps,athlete_profiles(date_of_birth,height_feet,height_inches,weight_lbs,throwing_hand,playing_level,current_avg_velocity,current_max_velocity,goal_velocity,main_goal,mechanical_concern)')
       .eq('id', analysisId).single()
+    if (analysisError) return NextResponse.json({ error: `Could not load the saved Motion Lab result: ${analysisError.message}` }, { status: 500 })
     if (!analysis) return NextResponse.json({ error: 'Motion analysis not found.' }, { status: 404 })
     const snapshots = Array.isArray(analysis.phase_snapshots) ? analysis.phase_snapshots as Array<{ key: string; storage_path?: string; time?: number; confidence_note?: string }> : []
     const images: Array<Record<string, unknown>> = []
