@@ -500,6 +500,7 @@ export function MotionAnalysisStudio({ initialVideo = null }: { initialVideo?: I
   const watermarkRef = useRef<HTMLCanvasElement | null>(null)
 
   const [fileUrl, setFileUrl] = useState<string | null>(null)
+  const [loadingInitialVideo, setLoadingInitialVideo] = useState(Boolean(initialVideo))
   const [fileName, setFileName] = useState('')
   const [modelStatus, setModelStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle')
   const [playing, setPlaying] = useState(false)
@@ -771,17 +772,21 @@ export function MotionAnalysisStudio({ initialVideo = null }: { initialVideo?: I
     if (!initialVideo || initialVideoLoadedRef.current) return
     initialVideoLoadedRef.current = true
     setHandedness(initialVideo.handedness)
-    // Use the private signed URL directly. Downloading the entire object with
-    // fetch first could fail because of storage CORS/large-file behavior and
-    // silently leave staff on the empty upload template.
-    setFileUrl(initialVideo.signedUrl)
-    setFileName(initialVideo.fileName)
-    selectedFileRef.current = new File([], initialVideo.fileName, {
-      type: initialVideo.mimeType || 'video/mp4',
-    })
     existingSourcePathRef.current = initialVideo.storagePath
-    setError('')
-    void initializeModel()
+    setLoadingInitialVideo(true)
+    // PoseLandmarker reliably accepts a same-origin Blob URL. Feeding the
+    // private cross-origin signed URL directly into the WebGL model caused
+    // valid clips to return zero landmarks even though playback still worked.
+    fetch(initialVideo.signedUrl, { cache: 'no-store' })
+      .then((response) => {
+        if (!response.ok) throw new Error('The secure video link expired. Return to the order and open Motion Lab again.')
+        return response.blob()
+      })
+      .then((blob) => handleFile(new File([blob], initialVideo.fileName, {
+        type: initialVideo.mimeType || blob.type || 'video/mp4',
+      })))
+      .catch((reason) => setError(reason instanceof Error ? reason.message : 'Could not load the submitted video.'))
+      .finally(() => setLoadingInitialVideo(false))
   // Load the selected private submission only once.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialVideo?.signedUrl])
@@ -1247,17 +1252,17 @@ export function MotionAnalysisStudio({ initialVideo = null }: { initialVideo?: I
       {!fileUrl ? (
         <label className="flex min-h-80 cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-surface-border bg-surface-card p-8 text-center transition hover:border-electric-blue hover:bg-surface-hover">
           <Upload className="h-12 w-12 text-electric-blue-light" />
-          <span className="mt-4 text-lg font-bold text-white">Choose a pitching video</span>
+          <span className="mt-4 text-lg font-bold text-white">{loadingInitialVideo ? 'Loading the submitted private video…' : 'Choose a pitching video'}</span>
           <span className="mt-2 max-w-md text-sm text-slate-400">
-            Use a stationary, full-body open-side video. Slow motion at 120 or 240 FPS produces better frame selection.
+            {loadingInitialVideo ? 'Keep this page open. Larger slow-motion videos can take a moment to load securely.' : 'Use a stationary, full-body open-side video. Slow motion at 120 or 240 FPS produces better frame selection.'}
           </span>
           <span className="mt-4 text-xs text-slate-500">MP4, MOV or WebM · maximum 500 MB</span>
-          <input
+          {!loadingInitialVideo && <input
             type="file"
             accept="video/mp4,video/quicktime,video/webm"
             className="sr-only"
             onChange={(event) => event.target.files?.[0] && handleFile(event.target.files[0])}
-          />
+          />}
         </label>
       ) : (
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_290px]">
