@@ -152,9 +152,9 @@ export default function AdminOrderDetailPage() {
       setScorecard((scoreRows as ScorecardCategory[]) ?? [])
       setPositions((positionRows as PositionScreenshot[]) ?? [])
       setAssigned((assignedRows as AssignedDrill[]) ?? [])
-      setReportNotes(report.overall_assessment ?? '')
-      setVelocityNotes(report.velocity_notes ?? '')
-      setOverallNotes(report.notess ?? '')
+      setReportNotes(report.main_focus ?? '')
+      setVelocityNotes(report.reviewer_velocity_notes ?? '')
+      setOverallNotes('')
       setFollowUp(report.follow_up_recommendation ?? '')
     }
 
@@ -211,9 +211,8 @@ export default function AdminOrderDetailPage() {
     setSaving(true)
     const { data: savedReport } = await supabase.from('analysis_reports').upsert({
       order_id: id,
-      overall_assessment: reportNotes,
-      velocity_notes: velocityNotes,
-      notess: overallNotes,
+      main_focus: reportNotes,
+      reviewer_velocity_notes: velocityNotes,
       follow_up_recommendation: followUp,
     }, { onConflict: 'order_id' }).select('id').single()
     if (savedReport?.id) setReportId(savedReport.id)
@@ -233,50 +232,20 @@ export default function AdminOrderDetailPage() {
   async function applyAutomatedDraft() {
     if (!automatedAnalysis) return
     setSaving(true)
-    setDraftMessage('')
+    setDraftMessage('Applying the staff-verified draft…')
     try {
-      const categories = Array.isArray(automatedAnalysis.category_scores) ? automatedAnalysis.category_scores : []
-      const phases = Array.isArray(automatedAnalysis.phase_snapshots) ? automatedAnalysis.phase_snapshots : []
-      const velocityRange = automatedAnalysis.velocity_estimate_low !== null && automatedAnalysis.velocity_estimate_high !== null
-        ? `Video-estimated range: ${automatedAnalysis.velocity_estimate_low.toFixed(1)}–${automatedAnalysis.velocity_estimate_high.toFixed(1)} mph (${automatedAnalysis.velocity_confidence ?? 'limited'} confidence). Not radar verified.`
-        : 'No video velocity range was produced. Do not infer exact velocity from mechanics scores.'
-      const { data: report, error: reportError } = await supabase.from('analysis_reports').upsert({
-        order_id: id,
-        delivery_score: automatedAnalysis.delivery_score,
-        three_strengths: automatedAnalysis.strengths?.slice(0, 3) ?? [],
-        three_priorities: automatedAnalysis.development_priorities?.slice(0, 3) ?? [],
-        overall_assessment: automatedAnalysis.coach_feedback ?? 'Automated video draft prepared for staff verification.',
-        velocity_notes: velocityRange,
-      }, { onConflict: 'order_id' }).select('id').single()
-      if (reportError || !report) throw reportError ?? new Error('Could not create report draft.')
-
-      for (const category of categories) {
-        const key = scorecardKey(category.category)
-        await supabase.from('scorecard_categories').upsert({
-          report_id: report.id,
-          category: key,
-          score: Math.max(1, Math.min(5, Number(category.score) || 3)),
-          notes: `${category.strength} ${category.development} Evidence: ${category.evidence} Confidence: ${category.confidence}.`,
-        }, { onConflict: 'report_id,category' })
-      }
-
-      for (let index = 0; index < phases.length; index += 1) {
-        const phase = phases[index]
-        const position = POSITION_FROM_AUTOMATED[phase.key]
-        if (!position || !phase.storage_path) continue
-        await supabase.from('position_screenshots').upsert({
-          report_id: report.id,
-          position,
-          storage_path: phase.storage_path,
-          reviewer_notes: `Automatically selected at ${Number(phase.time).toFixed(2)} seconds. Staff must verify this event before release.`,
-          quality_note: phase.confidence_note,
-          sort_order: index,
-        }, { onConflict: 'report_id,position' })
-      }
-      setDraftMessage('Automated draft applied. Verify every score and phase frame before publishing.')
+      const response = await fetch('/api/admin/apply-ai-draft', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ analysisId: automatedAnalysis.id, orderId: id }),
+      })
+      const result = await response.json() as { error?: string; reportId?: string }
+      if (!response.ok) throw new Error(result.error || 'Could not apply the verified AI draft.')
+      if (result.reportId) setReportId(result.reportId)
       await loadData()
+      setDraftMessage('Verified AI draft applied. Review the populated scores and phase frames before publishing.')
     } catch (reason) {
-      setDraftMessage(reason instanceof Error ? reason.message : 'Could not apply the automated draft.')
+      setDraftMessage(reason instanceof Error ? reason.message : 'Could not apply the verified AI draft.')
     } finally {
       setSaving(false)
     }

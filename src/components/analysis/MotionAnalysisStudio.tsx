@@ -1343,6 +1343,7 @@ export function MotionAnalysisStudio({ initialVideo = null }: { initialVideo?: I
                 <label className="flex items-center gap-2 rounded-lg border border-surface-border bg-navy-950 px-3 py-2 text-sm text-slate-300">
                   Playback
                   <select className="bg-transparent font-bold text-white outline-none" value={playbackSpeed} onChange={(event) => setPlaybackSpeed(Number(event.target.value))}>
+                    <option className="bg-navy-900" value={1}>1×</option>
                     <option className="bg-navy-900" value={0.5}>0.5×</option>
                     <option className="bg-navy-900" value={0.25}>0.25×</option>
                     <option className="bg-navy-900" value={0.125}>0.125×</option>
