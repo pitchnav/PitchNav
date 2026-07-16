@@ -245,6 +245,6 @@ export async function sendMotionAnalysisReadyEmail(to: string, name: string, ana
   return sendEmail({
     to,
     subject: 'Your Pitch Nav feedback has been approved',
-    html: `<div style="${baseStyle}">${brandHeader}<h2 style="color:#00e5a0;font-size:24px;">Your verified feedback is ready</h2><p style="color:#94a3b8;line-height:1.6;">Hi ${name}, your Pitch Nav owner has reviewed and approved your mechanics feedback and two-month development plan.</p><div style="text-align:center;margin:32px 0;"><a href="${APP_URL}/dashboard/feedback/${analysisId}" style="background:#00e5a0;color:#05080f;text-decoration:none;padding:14px 32px;border-radius:8px;font-weight:700;display:inline-block;">View approved report</a></div>${footer}</div>`,
+    html: `<div style="${baseStyle}">${brandHeader}<h2 style="color:#00e5a0;font-size:24px;">Your verified feedback is ready</h2><p style="color:#94a3b8;line-height:1.6;">Hi ${name}, the Pitch Nav staff has reviewed and approved your mechanics feedback and development plan.</p><div style="text-align:center;margin:32px 0;"><a href="${APP_URL}/dashboard/feedback/${analysisId}" style="background:#00e5a0;color:#05080f;text-decoration:none;padding:14px 32px;border-radius:8px;font-weight:700;display:inline-block;">View approved report</a></div>${footer}</div>`,
   })
 }

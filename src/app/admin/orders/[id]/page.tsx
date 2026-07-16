@@ -99,6 +99,7 @@ export default function AdminOrderDetailPage() {
   const [emailSubject, setEmailSubject] = useState('')
   const [emailBody, setEmailBody] = useState('')
   const [sendingEmail, setSendingEmail] = useState(false)
+  const [publishingReport, setPublishingReport] = useState(false)
   const [emailSent, setEmailSent] = useState(false)
 
   const loadData = useCallback(async () => {
@@ -269,6 +270,27 @@ export default function AdminOrderDetailPage() {
       setDraftMessage(reason instanceof Error ? reason.message : 'AI draft generation failed.')
     } finally {
       setGeneratingAi(false)
+    }
+  }
+
+  async function publishAndSendReport() {
+    if (!automatedAnalysis) return
+    setPublishingReport(true)
+    setDraftMessage('Publishing the verified report and notifying the athlete…')
+    try {
+      const response = await fetch('/api/admin/publish-report', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ analysisId: automatedAnalysis.id, orderId: id }),
+      })
+      const result = await response.json() as { error?: string }
+      if (!response.ok) throw new Error(result.error || 'Could not publish and send the report.')
+      await loadData()
+      setDraftMessage('Report published. The athlete can now open Feedback & Plan, and the notification email was sent.')
+    } catch (reason) {
+      setDraftMessage(reason instanceof Error ? reason.message : 'Could not publish and send the report.')
+    } finally {
+      setPublishingReport(false)
     }
   }
 
@@ -649,6 +671,16 @@ export default function AdminOrderDetailPage() {
               <Save className="h-4 w-4" />
               {saving ? 'Saving…' : 'Save Report Data'}
             </button>
+            {automatedAnalysis && (
+              <button
+                onClick={publishAndSendReport}
+                disabled={publishingReport || automatedAnalysis.ai_draft_status === 'ready_for_staff_review'}
+                className="btn-accent"
+              >
+                <Send className="h-4 w-4" />
+                {publishingReport ? 'Publishing & sending…' : 'Publish & Send Report to Athlete'}
+              </button>
+            )}
           </div>
         </div>
       )}
