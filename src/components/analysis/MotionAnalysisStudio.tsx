@@ -771,13 +771,17 @@ export function MotionAnalysisStudio({ initialVideo = null }: { initialVideo?: I
     if (!initialVideo || initialVideoLoadedRef.current) return
     initialVideoLoadedRef.current = true
     setHandedness(initialVideo.handedness)
-    fetch(initialVideo.signedUrl)
-      .then((response) => {
-        if (!response.ok) throw new Error('The secure video link expired. Return to the order and open Motion Lab again.')
-        return response.blob()
-      })
-      .then((blob) => handleFile(new File([blob], initialVideo.fileName, { type: initialVideo.mimeType || blob.type || 'video/mp4' })))
-      .catch((reason) => setError(reason instanceof Error ? reason.message : 'Could not load the submitted video.'))
+    // Use the private signed URL directly. Downloading the entire object with
+    // fetch first could fail because of storage CORS/large-file behavior and
+    // silently leave staff on the empty upload template.
+    setFileUrl(initialVideo.signedUrl)
+    setFileName(initialVideo.fileName)
+    selectedFileRef.current = new File([], initialVideo.fileName, {
+      type: initialVideo.mimeType || 'video/mp4',
+    })
+    existingSourcePathRef.current = initialVideo.storagePath
+    setError('')
+    void initializeModel()
   // Load the selected private submission only once.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialVideo?.signedUrl])
