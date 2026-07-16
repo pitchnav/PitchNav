@@ -45,6 +45,9 @@ type AutomatedAnalysis = {
   velocity_estimate_low: number | null
   velocity_estimate_high: number | null
   velocity_confidence: string | null
+  ai_draft_status: string | null
+  ai_generated_at: string | null
+  ai_model: string | null
 }
 
 const POSITION_FROM_AUTOMATED: Record<string, string> = {
@@ -84,6 +87,7 @@ export default function AdminOrderDetailPage() {
   const [automatedAnalysis, setAutomatedAnalysis] = useState<AutomatedAnalysis | null>(null)
   const [phaseUrls, setPhaseUrls] = useState<Record<string, string>>({})
   const [draftMessage, setDraftMessage] = useState('')
+  const [generatingAi, setGeneratingAi] = useState(false)
   const [saving, setSaving] = useState(false)
   const [statusNote, setStatusNote] = useState('')
   const [reportNotes, setReportNotes] = useState('')
@@ -115,7 +119,7 @@ export default function AdminOrderDetailPage() {
     if (athleteProfileId) {
       const { data: automated } = await supabase
         .from('motion_analyses')
-        .select('id,delivery_score,category_scores,phase_snapshots,strengths,development_priorities,coach_feedback,velocity_estimate_low,velocity_estimate_high,velocity_confidence')
+        .select('id,delivery_score,category_scores,phase_snapshots,strengths,development_priorities,coach_feedback,velocity_estimate_low,velocity_estimate_high,velocity_confidence,ai_draft_status,ai_generated_at,ai_model')
         .eq('athlete_profile_id', athleteProfileId)
         .order('created_at', { ascending: false })
         .limit(1)
@@ -275,6 +279,27 @@ export default function AdminOrderDetailPage() {
       setDraftMessage(reason instanceof Error ? reason.message : 'Could not apply the automated draft.')
     } finally {
       setSaving(false)
+    }
+  }
+
+  async function generateAiDraft() {
+    if (!automatedAnalysis) return
+    setGeneratingAi(true)
+    setDraftMessage('AI is reviewing all six phase images and measurements. This can take several minutes…')
+    try {
+      const response = await fetch('/api/admin/ai-mechanics', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ analysisId: automatedAnalysis.id }),
+      })
+      const result = await response.json() as { error?: string }
+      if (!response.ok) throw new Error(result.error || 'AI draft generation failed.')
+      await loadData()
+      setDraftMessage('AI-assisted coaching draft generated. Review every score, phase, and statement before applying or publishing it.')
+    } catch (reason) {
+      setDraftMessage(reason instanceof Error ? reason.message : 'AI draft generation failed.')
+    } finally {
+      setGeneratingAi(false)
     }
   }
 
@@ -530,9 +555,14 @@ export default function AdminOrderDetailPage() {
                 <p className="mt-2 max-w-3xl text-sm text-slate-400">Pose tracking can generate score candidates and six phase images. Peak leg lift and finish are stronger candidates. Hand separation, foot contact, maximum external rotation, and ball release must be visually confirmed; ordinary 2D phone video cannot identify all of those events exactly.</p>
               </div>
               {automatedAnalysis ? (
-                <button onClick={applyAutomatedDraft} disabled={saving} className="btn-primary shrink-0">
-                  <CheckCircle className="h-4 w-4" /> {saving ? 'Applying…' : 'Apply automated draft'}
-                </button>
+                <div className="flex shrink-0 flex-col gap-2">
+                  <button onClick={generateAiDraft} disabled={generatingAi} className="btn-accent">
+                    {generatingAi ? 'AI reviewing six phases…' : automatedAnalysis.ai_draft_status === 'ready_for_staff_review' ? 'Regenerate AI coaching draft' : 'Generate AI coaching draft'}
+                  </button>
+                  <button onClick={applyAutomatedDraft} disabled={saving || automatedAnalysis.ai_draft_status !== 'ready_for_staff_review'} className="btn-primary">
+                    <CheckCircle className="h-4 w-4" /> {saving ? 'Applying…' : 'Apply verified AI draft'}
+                  </button>
+                </div>
               ) : videos.find((video) => video.angle === 'open_side') ? (
                 <a href={`/admin/orders/${id}/motion-lab?videoId=${videos.find((video) => video.angle === 'open_side')!.id}`} className="btn-primary shrink-0">
                   Generate draft from side-view video →
@@ -540,6 +570,7 @@ export default function AdminOrderDetailPage() {
               ) : null}
             </div>
             {!automatedAnalysis && <p className="mt-3 text-sm text-yellow-300">The video is uploaded, but it has not been processed yet. Click “Generate draft from side-view video,” analyze the trimmed clip, and save it. You will then return here to verify and apply the generated material.</p>}
+            {automatedAnalysis && <p className="mt-3 text-xs text-slate-400">Step 1: generate the AI coaching draft from the six saved phase images. Step 2: visually verify it. Step 3: apply the verified draft. AI output is educational and is not laboratory or medical analysis.</p>}
             {draftMessage && <p className="mt-3 text-sm text-accent-green">{draftMessage}</p>}
           </div>
           {/* Scorecard */}
