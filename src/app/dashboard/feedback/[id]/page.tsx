@@ -10,6 +10,8 @@ type Category = { category: string; score: number; confidence: string; strength:
 type Phase = { key: string; label: string; time: number; storage_path: string; confidence_note: string; signedUrl?: string }
 type PlanDay = { day: string; focus: string; work: string }
 type PlanWeek = { week: number; priority: string; coaching_cue?: string; prescription?: string; days?: PlanDay[] }
+type StrengthDay = { day: string; focus: string; work: string; cues?: string[]; common_mistake?: string }
+type StrengthWeek = { week: number; phase: string; tailored_focus: string; days: StrengthDay[] }
 
 export default async function FeedbackReportPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -34,6 +36,7 @@ export default async function FeedbackReportPage({ params }: { params: Promise<{
   }
   const planRecord = Array.isArray(analysis.training_plans) ? analysis.training_plans[0] : analysis.training_plans
   const weeks = (planRecord?.weeks ?? []) as PlanWeek[]
+  const strengthWeeks = (planRecord?.strength_mobility_weeks ?? []) as StrengthWeek[]
   const strengths = (analysis.strengths ?? []) as string[]
   const priorities = (analysis.development_priorities ?? []) as string[]
 
@@ -73,6 +76,7 @@ export default async function FeedbackReportPage({ params }: { params: Promise<{
         categories={categories}
         phases={phases}
         weeks={weeks}
+        strengthWeeks={strengthWeeks}
         initialProgress={planRecord?.progress ?? {}}
       />
       <SafetyDisclaimer />

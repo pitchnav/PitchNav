@@ -186,9 +186,9 @@ function CheckoutContent() {
               <div className="flex justify-between items-start mb-6">
                 <div>
                   <h3 className="text-lg font-bold text-white">Order Total</h3>
-                  <p className="text-slate-500 text-sm">One-time payment</p>
+                  <p className="text-slate-500 text-sm">Monthly membership</p>
                 </div>
-                <p className="text-4xl font-black text-white">$25/month</p>
+                <p className="text-4xl font-black text-white">$40/month</p>
               </div>
 
               {error && (
@@ -211,7 +211,7 @@ function CheckoutContent() {
                 ) : (
                   <>
                     <Lock className="h-4 w-4" />
-                    Subscribe for $25/month
+                    Subscribe for $40/month
                   </>
                 )}
               </button>
@@ -225,7 +225,7 @@ function CheckoutContent() {
 
               <div className="text-xs text-slate-600 space-y-1">
                 <p>✓ Secure encrypted connection</p>
-                <p>✓ No subscription — one-time payment</p>
+                <p>✓ Monthly membership · cancel according to the membership terms</p>
                 <p>✓ Video stored in private, access-controlled storage</p>
               </div>
             </div>

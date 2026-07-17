@@ -156,5 +156,5 @@ export const ACCEPTED_VIDEO_TYPES = [
 
 export const MAX_VIDEO_SIZE_BYTES = 500 * 1024 * 1024 // 500 MB
 
-export const PACKAGE_PRICE_CENTS = 4900
+export const PACKAGE_PRICE_CENTS = 4000
 export const PACKAGE_NAME = 'Complete Pitching Analysis'

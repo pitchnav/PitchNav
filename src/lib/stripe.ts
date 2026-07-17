@@ -41,7 +41,7 @@ export async function createCheckoutSession({
     customer_email: undefined, // set via metadata if needed
     success_url: successUrl,
     cancel_url: cancelUrl,
-    // The configured Stripe Price must be a recurring monthly $25 price.
+    // The configured Stripe Price must be a recurring monthly $40 price.
     subscription_data: {
       metadata: { order_id: orderId, user_id: userId },
     },

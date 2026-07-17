@@ -1,13 +1,13 @@
-# PitchFrame — Complete Setup & Deployment Guide
+# Pitch Nav — Complete Setup & Deployment Guide
 
 > This guide is written for a business owner with limited coding experience.
 > Every step includes plain-English explanations.
 
 ---
 
-## What Is PitchFrame?
+## What Is Pitch Nav?
 
-PitchFrame is a web application that lets baseball pitchers:
+Pitch Nav is a web application that lets baseball pitchers:
 
 1. Create an account and fill out an athlete profile
 2. Follow a guided camera-setup wizard and upload pitching videos
@@ -133,7 +133,7 @@ Open `.env.local` in a text editor and fill in every value. See the sections bel
 
 ```env
 NEXT_PUBLIC_APP_URL=http://localhost:3000        # Change to https://yourdomain.com in production
-NEXT_PUBLIC_APP_NAME=PitchFrame
+NEXT_PUBLIC_APP_NAME=Pitch Nav
 ADMIN_EMAILS=youremail@example.com               # Comma-separated admin emails
 CONTACT_DESTINATION_EMAIL=youremail@example.com  # Where contact form submissions go
 ```
@@ -155,6 +155,14 @@ The database schema lives in `supabase/migrations/`. Run them in order:
    - `002_rls_policies.sql`
    - `003_storage_policies.sql`
    - `004_demo_data.sql`
+   - Continue with every remaining numbered migration in ascending order through
+     `021_scientific_motion_strength_membership.sql`. Do not paste a filename into
+     the SQL editor; paste the contents of each `.sql` file and click **Run**.
+
+The `021` migration makes staff-rejected clips exempt from the 14-day limit,
+adds the tailored eight-week strength/mobility calendar, and sets the configured
+membership amount to 4000 cents ($40). The actual Stripe Price must also be a
+recurring $40 monthly Price and its ID must be saved as `STRIPE_PRICE_ID`.
 
 #### Option B — Supabase CLI
 
@@ -394,7 +402,7 @@ The following pages contain `[PLACEHOLDER]` markers where legal review is requir
 | `src/lib/resend.ts` — email templates | Generic branded HTML | Customize with your logo, colors, contact links |
 | All legal pages | `[PLACEHOLDER — Attorney Review Required]` blocks | Legal review and rewrite |
 | `public/` | No OG social image present | Create a 1200×630 PNG and add to `src/app/layout.tsx` |
-| Navbar | PitchFrame logo text | Replace with actual SVG or image logo |
+| Navbar | Pitch Nav logo text | Replace with the final production SVG or image logo |
 | Footer | Social links use `#` as href | Add real social profile URLs or remove |
 | Contact page | `support@pitchframe.com` placeholder | Replace with real support email |
 | Contact page | Business hours placeholder | Add real business hours |
@@ -454,7 +462,7 @@ RESEND_FROM_EMAIL=                  # e.g. noreply@pitchframe.com
 
 # App
 NEXT_PUBLIC_APP_URL=                # e.g. https://pitchframe.com
-NEXT_PUBLIC_APP_NAME=PitchFrame
+NEXT_PUBLIC_APP_NAME=Pitch Nav
 ADMIN_EMAILS=                       # Comma-separated admin emails
 CONTACT_DESTINATION_EMAIL=          # Where contact form goes
 ```
@@ -487,5 +495,5 @@ Run `npm run build` locally first and fix any TypeScript errors before pushing.
 
 For application-level questions, open an issue on GitHub.
 
-PitchFrame is not a medical or emergency service.
+Pitch Nav is not a medical or emergency service.
 If an athlete is experiencing a medical emergency, call 911.

@@ -198,10 +198,17 @@ export default function AdminOrderDetailPage() {
   }
 
   async function updateVideoQuality(videoId: string, approved: boolean, reason?: string) {
-    await supabase
-      .from('video_submissions')
-      .update({ quality_approved: approved, quality_rejection_reason: reason ?? null })
-      .eq('id', videoId)
+    const response = await fetch('/api/admin/video-quality', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ videoId, approved, reason }),
+    })
+    const result = await response.json() as { error?: string; message?: string }
+    if (!response.ok) {
+      alert(result.error || 'Could not update video quality. Please try again.')
+      return
+    }
+    if (!approved) alert(result.message || 'Replacement upload opened with no cooldown.')
     await loadData()
   }
 

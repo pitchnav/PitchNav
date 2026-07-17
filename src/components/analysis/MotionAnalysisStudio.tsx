@@ -134,6 +134,38 @@ function buildCategoryFeedback(frames: FrameMetrics[], summary: ClipSummary): Ca
   ]
 }
 
+function buildStrengthMobilityPlan(categories: CategoryFeedback[]) {
+  const lowest = [...categories].sort((a, b) => a.score - b.score)[0]?.category ?? 'Posture'
+  const tailored = lowest === 'Front-Side Stability'
+    ? { primary: 'Rear-foot-elevated split squat isometric', secondary: 'Controlled step-down', mobility: 'Ankle dorsiflexion and hip-flexor mobility' }
+    : lowest === 'Lower-Half Sequencing' || lowest === 'Direction'
+      ? { primary: 'Goblet split squat', secondary: 'Single-leg Romanian deadlift', mobility: 'Adductor rock-back and hip rotation mobility' }
+      : lowest === 'Upper-Half Timing' || lowest === 'Release Consistency'
+        ? { primary: 'Chest-supported row', secondary: 'Half-kneeling cable press', mobility: 'Thoracic rotation and shoulder controlled-articular rotations' }
+        : { primary: 'Suitcase carry', secondary: 'Dead bug with full exhale', mobility: 'Thoracic rotation and hip-flexor mobility' }
+
+  return Array.from({ length: 8 }, (_, index) => {
+    const week = index + 1
+    const phase = week <= 2 ? 'Foundation' : week <= 4 ? 'Build' : week <= 6 ? 'Strength-to-power transfer' : week === 7 ? 'Deload' : 'Retest preparation'
+    const sets = week === 7 ? '2 sets' : week <= 2 ? '3 sets of 8' : week <= 4 ? '3 sets of 6–8' : '3–4 sets of 4–6'
+    const effort = week === 7 ? 'RPE 4–5' : week <= 2 ? 'RPE 5–6' : 'RPE 6–7'
+    return {
+      week,
+      phase,
+      tailored_focus: `Support ${lowest.toLowerCase()} without changing pitching mechanics through fatigue.`,
+      days: [
+        { day: 'Monday', focus: 'Lower body + trunk', work: `${tailored.primary}: ${sets}; split-stance Pallof press: 3 × 8/side; calf raise: 3 × 10. ${effort}.`, cues: ['Move under control', 'Finish every rep balanced'], common_mistake: 'Adding load when position or tempo changes.' },
+        { day: 'Tuesday', focus: 'Mobility + recovery', work: `${tailored.mobility}: 2–3 gentle rounds; easy aerobic recovery 15–20 minutes.`, cues: ['Stay in a pain-free range', 'Use slow breathing'], common_mistake: 'Forcing end range.' },
+        { day: 'Wednesday', focus: 'Upper body + scapular control', work: `${tailored.secondary}: ${sets}; one-arm row: 3 × 8/side; serratus wall slide: 2 × 10. ${effort}.`, cues: ['Keep ribs stacked', 'Control the return'], common_mistake: 'Shrugging or rushing the repetition.' },
+        { day: 'Thursday', focus: 'Recovery mobility', work: 'Light shoulder, thoracic, hip, and ankle mobility; no fatigue-focused lifting.', cues: ['Leave the session feeling better', 'Stop with pain'], common_mistake: 'Turning recovery into another hard workout.' },
+        { day: 'Friday', focus: 'Total-body power', work: week <= 2 ? 'Technique week: med-ball scoop-toss setup and low-intent jumps, 3 × 3 each.' : 'Medicine-ball scoop toss and countermovement jump, 3–4 × 3 with full rest.', cues: ['Fast intent, low fatigue', 'Land quietly and balanced'], common_mistake: 'Chasing fatigue instead of quality.' },
+        { day: 'Saturday', focus: 'Movement preparation', work: 'Dynamic warm-up, light carries, and mobility only; coordinate with the athlete’s throwing schedule.', cues: ['Keep volume low', 'Prioritize readiness'], common_mistake: 'Heavy training immediately before a high-intent throwing day.' },
+        { day: 'Sunday', focus: 'Rest + check-in', work: 'No required lifting. Record soreness, throwing workload, sleep, and completion.', cues: ['Be honest about soreness', 'Use the check-in to adjust'], common_mistake: 'Ignoring pain or unusual fatigue.' },
+      ],
+    }
+  })
+}
+
 function formatAngle(value: number | null) {
   return value === null ? '—' : `${Math.round(value)}°`
 }
@@ -210,7 +242,7 @@ function drawAnatomicalSkeleton(
   const hips = [point(23), point(24)]
   const shoulderMid = midpoint(shoulders[0], shoulders[1])
   const hipMid = midpoint(hips[0], hips[1])
-  const scale = Math.max(3, width / 300)
+  const scale = Math.max(2.2, width / 420)
 
   const bone = (startIndex: number, endIndex: number, thickness = 1.8) => {
     const start = point(startIndex)
@@ -222,10 +254,10 @@ function drawAnatomicalSkeleton(
     const normalX = -(end.y - start.y) / length
     const normalY = (end.x - start.x) / length
     const separation = Math.min(scale * thickness * 0.62, length * 0.045)
-    context.shadowBlur = 3
-    context.shadowColor = 'rgba(125, 211, 252, 0.45)'
-    context.strokeStyle = '#e5e7eb'
-    context.lineWidth = Math.max(1.2, scale * 0.52)
+    context.shadowBlur = 1.5
+    context.shadowColor = 'rgba(125, 211, 252, 0.28)'
+    context.strokeStyle = '#eef2f7'
+    context.lineWidth = Math.max(1, scale * 0.4)
     for (const side of [-1, 1]) {
       context.beginPath()
       context.moveTo(start.x + normalX * separation * side, start.y + normalY * separation * side)
@@ -235,21 +267,21 @@ function drawAnatomicalSkeleton(
     context.fillStyle = '#f8fafc'
     for (const endpoint of [start, end]) {
       context.beginPath()
-      context.ellipse(endpoint.x, endpoint.y, scale * 0.75, scale * 0.5, Math.atan2(end.y - start.y, end.x - start.x), 0, Math.PI * 2)
+      context.ellipse(endpoint.x, endpoint.y, scale * 0.48, scale * 0.34, Math.atan2(end.y - start.y, end.x - start.x), 0, Math.PI * 2)
       context.fill()
     }
     context.restore()
   }
 
-  const joint = (index: number, radius = 2.2) => {
+  const joint = (index: number, radius = 0.82) => {
     const p = point(index)
     if (p.visibility < 0.45) return
     context.save()
-    context.shadowBlur = 10
-    context.shadowColor = '#38bdf8'
-    context.fillStyle = '#dbeafe'
-    context.strokeStyle = '#38bdf8'
-    context.lineWidth = scale * 0.3
+    context.shadowBlur = 3
+    context.shadowColor = 'rgba(56,189,248,.45)'
+    context.fillStyle = '#f8fafc'
+    context.strokeStyle = '#7dd3fc'
+    context.lineWidth = Math.max(0.7, scale * 0.18)
     context.beginPath()
     context.arc(p.x, p.y, scale * radius, 0, Math.PI * 2)
     context.fill()
@@ -360,19 +392,13 @@ function drawAnatomicalSkeleton(
 
 function drawScientificMound(
   context: CanvasRenderingContext2D,
-  landmarks: NormalizedLandmark[],
   width: number,
   height: number
 ) {
-  const visibleFeet = [27, 28, 29, 30, 31, 32]
-    .map((index) => landmarks[index])
-    .filter((point) => point && (point.visibility ?? 0) >= 0.4)
-  const footY = visibleFeet.length
-    ? Math.min(height * 0.9, Math.max(...visibleFeet.map((point) => point.y * height)) + height * 0.018)
-    : height * 0.78
-  const footX = visibleFeet.length
-    ? visibleFeet.reduce((sum, point) => sum + point.x * width, 0) / visibleFeet.length
-    : width * 0.5
+  // The export pose is normalized to this fixed stage. Anchoring the floor to
+  // noisy foot landmarks made the mound jump and the athlete appear to float.
+  const footX = width * 0.56
+  const footY = height * 0.80
 
   context.save()
   const ground = context.createLinearGradient(0, footY - height * 0.08, 0, height)
@@ -382,8 +408,8 @@ function drawScientificMound(
   context.fillStyle = ground
   context.fillRect(0, footY - height * 0.03, width, height - footY + height * 0.03)
 
-  // Perspective measurement grid anchored to the detected foot plane.
-  context.strokeStyle = 'rgba(56, 189, 248, 0.22)'
+  // Fixed perspective measurement grid for a repeatable scientific view.
+  context.strokeStyle = 'rgba(56, 189, 248, 0.16)'
   context.lineWidth = Math.max(0.7, width / 1500)
   for (let row = 0; row <= 7; row += 1) {
     const t = row / 7
@@ -395,17 +421,17 @@ function drawScientificMound(
   }
 
   // Low pitching-mound profile, landing surface, rubber, and contact shadow.
-  const moundWidth = width * 0.52
-  const moundHeight = height * 0.075
+  const moundWidth = width * 0.62
+  const moundHeight = height * 0.058
   const moundGradient = context.createLinearGradient(0, footY - moundHeight, 0, footY + moundHeight)
   moundGradient.addColorStop(0, '#59412e')
   moundGradient.addColorStop(0.55, '#2f241c')
   moundGradient.addColorStop(1, '#120f0c')
   context.fillStyle = moundGradient
   context.beginPath()
-  context.ellipse(footX, footY + moundHeight * 0.36, moundWidth / 2, moundHeight, 0, Math.PI, Math.PI * 2)
-  context.lineTo(footX + moundWidth / 2, footY + moundHeight)
-  context.lineTo(footX - moundWidth / 2, footY + moundHeight)
+  context.moveTo(footX - moundWidth * 0.5, footY + moundHeight)
+  context.quadraticCurveTo(footX - moundWidth * 0.16, footY - moundHeight * 0.52, footX, footY - moundHeight * 0.36)
+  context.quadraticCurveTo(footX + moundWidth * 0.2, footY - moundHeight * 0.2, footX + moundWidth * 0.5, footY + moundHeight)
   context.closePath(); context.fill()
   context.fillStyle = 'rgba(0,0,0,0.42)'
   context.beginPath(); context.ellipse(footX, footY + height * 0.015, width * 0.12, height * 0.018, 0, 0, Math.PI * 2); context.fill()
@@ -450,16 +476,58 @@ function framePoseForExport(landmarks: NormalizedLandmark[], transform: ExportFr
 
 function smoothPose(previous: NormalizedLandmark[] | null, current: NormalizedLandmark[]) {
   if (!previous || previous.length !== current.length) return current
-  const responsiveness = 0.38
-  const maximumStep = 0.055
-  return current.map((point, index) => ({
+  const coreJoints = [11, 12, 13, 14, 15, 16, 23, 24, 25, 26, 27, 28]
+  const visibleCoreJoints = coreJoints.filter((index) => (current[index]?.visibility ?? 0) >= 0.55).length
+  // Do not render a newly invented body configuration when the model loses
+  // most of the athlete. Holding the last accepted frame is less misleading
+  // than allowing occlusion noise to create stretched or detached limbs.
+  if (visibleCoreJoints < 7) return previous.map((point) => ({ ...point }))
+  const corrected = current.map((point) => ({ ...point }))
+  // Select the left/right assignment with the smallest change from the prior
+  // accepted frame. This suppresses the most distracting pose-model swap.
+  const pairs: Array<[number, number]> = [[11, 12], [13, 14], [15, 16], [23, 24], [25, 26], [27, 28], [29, 30], [31, 32]]
+  for (const [left, right] of pairs) {
+    const normal = Math.hypot(corrected[left].x - previous[left].x, corrected[left].y - previous[left].y)
+      + Math.hypot(corrected[right].x - previous[right].x, corrected[right].y - previous[right].y)
+    const swapped = Math.hypot(corrected[right].x - previous[left].x, corrected[right].y - previous[left].y)
+      + Math.hypot(corrected[left].x - previous[right].x, corrected[left].y - previous[right].y)
+    if (swapped + 0.025 < normal) [corrected[left], corrected[right]] = [corrected[right], corrected[left]]
+  }
+  const responsiveness = 0.45
+  const maximumStep = 0.03
+  const smoothed = corrected.map((point, index) => ({
     ...point,
     // Hold low-confidence landmarks and cap one-frame jumps. This suppresses
     // common left/right swaps and occlusion spikes without inventing joints.
-    x: (point.visibility ?? 0) < 0.4 ? previous[index].x : previous[index].x + Math.max(-maximumStep, Math.min(maximumStep, point.x - previous[index].x)) * responsiveness,
-    y: (point.visibility ?? 0) < 0.4 ? previous[index].y : previous[index].y + Math.max(-maximumStep, Math.min(maximumStep, point.y - previous[index].y)) * responsiveness,
+    x: (point.visibility ?? 0) < 0.55 ? previous[index].x : previous[index].x + Math.max(-maximumStep, Math.min(maximumStep, point.x - previous[index].x)) * responsiveness,
+    y: (point.visibility ?? 0) < 0.55 ? previous[index].y : previous[index].y + Math.max(-maximumStep, Math.min(maximumStep, point.y - previous[index].y)) * responsiveness,
     z: previous[index].z + Math.max(-maximumStep, Math.min(maximumStep, point.z - previous[index].z)) * responsiveness,
   }))
+
+  // Reject impossible one-frame bone-length changes while preserving genuine
+  // perspective foreshortening over multiple frames. This is a temporal 2D
+  // consistency guard, not an anatomical or 3D reconstruction claim.
+  const segments: Array<[number, number]> = [
+    [11, 13], [13, 15], [12, 14], [14, 16],
+    [23, 25], [25, 27], [24, 26], [26, 28],
+    [27, 31], [28, 32],
+  ]
+  for (const [parentIndex, childIndex] of segments) {
+    if ((current[parentIndex]?.visibility ?? 0) < 0.55 || (current[childIndex]?.visibility ?? 0) < 0.55) continue
+    const previousLength = Math.hypot(
+      previous[childIndex].x - previous[parentIndex].x,
+      previous[childIndex].y - previous[parentIndex].y
+    )
+    const deltaX = smoothed[childIndex].x - smoothed[parentIndex].x
+    const deltaY = smoothed[childIndex].y - smoothed[parentIndex].y
+    const currentLength = Math.hypot(deltaX, deltaY)
+    if (previousLength < 0.008 || currentLength < 0.008) continue
+    const constrainedLength = Math.max(previousLength * 0.72, Math.min(previousLength * 1.28, currentLength))
+    if (Math.abs(constrainedLength - currentLength) < 0.001) continue
+    smoothed[childIndex].x = smoothed[parentIndex].x + (deltaX / currentLength) * constrainedLength
+    smoothed[childIndex].y = smoothed[parentIndex].y + (deltaY / currentLength) * constrainedLength
+  }
+  return smoothed
 }
 
 type InitialVideo = {
@@ -472,6 +540,7 @@ type InitialVideo = {
   staffProcessing?: boolean
   trimStartSecs?: number | null
   trimEndSecs?: number | null
+  captureFps?: number | null
   athleteProfileId: string | null
   handedness: Handedness
 } | null
@@ -517,7 +586,11 @@ export function MotionAnalysisStudio({ initialVideo = null }: { initialVideo?: I
   const [ballStart, setBallStart] = useState<VideoPoint | null>(null)
   const [ballEnd, setBallEnd] = useState<VideoPoint | null>(null)
   const [calibrationFeet, setCalibrationFeet] = useState(6)
-  const [captureFps, setCaptureFps] = useState(240)
+  const [captureFps, setCaptureFps] = useState(() =>
+    initialVideo?.captureFps && [60, 120, 240].includes(initialVideo.captureFps)
+      ? initialVideo.captureFps
+      : 240
+  )
   const [playbackSpeed, setPlaybackSpeed] = useState(0.25)
   const playbackSpeedRef = useRef(0.25)
   const [detectedPlaybackFps, setDetectedPlaybackFps] = useState<number | null>(null)
@@ -650,8 +723,13 @@ export function MotionAnalysisStudio({ initialVideo = null }: { initialVideo?: I
           : landmarks
         const presentationPose = smoothPose(exportPoseRef.current, framed)
         exportPoseRef.current = presentationPose
-        drawScientificMound(context, presentationPose, width, height)
+        drawScientificMound(context, width, height)
         drawAnatomicalSkeleton(context, presentationPose, width, height)
+        context.save()
+        context.fillStyle = 'rgba(148,163,184,.82)'
+        context.font = `500 ${Math.max(10, width / 92)}px sans-serif`
+        context.fillText('Scientific 2D pose reconstruction · not a 3D or laboratory model', width * 0.035, height * 0.135)
+        context.restore()
         if (watermarkRef.current) {
           const logoWidth = width * 0.24
           const logoHeight = logoWidth * (watermarkRef.current.height / watermarkRef.current.width)
@@ -772,6 +850,9 @@ export function MotionAnalysisStudio({ initialVideo = null }: { initialVideo?: I
     if (!initialVideo || initialVideoLoadedRef.current) return
     initialVideoLoadedRef.current = true
     setHandedness(initialVideo.handedness)
+    if (initialVideo.captureFps && [60, 120, 240].includes(initialVideo.captureFps)) {
+      setCaptureFps(initialVideo.captureFps)
+    }
     existingSourcePathRef.current = initialVideo.storagePath
     setLoadingInitialVideo(true)
     // PoseLandmarker reliably accepts a same-origin Blob URL. Feeding the
@@ -832,9 +913,14 @@ export function MotionAnalysisStudio({ initialVideo = null }: { initialVideo?: I
         const median = deltas[Math.floor(deltas.length / 2)]
         const fps = Math.round(1 / median)
         setDetectedPlaybackFps(fps)
-        if (fps >= 180) setCaptureFps(240)
-        else if (fps >= 90) setCaptureFps(120)
-        else setCaptureFps(60)
+        // requestVideoFrameCallback measures the playback timeline. iPhone
+        // Slo-mo commonly stores 240 captured frames on a 30 FPS playback
+        // timeline, so it must not overwrite a confirmed camera capture rate.
+        if (!initialVideo?.captureFps) {
+          if (fps >= 180) setCaptureFps(240)
+          else if (fps >= 90) setCaptureFps(120)
+          else if (fps >= 50) setCaptureFps(60)
+        }
       }
     } catch (reason) {
       console.warn('Frame-rate detection was unavailable', reason)
@@ -854,8 +940,12 @@ export function MotionAnalysisStudio({ initialVideo = null }: { initialVideo?: I
     if (!video || !video.duration) return
     video.pause()
     setPlaying(false)
-    // Use the selected capture rate so 240/120 FPS clips can be inspected one recorded frame at a time.
-    const frameDuration = 1 / Math.max(1, captureFps)
+    // Frame stepping follows the decoded playback timeline. An iPhone Slo-mo
+    // file may contain a ~30 FPS timeline even though it was captured at 240
+    // FPS; the confirmed capture rate remains separate for eligibility and
+    // downstream velocity processing.
+    const timelineFps = detectedPlaybackFps ?? captureFps
+    const frameDuration = 1 / Math.max(1, timelineFps)
     const start = analysisStartRef.current
     const end = Math.min(video.duration, analysisEndRef.current ?? video.duration)
     video.currentTime = Math.max(start, Math.min(end - frameDuration, video.currentTime + direction * frameDuration))
@@ -1091,7 +1181,7 @@ export function MotionAnalysisStudio({ initialVideo = null }: { initialVideo?: I
       if (!user) throw new Error('Please sign in again.')
       const targetUserId = initialVideo?.ownerUserId ?? user.id
       const cutoff = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString()
-      const { data: recentAnalysis } = await supabase.from('motion_analyses').select('id,created_at').eq('user_id', targetUserId).gte('created_at', cutoff).order('created_at', { ascending: false }).limit(1).maybeSingle()
+      const { data: recentAnalysis } = await supabase.from('motion_analyses').select('id,created_at').eq('user_id', targetUserId).eq('cooldown_exempt', false).gte('created_at', cutoff).order('created_at', { ascending: false }).limit(1).maybeSingle()
       if (recentAnalysis && !initialVideo?.staffProcessing) {
         const nextDate = new Date(new Date(recentAnalysis.created_at).getTime() + 14 * 24 * 60 * 60 * 1000)
         throw new Error(`Your membership includes one analysis every two weeks. Your next analysis is available ${nextDate.toLocaleDateString()}.`)
@@ -1171,6 +1261,7 @@ export function MotionAnalysisStudio({ initialVideo = null }: { initialVideo?: I
         ],
         completed: false,
       }))
+      const strengthMobilityWeeks = buildStrengthMobilityPlan(categoryFeedback)
       const followUp = new Date()
       followUp.setDate(followUp.getDate() + planWeeks * 7)
       const { error: planError } = await supabase.from('training_plans').insert({
@@ -1179,6 +1270,7 @@ export function MotionAnalysisStudio({ initialVideo = null }: { initialVideo?: I
         duration_weeks: planWeeks,
         title: `${planWeeks}-Week Pitching Development Plan`,
         weeks,
+        strength_mobility_weeks: strengthMobilityWeeks,
         follow_up_date: followUp.toISOString().slice(0, 10),
         published_at: null,
       })
@@ -1466,8 +1558,7 @@ export function MotionAnalysisStudio({ initialVideo = null }: { initialVideo?: I
               <label>
                 <span className="label">Development-plan length</span>
                 <select className="input min-w-52" value={planWeeks} onChange={(event) => setPlanWeeks(Number(event.target.value) as 4 | 8)}>
-                  <option value={4}>4-week plan</option>
-                  <option value={8}>8-week plan</option>
+                  <option value={8}>8-week pitching + strength plan</option>
                 </select>
               </label>
               <button type="button" onClick={saveAnalysisToDashboard} disabled={savingAnalysis} className="btn-accent">

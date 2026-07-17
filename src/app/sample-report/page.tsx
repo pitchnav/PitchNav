@@ -317,7 +317,7 @@ export default function SampleReportPage() {
             personalized to your specific delivery.
           </p>
           <Link href="/start-analysis" className="btn-primary text-base px-8 py-4">
-            Start My Analysis — $25/month <ArrowRight className="h-5 w-5" />
+            Start My Analysis — $40/month <ArrowRight className="h-5 w-5" />
           </Link>
         </div>
       </div>

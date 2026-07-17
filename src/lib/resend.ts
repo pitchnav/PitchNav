@@ -229,7 +229,7 @@ export async function sendFollowupReminderEmail(to: string, name: string) {
   })
 }
 
-export async function sendOwnerReviewRequestEmail(to: string, athleteName: string, title: string, analysisId: string) {
+export async function sendStaffReviewRequestEmail(to: string, athleteName: string, title: string, analysisId: string) {
   return sendEmail({
     to,
     subject: `Approval requested: ${athleteName} — ${title}`,

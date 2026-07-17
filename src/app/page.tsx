@@ -208,7 +208,7 @@ function WhatIsIncluded() {
             </ul>
             <div className="mt-10 flex gap-4">
               <Link href="/start-analysis" className="btn-primary">
-                Get Started — $25/month <ArrowRight className="h-4 w-4" />
+                Get Started — $40/month <ArrowRight className="h-4 w-4" />
               </Link>
               <Link href="/pricing" className="btn-secondary">
                 See Pricing Details
@@ -221,7 +221,7 @@ function WhatIsIncluded() {
             <div className="flex items-center justify-between mb-6">
               <div>
                 <p className="text-xs text-slate-500 uppercase tracking-widest">Complete Package</p>
-                <p className="text-3xl font-black text-white mt-1">$25/month</p>
+                <p className="text-3xl font-black text-white mt-1">$40/month</p>
               </div>
               <div className="rounded-lg bg-accent-green/10 px-3 py-1">
                 <span className="text-sm font-semibold text-accent-green">All Included</span>
@@ -391,7 +391,7 @@ function PricingSection() {
               <p className="text-slate-400 mt-1">Everything you need to improve your delivery</p>
             </div>
             <div className="text-right">
-              <p className="text-4xl font-black text-white">$25/month</p>
+              <p className="text-4xl font-black text-white">$40/month</p>
               <p className="text-slate-500 text-sm">one-time</p>
             </div>
           </div>
@@ -418,7 +418,7 @@ function PricingSection() {
           </div>
 
           <Link href="/start-analysis" className="btn-accent w-full justify-center text-base py-4">
-            Start My Analysis — $25/month <ArrowRight className="h-5 w-5" />
+            Start My Analysis — $40/month <ArrowRight className="h-5 w-5" />
           </Link>
         </div>
 
