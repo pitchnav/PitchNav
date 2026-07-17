@@ -6,6 +6,7 @@ import {
   sendSubmissionConfirmationEmail,
 } from '@/lib/resend'
 import type Stripe from 'stripe'
+import { enqueueAutomaticVelocityJob } from '@/lib/automatic-velocity'
 
 // Must export config to disable body parsing — Stripe needs the raw body
 export const runtime = 'nodejs'
@@ -96,6 +97,12 @@ export async function POST(request: NextRequest) {
           error: emailResult.error,
         })
       }
+
+      // This covers orders where a side-view file already exists when Stripe
+      // confirms payment. The paid upload page also enqueues after upload.
+      void enqueueAutomaticVelocityJob({ orderId }).catch((reason) =>
+        console.error('[Webhook] Automatic velocity enqueue failed:', reason)
+      )
 
       console.log('[Webhook] Order confirmed:', orderId)
       break

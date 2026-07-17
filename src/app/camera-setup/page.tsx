@@ -87,6 +87,29 @@ export default function CameraSetupPage() {
 
         <CameraAlignmentStudio />
 
+        <section className="card mb-10 border-electric-blue/30">
+          <div className="grid items-center gap-8 md:grid-cols-[0.8fr_1.2fr]">
+            <img
+              src="/velocity-calibration-marker.svg"
+              alt="Printable Pitch Nav automatic velocity calibration marker"
+              className="mx-auto w-full max-w-sm rounded-xl bg-white p-3"
+            />
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-electric-blue-light">Required for an automatic velocity estimate</p>
+              <h2 className="mt-2 text-2xl font-black text-white">Print and place the 8-inch calibration marker</h2>
+              <p className="mt-3 text-sm leading-relaxed text-slate-400">The video worker finds this marker automatically, measures its known size, and uses it to convert ball movement from pixels into an estimated speed range. You do not click calibration points.</p>
+              <ol className="mt-5 space-y-2 text-sm text-slate-300">
+                <li><strong className="text-white">1.</strong> Print at <strong className="text-white">Actual Size / 100%</strong>—never “Fit to Page.”</li>
+                <li><strong className="text-white">2.</strong> Confirm the black square measures exactly <strong className="text-white">8 × 8 inches</strong>.</li>
+                <li><strong className="text-white">3.</strong> Mount it flat and vertical beside the pitcher, as close as safely possible to the pitcher’s throwing plane.</li>
+                <li><strong className="text-white">4.</strong> Keep the complete marker visible from the start of the delivery through release.</li>
+              </ol>
+              <a href="/velocity-calibration-marker.svg" download="pitch-nav-velocity-calibration-marker.svg" className="btn-primary mt-6">Download printable marker</a>
+              <p className="mt-4 text-xs leading-relaxed text-yellow-200">No marker, an obscured marker, 60 FPS footage, or an unreliable ball track produces “velocity unavailable”—not a guessed number. Results are video-estimated and require staff approval; radar remains the verified measurement.</p>
+            </div>
+          </div>
+        </section>
+
         {/* Angle selector */}
         <div className="flex flex-col sm:flex-row gap-3 mb-10">
           {ANGLES.map((angle) => (

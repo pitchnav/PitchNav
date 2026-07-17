@@ -216,6 +216,22 @@ function UploadContent() {
 
       if (dbError) throw dbError
 
+      // Automatic processing is server-side and only starts after payment has
+      // been confirmed. Upload success is not rolled back if the optional
+      // worker is temporarily unavailable; staff can retry it from the order.
+      try {
+        const enqueueResponse = await fetch('/api/velocity/enqueue', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ orderId, videoSubmissionId: submission.id }),
+        })
+        if (!enqueueResponse.ok) {
+          console.warn('[Automatic velocity] Staff will need to retry this video from the order.')
+        }
+      } catch (reason) {
+        console.warn('[Automatic velocity] Enqueue deferred', reason)
+      }
+
       setVideos((prev) => ({
         ...prev,
         [checklistAngle]: {

@@ -1,13 +1,13 @@
 import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
-import { Activity, ArrowRight, Video } from 'lucide-react'
+import { Activity, ArrowRight, Gauge, Video } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { OrderStatusBadge } from '@/components/ui/Badge'
 import { StatusTimeline } from '@/components/ui/StatusTimeline'
 import { SafetyDisclaimer } from '@/components/ui/SafetyDisclaimer'
 import { formatDateShort, formatFileSize, PLAYING_LEVEL_LABELS } from '@/lib/utils'
 import type { AthleteProfile, VideoSubmission, OrderStatusHistory,
-  PlayingLevel
+  PlayingLevel, AutomaticVelocityJob
 } from '@/types/database'
 
 export default async function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -33,6 +33,14 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
   const profile = order.athlete_profiles as AthleteProfile
   const videos = order.video_submissions as VideoSubmission[]
   const history = (order.order_status_history as OrderStatusHistory[]) ?? []
+  const { data: automaticVelocityData } = await supabase
+    .from('automatic_velocity_jobs')
+    .select('*')
+    .eq('order_id', order.id)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+  const automaticVelocity = automaticVelocityData as AutomaticVelocityJob | null
 
   // Generate signed URLs for video previews
   const videoUrls: Record<string, string> = {}
@@ -148,6 +156,31 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
               <p className="text-sm text-slate-500">No videos submitted yet.</p>
             )}
           </div>
+
+          {automaticVelocity && (
+            <div className="card border-electric-blue/25 bg-electric-blue/5">
+              <div className="flex items-start gap-3">
+                <Gauge className="mt-0.5 h-5 w-5 shrink-0 text-electric-blue-light" />
+                <div className="min-w-0 flex-1">
+                  <h2 className="text-base font-semibold text-white">Automatic velocity review</h2>
+                  <p className="mt-1 text-sm text-slate-400">
+                    {automaticVelocity.status === 'queued' && 'Your paid side-view clip is queued for secure processing.'}
+                    {automaticVelocity.status === 'processing' && 'The system is checking frame rate, calibration, and the visible baseball path.'}
+                    {automaticVelocity.status === 'completed' && !automaticVelocity.staff_approved && 'A video-estimated range was produced and is waiting for staff verification.'}
+                    {automaticVelocity.status === 'completed' && automaticVelocity.staff_approved && 'Staff verified the video-estimated range. It will appear in your completed report.'}
+                    {automaticVelocity.status === 'unavailable' && 'The video did not support a defensible velocity estimate. Mechanics review can still continue.'}
+                    {automaticVelocity.status === 'failed' && 'Automatic velocity processing could not finish. Staff can retry it without another upload.'}
+                  </p>
+                  {automaticVelocity.status === 'unavailable' && automaticVelocity.rejection_reason && (
+                    <p className="mt-2 text-xs text-yellow-300">Reason: {automaticVelocity.rejection_reason}</p>
+                  )}
+                  <p className="mt-3 text-xs text-slate-500">
+                    Video estimates are never labeled as radar verified and are not displayed before staff approval.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Complete report CTA */}
           {order.status === 'complete' && (

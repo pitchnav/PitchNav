@@ -161,6 +161,50 @@ export interface OrderStatusHistory {
   created_at: string
 }
 
+export type AutomaticVelocityStatus =
+  | 'queued'
+  | 'processing'
+  | 'completed'
+  | 'unavailable'
+  | 'failed'
+
+export interface AutomaticVelocityJob {
+  id: string
+  order_id: string
+  video_submission_id: string
+  user_id: string
+  athlete_profile_id: string | null
+  motion_analysis_id: string | null
+  status: AutomaticVelocityStatus
+  worker_job_id: string | null
+  attempts: number
+  detected_playback_fps: number | null
+  declared_capture_fps: number | null
+  effective_capture_fps: number | null
+  width: number | null
+  height: number | null
+  duration_secs: number | null
+  trim_start_secs: number | null
+  trim_end_secs: number | null
+  calibration_detected: boolean
+  calibration_method: string | null
+  calibration_scale_px_per_foot: number | null
+  ball_track_frames: number
+  estimate_low_mph: number | null
+  estimate_high_mph: number | null
+  estimate_center_mph: number | null
+  confidence: 'High' | 'Moderate' | 'Low' | 'Unavailable' | null
+  rejection_reason: string | null
+  diagnostics: Record<string, unknown>
+  staff_approved: boolean
+  staff_approved_by: string | null
+  staff_approved_at: string | null
+  started_at: string | null
+  completed_at: string | null
+  created_at: string
+  updated_at: string
+}
+
 export interface VideoSubmission {
   id: string
   order_id: string
