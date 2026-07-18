@@ -63,6 +63,7 @@ function UploadContent() {
   const [videos, setVideos] = useState<Record<string, UploadedVideo>>({})
   const [checklistItems, setChecklistItems] = useState<Record<string, boolean>>({})
   const [checklistAngle, setChecklistAngle] = useState<string | null>(null)
+  const [checklistAutoSubmitting, setChecklistAutoSubmitting] = useState(false)
   const [loading, setLoading] = useState(true)
   const [orderLoading, setOrderLoading] = useState(false)
   const [preflightAngle, setPreflightAngle] = useState<'open_side' | null>(null)
@@ -205,19 +206,25 @@ function UploadContent() {
   }
 
   async function confirmChecklistAndUpload() {
-    if (!allChecked() || !checklistAngle || !userId || !orderId) return
+    if (!allChecked() || !checklistAngle || !userId || !orderId || checklistAutoSubmitting) return
 
-    const video = videos[checklistAngle]
+    const angle = checklistAngle
+    const video = videos[angle]
     if (!video) return
+
+    // The final confirmation starts the upload immediately. Closing the modal
+    // here prevents users from having to confirm the same clip twice.
+    setChecklistAutoSubmitting(true)
+    setChecklistAngle(null)
 
     setVideos((prev) => ({
       ...prev,
-      [checklistAngle]: { ...prev[checklistAngle], uploading: true, progress: 0, checklistConfirmed: true },
+      [angle]: { ...prev[angle], uploading: true, progress: 0, checklistConfirmed: true },
     }))
 
     try {
       const ext = video.file.name.split('.').pop()
-      const filename = `${checklistAngle}_${Date.now()}.${ext}`
+      const filename = `${angle}_${Date.now()}.${ext}`
       const storagePath = `${userId}/${orderId}/${filename}`
 
       const { error: uploadError } = await supabase.storage
@@ -235,7 +242,7 @@ function UploadContent() {
         .insert({
           order_id: orderId,
           user_id: userId,
-          angle: checklistAngle,
+          angle,
           storage_path: storagePath,
           file_name: filename,
           file_size_bytes: video.file.size,
@@ -272,26 +279,38 @@ function UploadContent() {
 
       setVideos((prev) => ({
         ...prev,
-        [checklistAngle]: {
-          ...prev[checklistAngle],
+        [angle]: {
+          ...prev[angle],
           uploading: false,
           progress: 100,
           submissionId: submission.id,
         },
       }))
-      setChecklistAngle(null)
     } catch (err) {
       console.error(err)
       setVideos((prev) => ({
         ...prev,
-        [checklistAngle]: {
-          ...prev[checklistAngle],
+        [angle]: {
+          ...prev[angle],
           uploading: false,
           error: 'Upload failed. Please try again.',
         },
       }))
+    } finally {
+      setChecklistAutoSubmitting(false)
     }
   }
+
+  // Once the last quality box is checked, dismiss the checklist and upload.
+  // The guard above prevents React development-mode effects from submitting
+  // the same file more than once.
+  useEffect(() => {
+    if (!checklistAngle || checklistAutoSubmitting || !allChecked()) return
+    void confirmChecklistAndUpload()
+    // confirmChecklistAndUpload intentionally runs only when checklist state
+    // reaches complete; including the recreated function would retrigger it.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [checklistAngle, checklistItems, checklistAutoSubmitting, userId, orderId])
 
   function removeVideo(angle: string) {
     setVideos((prev) => {
@@ -303,6 +322,9 @@ function UploadContent() {
   }
 
   const requiredUploaded = REQUIRED_ANGLES.every((a) => videos[a]?.submissionId)
+  const cameraGuideHref = orderId
+    ? `/camera-setup?orderId=${encodeURIComponent(orderId)}`
+    : '/camera-setup'
 
   async function finishSubmission() {
     if (!orderId) return
@@ -332,7 +354,7 @@ function UploadContent() {
           <h1 className="text-3xl font-black text-white">Upload Your Videos</h1>
           <p className="mt-2 text-slate-400">
             Submit one clear throwing-arm side-view video. It will open directly in Motion Lab after upload. Review the{' '}
-            <a href="/camera-setup" className="text-electric-blue-light hover:underline" target="_blank">
+            <a href={cameraGuideHref} className="text-electric-blue-light hover:underline" target="_blank">
               camera setup guide
             </a>{' '}
             before filming.
@@ -340,7 +362,7 @@ function UploadContent() {
         </div>
 
         <section className="card mb-8 overflow-hidden border-electric-blue/30">
-          <div className="grid items-center gap-5 md:grid-cols-[0.9fr_1.1fr]"><div><p className="text-xs font-bold uppercase tracking-[0.18em] text-electric-blue-light">Before choosing files</p><h2 className="mt-1 text-xl font-black text-white">Confirm that you recorded in SLO-MO</h2><p className="mt-2 text-sm leading-relaxed text-slate-400">Use 240 FPS when available or 120 FPS when necessary. Normal Video mode—even when played slowly later—is not eligible for the velocity estimator.</p><a href="/camera-setup" target="_blank" className="mt-4 inline-flex text-sm font-bold text-electric-blue-light hover:text-white">Open the complete recording guide →</a></div><img src="/pitch-nav-slow-motion-guide.png" alt="How to configure iPhone Slo-mo recording at 240 or 120 FPS" className="w-full rounded-lg border border-surface-border" /></div>
+          <div className="grid items-center gap-5 md:grid-cols-[0.9fr_1.1fr]"><div><p className="text-xs font-bold uppercase tracking-[0.18em] text-electric-blue-light">Before choosing files</p><h2 className="mt-1 text-xl font-black text-white">Confirm that you recorded in SLO-MO</h2><p className="mt-2 text-sm leading-relaxed text-slate-400">Use 240 FPS when available or 120 FPS when necessary. Normal Video mode—even when played slowly later—is not eligible for the velocity estimator.</p><a href={cameraGuideHref} target="_blank" className="mt-4 inline-flex text-sm font-bold text-electric-blue-light hover:text-white">Open the complete recording guide →</a></div><div><img src="/pitch-nav-slow-motion-guide.png?v=20260718" alt="How to configure iPhone Slo-mo recording at 240 or 120 FPS" className="w-full rounded-lg border border-surface-border" /><p className="mt-2 text-xs text-slate-500">If the graphic is unavailable: iPhone Settings → Camera → Record Slo-mo → 1080p HD at 240 fps (120 fps accepted).</p></div></div>
         </section>
 
         {/* Video slots */}
@@ -382,6 +404,7 @@ function UploadContent() {
                       type="file"
                       accept={ACCEPTED_VIDEO_TYPES.join(',')}
                       className="hidden"
+                      onClick={(event) => event.stopPropagation()}
                       onChange={(e) => {
                         const file = e.target.files?.[0]
                         if (file) handleFileSelect(angle, file, captureFps)
@@ -422,15 +445,15 @@ function UploadContent() {
                         <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
                           {[
                             ['Camera capture', `${video.captureFps} FPS confirmed`],
-                            ['Playback timeline', video.quality.frameRate ? `~${video.quality.frameRate} FPS` : 'Not exposed'],
+                            ['Playback timeline (normal for Slo-mo)', video.quality.frameRate ? `~${video.quality.frameRate} FPS` : 'Not exposed'],
                             ['Resolution', `${video.quality.width}×${video.quality.height}`],
                             ['Length', `${video.quality.duration.toFixed(1)} sec`],
                             ['Orientation', video.quality.orientation],
                             ['File size', formatFileSize(video.file.size)],
                           ].map(([label, value]) => <div key={label} className="rounded-lg bg-navy-900 p-2"><p className="text-[10px] uppercase text-slate-600">{label}</p><p className="mt-1 text-xs font-semibold text-white">{value}</p></div>)}
                         </div>
-                        {video.quality.warnings.map((warning) => <p key={warning} className="mt-2 text-xs text-yellow-300">• {warning}</p>)}
-                        <p className="mt-3 text-xs text-slate-500">iPhone Slo-mo may correctly show a ~30 FPS playback timeline even when the Camera captured 120/240 FPS. Pitch Nav keeps your confirmed original Camera setting separately. This metadata check cannot prove the capture setting, so staff still verifies the clip.</p>
+                        {video.quality.warnings.filter((warning) => !(video.captureFps >= 120 && warning.includes('playback track is below 60 FPS'))).map((warning) => <p key={warning} className="mt-2 text-xs text-yellow-300">• {warning}</p>)}
+                        <p className="mt-3 rounded-lg border border-electric-blue/20 bg-electric-blue/10 p-2 text-xs text-electric-blue-light"><strong>Your 240 FPS confirmation is saved.</strong> iPhone Slo-mo normally exports a roughly 30 FPS playback timeline so the pitch plays slowly. That does not mean the camera captured only 30 FPS.</p>
                         {video.captureFps === 60 && <p className="mt-2 text-xs font-semibold text-yellow-300">60 FPS is mechanics-only. No video velocity estimate will be produced.</p>}
                       </div>
                     )}
@@ -509,7 +532,7 @@ function UploadContent() {
             <div className="card max-w-lg w-full max-h-[90vh] overflow-y-auto">
               <h3 className="text-lg font-bold text-white mb-2">Video Quality Checklist</h3>
               <p className="text-sm text-slate-400 mb-6">
-                Confirm each item before your video is uploaded. You cannot undo this step.
+                Confirm each item. The upload starts automatically after the final check.
               </p>
               <div className="space-y-3 mb-6">
                 {CHECKLIST.map((item) => (
@@ -529,18 +552,10 @@ function UploadContent() {
               <div className="flex gap-3">
                 <button
                   type="button"
-                  className="btn-secondary flex-1 justify-center"
+                  className="btn-secondary w-full justify-center"
                   onClick={() => setChecklistAngle(null)}
                 >
                   Cancel
-                </button>
-                <button
-                  type="button"
-                  disabled={!allChecked()}
-                  className="btn-primary flex-1 justify-center"
-                  onClick={confirmChecklistAndUpload}
-                >
-                  Upload Video
                 </button>
               </div>
             </div>

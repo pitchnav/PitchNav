@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { CheckCircle, AlertCircle, Camera, Eye, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { CameraAlignmentStudio } from '@/components/camera/CameraAlignmentStudio'
@@ -58,7 +59,12 @@ const GUIDE: Record<Angle, {
 
 }
 
-export default function CameraSetupPage() {
+function CameraSetupContent() {
+  const searchParams = useSearchParams()
+  const paidOrderId = searchParams.get('orderId')
+  const uploadReturnHref = paidOrderId
+    ? `/start-analysis/upload?orderId=${encodeURIComponent(paidOrderId)}`
+    : '/start-analysis'
   const [activeAngle, setActiveAngle] = useState<Angle>('open_side')
   const [checklist, setChecklist] = useState<Record<string, boolean>>({})
 
@@ -81,7 +87,10 @@ export default function CameraSetupPage() {
 
         <section className="card mb-10 overflow-hidden border-electric-blue/30">
           <div className="mb-5"><p className="text-xs font-bold uppercase tracking-[0.2em] text-electric-blue-light">Required recording mode</p><h2 className="mt-1 text-2xl font-black text-white">Record with SLO-MO—not normal Video mode</h2><p className="mt-2 text-sm text-slate-400">On iPhone, set Settings → Camera → Record Slo-mo to 1080p at 240 FPS when available. Then open the Camera app and swipe to <strong className="text-white">SLO-MO</strong> before recording. Choosing a slower playback speed afterward does not create high-frame-rate footage.</p></div>
-          <img src="/pitch-nav-slow-motion-guide.png" alt="Pitch Nav iPhone instructions showing Settings, Camera, Record Slo-mo, and selection of 240 FPS or 120 FPS" className="w-full rounded-xl border border-surface-border" />
+          <img src="/pitch-nav-slow-motion-guide.png?v=20260718" alt="Pitch Nav iPhone instructions showing Settings, Camera, Record Slo-mo, and selection of 240 FPS or 120 FPS" className="w-full rounded-xl border border-surface-border" />
+          <div className="mt-4 grid gap-3 sm:grid-cols-4">
+            {['Open Settings', 'Tap Camera', 'Tap Record Slo-mo', 'Choose 1080p at 240 fps'].map((step, index) => <div key={step} className="rounded-lg border border-surface-border bg-navy-950 p-3 text-sm text-slate-300"><strong className="mr-2 text-electric-blue-light">{index + 1}.</strong>{step}</div>)}
+          </div>
           <div className="mt-4 grid gap-3 sm:grid-cols-3"><div className="rounded-lg bg-accent-green/10 p-3 text-sm font-bold text-accent-green">240 FPS · Preferred</div><div className="rounded-lg bg-electric-blue/10 p-3 text-sm font-bold text-electric-blue-light">120 FPS · Accepted</div><div className="rounded-lg bg-yellow-400/10 p-3 text-sm font-bold text-yellow-200">Below 120 · No velocity estimate</div></div>
         </section>
 
@@ -244,11 +253,19 @@ export default function CameraSetupPage() {
 
         {/* CTA */}
         <div className="text-center">
-          <a href="/start-analysis" className="btn-primary text-base px-8 py-4 inline-flex items-center gap-2">
-            I'm Ready — Start My Analysis <ChevronRight className="h-5 w-5" />
+          <a href={uploadReturnHref} className="btn-primary text-base px-8 py-4 inline-flex items-center gap-2">
+            {paidOrderId ? 'Return to My Paid Video Upload' : "I'm Ready — Start My Analysis"} <ChevronRight className="h-5 w-5" />
           </a>
         </div>
       </div>
     </div>
+  )
+}
+
+export default function CameraSetupPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-navy-950 pt-24" />}>
+      <CameraSetupContent />
+    </Suspense>
   )
 }

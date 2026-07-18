@@ -389,23 +389,35 @@ function drawScientificMound(
     context.beginPath(); context.moveTo(footX, footY); context.lineTo(footX + column * width * 0.12, height); context.stroke()
   }
 
-  // Low pitching-mound profile, landing surface, rubber, and contact shadow.
-  const moundWidth = width * 0.62
-  const moundHeight = height * 0.058
+  // Side-view mound profile. The plateau and downslope run left-to-right to
+  // match the required open-side camera instead of facing the viewer.
+  const moundWidth = width * 0.74
+  const moundHeight = height * 0.064
+  const moundLeft = footX - moundWidth * 0.44
+  const moundRight = footX + moundWidth * 0.56
+  const moundTopY = footY - moundHeight * 0.22
+  const moundBaseY = footY + moundHeight
   const moundGradient = context.createLinearGradient(0, footY - moundHeight, 0, footY + moundHeight)
   moundGradient.addColorStop(0, '#59412e')
   moundGradient.addColorStop(0.55, '#2f241c')
   moundGradient.addColorStop(1, '#120f0c')
   context.fillStyle = moundGradient
   context.beginPath()
-  context.moveTo(footX - moundWidth * 0.5, footY + moundHeight)
-  context.quadraticCurveTo(footX - moundWidth * 0.16, footY - moundHeight * 0.52, footX, footY - moundHeight * 0.36)
-  context.quadraticCurveTo(footX + moundWidth * 0.2, footY - moundHeight * 0.2, footX + moundWidth * 0.5, footY + moundHeight)
+  context.moveTo(moundLeft, moundBaseY)
+  context.quadraticCurveTo(moundLeft + moundWidth * 0.12, moundTopY + moundHeight * 0.22, footX - moundWidth * 0.09, moundTopY)
+  context.lineTo(footX + moundWidth * 0.06, moundTopY)
+  context.quadraticCurveTo(footX + moundWidth * 0.30, moundTopY + moundHeight * 0.12, moundRight, moundBaseY)
   context.closePath(); context.fill()
-  context.fillStyle = 'rgba(0,0,0,0.42)'
-  context.beginPath(); context.ellipse(footX, footY + height * 0.015, width * 0.12, height * 0.018, 0, 0, Math.PI * 2); context.fill()
+  context.strokeStyle = 'rgba(180, 135, 91, 0.35)'
+  context.lineWidth = Math.max(1, width / 1100)
+  context.beginPath()
+  context.moveTo(moundLeft + moundWidth * 0.08, moundTopY + moundHeight * 0.32)
+  context.quadraticCurveTo(footX + moundWidth * 0.20, moundTopY + moundHeight * 0.38, moundRight - moundWidth * 0.08, moundBaseY - moundHeight * 0.16)
+  context.stroke()
+  context.fillStyle = 'rgba(0,0,0,0.34)'
+  context.beginPath(); context.ellipse(footX, footY + height * 0.008, width * 0.075, height * 0.011, 0, 0, Math.PI * 2); context.fill()
   context.fillStyle = '#d7d8d5'
-  context.fillRect(footX - width * 0.035, footY - height * 0.012, width * 0.07, Math.max(3, height * 0.009))
+  context.fillRect(footX - width * 0.042, moundTopY - height * 0.006, width * 0.084, Math.max(3, height * 0.008))
   context.restore()
 }
 
@@ -1249,8 +1261,17 @@ export function MotionAnalysisStudio({ initialVideo = null }: { initialVideo?: I
         published_at: null,
       })
       if (planError) throw planError
-      await fetch('/api/motion-lab/request-review', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ analysisId: analysis.id }) })
-      setSaveMessage('Submitted for staff review. We emailed Pitch Nav and will email you when your verified feedback and plan are approved for release.')
+      const notificationResponse = await fetch('/api/motion-lab/request-review', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ analysisId: analysis.id }),
+      })
+
+      if (notificationResponse.ok) {
+        setSaveMessage('Submitted for staff review. Pitch Nav staff was notified and will email you when your verified feedback and plan are approved for release.')
+      } else {
+        setSaveMessage('Submitted for staff review. Your analysis is safely in the admin dashboard, but the staff notification email could not be delivered. Pitch Nav staff can still review it there.')
+      }
     } catch (reason) {
       console.error(reason)
       setSaveMessage(reason instanceof Error ? reason.message : 'Could not save this analysis.')
@@ -1292,7 +1313,7 @@ export function MotionAnalysisStudio({ initialVideo = null }: { initialVideo?: I
           <Video className="mt-1 h-6 w-6 flex-none text-electric-blue-light" />
           <div>
             <h2 className="text-xl font-bold text-white">Calibrated side-view setup</h2>
-            <p className="mt-1 text-sm text-slate-400">Required before using the experimental video velocity estimator.</p>
+            <p className="mt-1 text-sm text-slate-400">These details help staff decide whether automatic, video-based velocity processing is eligible. Customers do not select calibration or baseball points.</p>
           </div>
         </div>
         <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -1302,7 +1323,7 @@ export function MotionAnalysisStudio({ initialVideo = null }: { initialVideo?: I
             'Aim perpendicular to the target line; keep the phone level and stationary.',
             'Use landscape orientation, no digital zoom, and strong lighting.',
             'Record at 240 FPS when supported; 120 FPS is the minimum.',
-            'Place a known-length calibration marker in the ball-travel plane.',
+            'Place the 8-inch Pitch Nav calibration marker in the same image plane as the visible baseball path.',
           ].map((instruction, index) => (
             <div key={instruction} className="rounded-xl border border-surface-border bg-navy-900 p-4 text-sm text-slate-300">
               <span className="mr-2 font-black text-electric-blue-light">{index + 1}.</span>{instruction}
@@ -1311,7 +1332,7 @@ export function MotionAnalysisStudio({ initialVideo = null }: { initialVideo?: I
         </div>
         <label className="mt-5 flex cursor-pointer items-start gap-3 rounded-xl border border-surface-border bg-navy-950 p-4">
           <input type="checkbox" checked={setupConfirmed} onChange={(event) => setSetupConfirmed(event.target.checked)} className="mt-1 h-5 w-5 accent-electric-blue" />
-          <span className="text-sm text-slate-300">I confirm this clip follows the 15-ft distance, 6-ft lens-height, perpendicular alignment, no-zoom, frame-rate, and in-plane calibration-marker requirements.</span>
+          <span className="text-sm text-slate-300">I confirm this clip follows the 15-ft distance, 6-ft lens-height, perpendicular alignment, no-zoom, frame-rate, and in-plane marker requirements. Staff will verify eligibility before any video-estimated range is released.</span>
         </label>
       </section>
 
@@ -1416,7 +1437,13 @@ export function MotionAnalysisStudio({ initialVideo = null }: { initialVideo?: I
                   </select>
                 </label>
                 <span className="rounded-lg bg-electric-blue/10 px-3 py-2 text-xs text-electric-blue-light">
-                  {detectingFps ? 'Detecting FPS…' : detectedPlaybackFps ? `Detected video track: ~${detectedPlaybackFps} FPS · ${detectedPlaybackFps >= 90 ? 'velocity eligible' : 'verify original slow-motion capture setting'}` : 'FPS unavailable—confirm original Camera setting'}
+                  {detectingFps
+                    ? 'Reading playback timeline…'
+                    : detectedPlaybackFps
+                      ? initialVideo?.captureFps && initialVideo.captureFps >= 120
+                        ? `Camera capture confirmed: ${initialVideo.captureFps} FPS · Slo-mo playback timeline: ~${detectedPlaybackFps} FPS`
+                        : `Playback timeline: ~${detectedPlaybackFps} FPS · original Camera capture setting still requires confirmation`
+                      : 'Playback FPS unavailable—confirm the original Camera Slo-mo setting'}
                 </span>
               </div>
             </div>
@@ -1449,56 +1476,22 @@ export function MotionAnalysisStudio({ initialVideo = null }: { initialVideo?: I
 
       {error && <div role="alert" className="rounded-xl border border-red-500/25 bg-red-500/10 p-4 text-sm text-red-300">{error}</div>}
 
-      {fileUrl && (
-        <section className="card">
-          <div className="flex flex-col justify-between gap-3 md:flex-row md:items-start">
+      {fileUrl && initialVideo?.orderId && (
+        <section className="card border-electric-blue/25">
+          <div className="flex items-start gap-3">
+            <Activity className="mt-1 h-6 w-6 flex-none text-electric-blue-light" />
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-electric-blue-light">Experimental</p>
-              <h2 className="mt-1 text-xl font-bold text-white">Calibrated video velocity estimator</h2>
-              <p className="mt-2 max-w-3xl text-sm text-slate-400">
-                Use Previous/Next frame above for precise selection. Select both ends of a known-length marker placed on the ground beside the ball path, then select the baseball center on two different frames. The result appears automatically after valid points are selected.
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-electric-blue-light">Staff-side processing</p>
+              <h2 className="mt-1 text-xl font-bold text-white">Velocity review runs behind the scenes</h2>
+              <p className="mt-2 max-w-3xl text-sm leading-relaxed text-slate-400">
+                No calibration clicks or baseball-point selections are required here. After a paid side-view video is uploaded,
+                Pitch Nav’s secure worker checks capture FPS, the calibration marker, and visible ball tracking. Staff reviews every
+                result before release. If the clip is not suitable, no video-estimated velocity is reported. Radar readings remain
+                separately labeled as verified.
               </p>
-            </div>
-            <div className="rounded-lg border border-yellow-400/25 bg-yellow-400/10 px-3 py-2 text-xs text-yellow-100">Estimated range—not radar verified</div>
-          </div>
-
-          <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <label>
-              <span className="label">Recorded frame rate</span>
-              <select className="input" value={captureFps} onChange={(event) => setCaptureFps(Number(event.target.value))}>
-                <option value={240}>240 FPS</option>
-                <option value={120}>120 FPS</option>
-                <option value={60}>60 FPS — mechanics only</option>
-              </select>
-              <span className="mt-1 block text-xs text-slate-500">{detectedPlaybackFps ? `File playback track: approximately ${detectedPlaybackFps} FPS. ` : ''}Confirm the original Camera app setting because edited iPhone slow-motion files may report 30/60 playback FPS even when captured at 120/240.</span>
-            </label>
-            <label>
-              <span className="label">Calibration-marker length</span>
-              <div className="flex items-center gap-2">
-                <input className="input" type="number" min={1} step={0.25} value={calibrationFeet} onChange={(event) => setCalibrationFeet(Number(event.target.value))} />
-                <span className="text-sm text-slate-400">ft</span>
-              </div>
-            </label>
-            <PointButton label="Set calibration point A" complete={!!calibrationA} active={selectionMode === 'calibrationA'} onClick={() => setSelectionMode('calibrationA')} />
-            <PointButton label="Set calibration point B" complete={!!calibrationB} active={selectionMode === 'calibrationB'} onClick={() => setSelectionMode('calibrationB')} />
-            <PointButton label="Set ball position 1" complete={!!ballStart} active={selectionMode === 'ballStart'} onClick={() => setSelectionMode('ballStart')} detail={ballStart ? `${ballStart.time.toFixed(3)}s` : 'Pause on first clear frame'} />
-            <PointButton label="Set ball position 2" complete={!!ballEnd} active={selectionMode === 'ballEnd'} onClick={() => setSelectionMode('ballEnd')} detail={ballEnd ? `${ballEnd.time.toFixed(3)}s` : 'Advance at least 4 frames'} />
-            <div className="rounded-xl border border-surface-border bg-navy-900 p-4 sm:col-span-2">
-              <p className="text-xs uppercase tracking-wider text-slate-500">Video-estimated velocity</p>
-              {captureFps < 120 ? (
-                <p className="mt-2 text-sm font-semibold text-yellow-300">Velocity calculation unavailable at 60 FPS. Mechanics analysis remains available.</p>
-              ) : velocityEstimate ? (
-                <>
-                  <p className="mt-1 text-3xl font-black text-white">{Math.round(velocityEstimate.low)}–{Math.round(velocityEstimate.high)} mph</p>
-                  <p className="mt-1 text-xs text-slate-400">Center estimate {velocityEstimate.mph.toFixed(1)} mph · {velocityEstimate.frames} frames · {velocityEstimate.confidence} confidence</p>
-                </>
-              ) : (
-                <div className="mt-2 space-y-1 text-sm text-slate-400"><p>Complete all four point selections to calculate a range.</p><p className="text-xs text-yellow-200">If all four are complete but no range appears, the points produced an implausible result. Make sure the marker length is correct, Ball 2 is on a later frame, and both ball points track the same pitch.</p></div>
-              )}
+              <p className="mt-3 text-xs text-slate-500">240 FPS is recommended. 120 FPS is accepted with reduced confidence. 60 FPS is mechanics-only.</p>
             </div>
           </div>
-          {selectionMode && <p role="status" className="mt-4 rounded-lg bg-electric-blue/10 p-3 text-sm text-electric-blue-light">Click the requested point directly on the paused video.</p>}
-          <p className="mt-4 text-xs leading-relaxed text-slate-500">240 FPS is recommended. 120 FPS is accepted with reduced confidence. 60 FPS is mechanics-only and never produces a velocity calculation. This calculation assumes the calibration marker and baseball path occupy the same image plane. Perspective, lens distortion, motion blur, incorrect FPS metadata, and point-selection error can materially affect the result. Radar remains the verified measurement.</p>
         </section>
       )}
 
