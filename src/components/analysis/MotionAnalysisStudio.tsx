@@ -144,6 +144,28 @@ function formatTime(value: number | null) {
   return `${value.toFixed(2)}s`
 }
 
+// Supabase's query/storage clients normally throw Error subclasses
+// (PostgrestError, StorageError), but older client versions — and any
+// code that rethrows a raw `{ message, code, details, hint }` object —
+// do not satisfy `instanceof Error`. Collapsing that case to a generic
+// string previously hid the real RLS/permission error from staff trying
+// to diagnose "Could not save this analysis."
+function describeSupabaseError(reason: unknown): string {
+  if (reason && typeof reason === 'object') {
+    const candidate = reason as { message?: unknown; code?: unknown; details?: unknown; hint?: unknown }
+    const message = typeof candidate.message === 'string' && candidate.message ? candidate.message : null
+    if (message) {
+      const parts = [message]
+      if (typeof candidate.code === 'string' && candidate.code) parts.push(`(code ${candidate.code})`)
+      if (typeof candidate.details === 'string' && candidate.details) parts.push(`— ${candidate.details}`)
+      if (typeof candidate.hint === 'string' && candidate.hint) parts.push(`Hint: ${candidate.hint}`)
+      return parts.join(' ')
+    }
+  }
+  if (typeof reason === 'string' && reason) return reason
+  return 'Could not save this analysis. Contact support and share this timestamp so staff can check server logs.'
+}
+
 function calculateMetrics(
   landmarks: NormalizedLandmark[],
   time: number,
@@ -559,6 +581,11 @@ export function MotionAnalysisStudio({
   const watermarkRef = useRef<HTMLCanvasElement | null>(null)
   const autoAnalyzeStartedRef = useRef(false)
   const autoSaveStartedRef = useRef(false)
+  // Stable across retries so a save that fails partway through (e.g. after
+  // phase screenshots upload but before the database insert) resumes the
+  // same analysis id on retry instead of orphaning the first attempt's
+  // uploaded files under an abandoned id.
+  const analysisIdRef = useRef<string | null>(null)
 
   const [fileUrl, setFileUrl] = useState<string | null>(null)
   const [loadingInitialVideo, setLoadingInitialVideo] = useState(Boolean(initialVideo))
@@ -824,6 +851,7 @@ export function MotionAnalysisStudio({
     setFileUrl(URL.createObjectURL(file))
     selectedFileRef.current = file
     renderedBlobRef.current = null
+    analysisIdRef.current = null
     setFileName(file.name)
     analyzingRef.current = false
     exportingRef.current = false
@@ -1186,6 +1214,13 @@ export function MotionAnalysisStudio({
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Please sign in again.')
       const targetUserId = initialVideo?.ownerUserId ?? user.id
+
+      // If a previous attempt already created the motion_analyses row (for
+      // example the training-plan insert or the retry step after it failed),
+      // reuse that row and its id instead of re-uploading the source video
+      // and six phase screenshots again, and instead of wrongly reporting
+      // success when the paired training plan never got created.
+      let existingAnalysisId: string | null = null
       if (initialVideo?.orderId) {
         const { data: existingAnalysis, error: existingError } = await supabase
           .from('motion_analyses')
@@ -1194,17 +1229,31 @@ export function MotionAnalysisStudio({
           .maybeSingle()
         if (existingError) throw existingError
         if (existingAnalysis) {
-          setSaveMessage('Your six-phase analysis is already prepared and waiting for staff review.')
-          return true
+          existingAnalysisId = existingAnalysis.id
+          const { data: existingPlan, error: existingPlanError } = await supabase
+            .from('training_plans')
+            .select('id')
+            .eq('motion_analysis_id', existingAnalysis.id)
+            .maybeSingle()
+          if (existingPlanError) throw existingPlanError
+          if (existingPlan) {
+            setSaveMessage('Your six-phase analysis is already prepared and waiting for staff review.')
+            return true
+          }
         }
       }
-      const cutoff = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString()
-      const { data: recentAnalysis } = await supabase.from('motion_analyses').select('id,created_at').eq('user_id', targetUserId).eq('cooldown_exempt', false).gte('created_at', cutoff).order('created_at', { ascending: false }).limit(1).maybeSingle()
-      if (recentAnalysis && !initialVideo?.staffProcessing) {
-        const nextDate = new Date(new Date(recentAnalysis.created_at).getTime() + 14 * 24 * 60 * 60 * 1000)
-        throw new Error(`Your membership includes one analysis every two weeks. Your next analysis is available ${nextDate.toLocaleDateString()}.`)
+
+      if (!existingAnalysisId) {
+        const cutoff = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString()
+        const { data: recentAnalysis } = await supabase.from('motion_analyses').select('id,created_at').eq('user_id', targetUserId).eq('cooldown_exempt', false).gte('created_at', cutoff).order('created_at', { ascending: false }).limit(1).maybeSingle()
+        if (recentAnalysis && !initialVideo?.staffProcessing) {
+          const nextDate = new Date(new Date(recentAnalysis.created_at).getTime() + 14 * 24 * 60 * 60 * 1000)
+          throw new Error(`Your membership includes one analysis every two weeks. Your next analysis is available ${nextDate.toLocaleDateString()}.`)
+        }
       }
-      const analysisId = crypto.randomUUID()
+
+      if (!analysisIdRef.current) analysisIdRef.current = crypto.randomUUID()
+      const analysisId = existingAnalysisId ?? analysisIdRef.current
       const source = selectedFileRef.current
       const categoryFeedback = buildCategoryFeedback(samplesRef.current, summary)
       const overallScore = categoryFeedback.reduce((total, category) => total + category.score, 0)
@@ -1216,55 +1265,60 @@ export function MotionAnalysisStudio({
         summary.averageConfidence < 0.7 ? 'Improve lighting and full-body framing to raise measurement confidence.' : 'Compare posture and direction at lead-foot contact across future clips.',
         'Use the same camera angle and intensity during the follow-up recording.',
       ]
-      const extension = source.name.split('.').pop()?.toLowerCase() || 'mp4'
-      const sourcePath = existingSourcePathRef.current ?? `${targetUserId}/motion-lab/${analysisId}/source.${extension}`
-      if (!existingSourcePathRef.current) {
-        const { error: sourceError } = await supabase.storage.from('pitch-videos').upload(sourcePath, source, { upsert: false, contentType: source.type })
-        if (sourceError) throw sourceError
-      }
 
-      let renderedPath: string | null = null
-      if (renderedBlobRef.current) {
-        renderedPath = `${targetUserId}/motion-lab/${analysisId}/skeleton.webm`
-        const { error: renderError } = await supabase.storage.from('pitch-videos').upload(renderedPath, renderedBlobRef.current, { upsert: true, contentType: 'video/webm' })
-        if (renderError) throw renderError
-      }
-      const phaseSnapshots = await capturePhaseScreenshots(targetUserId, analysisId)
-      if (phaseSnapshots.length !== 6) {
-        throw new Error('The six phase frames could not all be saved. Keep this page open and retry automatic processing.')
-      }
+      let analysis: { id: string }
+      if (existingAnalysisId) {
+        analysis = { id: existingAnalysisId }
+      } else {
+        const extension = source.name.split('.').pop()?.toLowerCase() || 'mp4'
+        const sourcePath = existingSourcePathRef.current ?? `${targetUserId}/motion-lab/${analysisId}/source.${extension}`
+        if (!existingSourcePathRef.current) {
+          const { error: sourceError } = await supabase.storage.from('pitch-videos').upload(sourcePath, source, { upsert: false, contentType: source.type })
+          if (sourceError) throw sourceError
+        }
 
-      const { data: analysis, error: analysisError } = await supabase.from('motion_analyses').insert({
-        id: analysisId,
-        order_id: initialVideo?.orderId ?? null,
-        user_id: targetUserId,
-        athlete_profile_id: initialVideo?.athleteProfileId ?? null,
-        title: fileName.replace(/\.[^.]+$/, '') || 'Motion Lab Analysis',
-        status: 'submitted_for_review',
-        source_video_storage_path: sourcePath,
-        rendered_video_storage_path: renderedPath,
-        capture_fps: captureFps,
-        calibration_passed: setupConfirmed,
-        velocity_estimate_low: velocityEstimate?.low ?? null,
-        velocity_estimate_high: velocityEstimate?.high ?? null,
-        velocity_confidence: velocityEstimate?.confidence ?? null,
-        velocity_assumptions: velocityEstimate ? `${captureFps} FPS; fixed side view; ${calibrationFeet} ft calibration marker; video-based estimate` : null,
-        mechanics_metrics: metrics ?? {},
-        clip_summary: summary,
-        delivery_score: overallScore,
-        category_scores: categoryFeedback,
-        phase_snapshots: phaseSnapshots,
-        strengths: immediateStrengths,
-        development_priorities: immediatePriorities,
-      }).select('id').single()
-      if (analysisError) throw analysisError
+        let renderedPath: string | null = null
+        if (renderedBlobRef.current) {
+          renderedPath = `${targetUserId}/motion-lab/${analysisId}/skeleton.webm`
+          const { error: renderError } = await supabase.storage.from('pitch-videos').upload(renderedPath, renderedBlobRef.current, { upsert: true, contentType: 'video/webm' })
+          if (renderError) throw renderError
+        }
+        const phaseSnapshots = await capturePhaseScreenshots(targetUserId, analysisId)
+        if (phaseSnapshots.length !== 6) {
+          const missing = 6 - phaseSnapshots.length
+          throw new Error(`${missing} of 6 phase frames could not be saved. Keep this page open and retry automatic processing.`)
+        }
+
+        const { data: inserted, error: analysisError } = await supabase.from('motion_analyses').insert({
+          id: analysisId,
+          order_id: initialVideo?.orderId ?? null,
+          user_id: targetUserId,
+          athlete_profile_id: initialVideo?.athleteProfileId ?? null,
+          title: fileName.replace(/\.[^.]+$/, '') || 'Motion Lab Analysis',
+          status: 'submitted_for_review',
+          source_video_storage_path: sourcePath,
+          rendered_video_storage_path: renderedPath,
+          capture_fps: captureFps,
+          calibration_passed: setupConfirmed,
+          velocity_estimate_low: velocityEstimate?.low ?? null,
+          velocity_estimate_high: velocityEstimate?.high ?? null,
+          velocity_confidence: velocityEstimate?.confidence ?? null,
+          velocity_assumptions: velocityEstimate ? `${captureFps} FPS; fixed side view; ${calibrationFeet} ft calibration marker; video-based estimate` : null,
+          mechanics_metrics: metrics ?? {},
+          clip_summary: summary,
+          delivery_score: overallScore,
+          category_scores: categoryFeedback,
+          phase_snapshots: phaseSnapshots,
+          strengths: immediateStrengths,
+          development_priorities: immediatePriorities,
+        }).select('id').single()
+        if (analysisError) throw analysisError
+        analysis = inserted
+      }
 
       if (initialVideo?.orderId) {
-        await supabase.from('orders').update({
-          status: 'in_analysis',
-          submitted_at: new Date().toISOString(),
-          delivery_estimate_text: 'Motion Lab processing complete. Staff verification will be completed within one business day.',
-        }).eq('id', initialVideo.orderId)
+        const { error: orderError } = await supabase.rpc('mark_order_in_analysis', { target_order_id: initialVideo.orderId })
+        if (orderError) console.error('Could not advance order status to in_analysis', orderError)
       }
 
       const weeks = Array.from({ length: planWeeks }, (_, index) => ({
@@ -1317,7 +1371,7 @@ export function MotionAnalysisStudio({
       return true
     } catch (reason) {
       console.error(reason)
-      setSaveMessage(reason instanceof Error ? reason.message : 'Could not save this analysis.')
+      setSaveMessage(describeSupabaseError(reason))
       return false
     } finally {
       setSavingAnalysis(false)
