@@ -5,30 +5,40 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import { CheckCircle, Shield, Lock } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { SafetyDisclaimer } from '@/components/ui/SafetyDisclaimer'
-import { formatCurrency } from '@/lib/utils'
 import type { Order, AthleteProfile } from '@/types/database'
 import Link from 'next/link'
 
-const PACKAGE_ITEMS = [
+type MembershipTier = 'throwing' | 'performance'
+
+const THROWING_ITEMS = [
   'Open-side video review',
   'Six-position mechanics breakdown',
   'Mechanics scorecard',
   'Three strengths & three development priorities',
   'Three personalized drills',
-  'Eight-week focus plan',
+  'Eight-week throwing plan',
   'Voice-over video analysis',
   'Downloadable PDF report',
+]
+
+const PERFORMANCE_ITEMS = [
+  ...THROWING_ITEMS,
+  'Tailored eight-week strength plan',
+  'Monday–Sunday mobility schedule',
+  'Lifting cues, recovery guidance & progress tracking',
 ]
 
 function CheckoutContent() {
   const searchParams = useSearchParams()
   const orderId = searchParams.get('orderId')
+  const requestedPlan = searchParams.get('plan')
   const router = useRouter()
   const supabase = useMemo(() => createClient(), [])
 
   const [order, setOrder] = useState<Order | null>(null)
   const [profile, setProfile] = useState<AthleteProfile | null>(null)
   const [agreed, setAgreed] = useState(false)
+  const [membershipTier, setMembershipTier] = useState<MembershipTier>(requestedPlan === 'performance' ? 'performance' : 'throwing')
   const [loading, setLoading] = useState(true)
   const [checkoutLoading, setCheckoutLoading] = useState(false)
   const [error, setError] = useState('')
@@ -74,7 +84,7 @@ function CheckoutContent() {
       const res = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderId }),
+        body: JSON.stringify({ orderId, membershipTier }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'Checkout failed')
@@ -141,11 +151,38 @@ function CheckoutContent() {
               </div>
             )}
 
-            {/* Package */}
+            {/* Membership choice */}
             <div className="card">
-              <h2 className="text-base font-semibold text-white mb-4">Complete Pitching Analysis</h2>
+              <h2 className="text-base font-semibold text-white">Choose Your Membership</h2>
+              <p className="mt-1 text-sm text-slate-400">Both options include one staff-reviewed pitching analysis every two weeks.</p>
+
+              <div className="mt-5 grid gap-4 sm:grid-cols-2">
+                <button
+                  type="button"
+                  onClick={() => setMembershipTier('throwing')}
+                  className={`rounded-xl border p-4 text-left transition ${membershipTier === 'throwing' ? 'border-electric-blue bg-electric-blue/10 ring-2 ring-electric-blue/25' : 'border-surface-border bg-navy-950 hover:border-slate-600'}`}
+                >
+                  <p className="text-xs font-bold uppercase tracking-wider text-electric-blue-light">Throwing Development</p>
+                  <p className="mt-2 text-3xl font-black text-white">$25<span className="text-sm font-medium text-slate-400">/month</span></p>
+                  <p className="mt-2 text-xs leading-relaxed text-slate-400">Pitching mechanics, throwing drills, feedback, and an eight-week throwing plan.</p>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMembershipTier('performance')}
+                  className={`relative rounded-xl border p-4 text-left transition ${membershipTier === 'performance' ? 'border-accent-green bg-accent-green/10 ring-2 ring-accent-green/20' : 'border-surface-border bg-navy-950 hover:border-slate-600'}`}
+                >
+                  <span className="absolute right-3 top-3 rounded-full bg-accent-green/15 px-2 py-1 text-[10px] font-bold uppercase text-accent-green">Most complete</span>
+                  <p className="pr-20 text-xs font-bold uppercase tracking-wider text-accent-green">Complete Performance</p>
+                  <p className="mt-2 text-3xl font-black text-white">$40<span className="text-sm font-medium text-slate-400">/month</span></p>
+                  <p className="mt-2 text-xs leading-relaxed text-slate-400">Everything in Throwing Development, plus tailored strength and mobility programming.</p>
+                </button>
+              </div>
+
+              <h3 className="mb-3 mt-6 text-sm font-semibold text-white">
+                {membershipTier === 'performance' ? 'Complete Performance includes' : 'Throwing Development includes'}
+              </h3>
               <ul className="space-y-2 mb-4">
-                {PACKAGE_ITEMS.map((item) => (
+                {(membershipTier === 'performance' ? PERFORMANCE_ITEMS : THROWING_ITEMS).map((item) => (
                   <li key={item} className="flex items-center gap-2.5 text-sm text-slate-300">
                     <CheckCircle className="h-4 w-4 text-accent-green flex-shrink-0" />
                     {item}
@@ -188,7 +225,7 @@ function CheckoutContent() {
                   <h3 className="text-lg font-bold text-white">Order Total</h3>
                   <p className="text-slate-500 text-sm">Monthly membership</p>
                 </div>
-                <p className="text-4xl font-black text-white">$40/month</p>
+                <p className="text-4xl font-black text-white">${membershipTier === 'performance' ? '40' : '25'}<span className="text-sm font-medium text-slate-400">/month</span></p>
               </div>
 
               {error && (
@@ -211,7 +248,7 @@ function CheckoutContent() {
                 ) : (
                   <>
                     <Lock className="h-4 w-4" />
-                    Subscribe for $40/month
+                    Subscribe for ${membershipTier === 'performance' ? '40' : '25'}/month
                   </>
                 )}
               </button>

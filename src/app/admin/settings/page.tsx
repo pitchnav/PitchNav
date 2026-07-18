@@ -127,7 +127,8 @@ export default function AdminSettingsPage() {
       <p className="text-xs text-slate-600 mt-8">
         Stripe product and price IDs are configured via environment variables (
         <code className="font-mono text-slate-500">STRIPE_PRODUCT_ID</code>,{' '}
-        <code className="font-mono text-slate-500">STRIPE_PRICE_ID</code>). Update{' '}
+        <code className="font-mono text-slate-500">STRIPE_THROWING_PRICE_ID</code>, and{' '}
+        <code className="font-mono text-slate-500">STRIPE_PERFORMANCE_PRICE_ID</code>). Update{' '}
         <code className="font-mono text-slate-500">.env.local</code> and redeploy to change them.
       </p>
     </div>

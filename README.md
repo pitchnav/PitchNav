@@ -11,9 +11,9 @@ Pitch Nav is a web application that lets baseball pitchers:
 
 1. Create an account and fill out an athlete profile
 2. Follow a guided camera-setup wizard and upload pitching videos
-3. Pay for a remote mechanics analysis ($49)
+3. Choose the $25/month throwing membership or the $40/month complete performance membership
 4. Track their order status
-5. View a completed report with a mechanics scorecard, personalized drills, and a four-week plan
+5. View a completed report with a mechanics scorecard, personalized drills, and an eight-week plan
 
 Admins review submitted orders, enter report data, and mark orders complete — all from a protected dashboard.
 
@@ -113,12 +113,10 @@ Open `.env.local` in a text editor and fill in every value. See the sections bel
 4. Copy:
    - `Publishable key` → `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`
    - `Secret key` → `STRIPE_SECRET_KEY`
-5. Create a Product:
-   - Go to **Products → Add product**
-   - Name: "Complete Pitching Analysis"
-   - Price: $49.00 one-time
-   - Copy the **Product ID** → `STRIPE_PRODUCT_ID`
-   - Copy the **Price ID** → `STRIPE_PRICE_ID`
+5. Create two recurring monthly Prices under your Pitch Nav membership Product:
+   - **Throwing Development:** $25/month → copy its Price ID to `STRIPE_THROWING_PRICE_ID`
+   - **Complete Performance:** $40/month → copy its Price ID to `STRIPE_PERFORMANCE_PRICE_ID`
+   - Copy the Product ID to `STRIPE_PRODUCT_ID`
 6. Create a webhook (covered in Step 7)
 
 ### Resend Keys
@@ -156,13 +154,13 @@ The database schema lives in `supabase/migrations/`. Run them in order:
    - `003_storage_policies.sql`
    - `004_demo_data.sql`
    - Continue with every remaining numbered migration in ascending order through
-     `021_scientific_motion_strength_membership.sql`. Do not paste a filename into
+     `022_membership_tiers.sql`. Do not paste a filename into
      the SQL editor; paste the contents of each `.sql` file and click **Run**.
 
-The `021` migration makes staff-rejected clips exempt from the 14-day limit,
-adds the tailored eight-week strength/mobility calendar, and sets the configured
-membership amount to 4000 cents ($40). The actual Stripe Price must also be a
-recurring $40 monthly Price and its ID must be saved as `STRIPE_PRICE_ID`.
+Migration `021` makes staff-rejected clips exempt from the 14-day limit and adds
+the tailored strength/mobility calendar. Migration `022` configures the two
+membership amounts. The $25 option receives throwing development only; the $40
+option also receives the tailored eight-week strength and mobility plan.
 
 #### Option B — Supabase CLI
 
@@ -423,7 +421,7 @@ The following pages contain `[PLACEHOLDER]` markers where legal review is requir
 
 1. Go to your Stripe Dashboard → Products
 2. Create a new price on the existing product (do not edit the existing price)
-3. Update `STRIPE_PRICE_ID` in Vercel environment variables
+3. Update both `STRIPE_THROWING_PRICE_ID` and `STRIPE_PERFORMANCE_PRICE_ID` in Vercel environment variables
 4. Redeploy: `vercel --prod`
 
 ### Configuring delivery estimate wording
@@ -454,7 +452,8 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY= # Safe to expose
 STRIPE_SECRET_KEY=                  # SECRET — server only
 STRIPE_WEBHOOK_SECRET=              # SECRET — webhook signature verification
 STRIPE_PRODUCT_ID=                  # Stripe product ID
-STRIPE_PRICE_ID=                    # Stripe price ID (e.g. price_xxx)
+STRIPE_THROWING_PRICE_ID=           # Recurring $25/month Stripe Price ID
+STRIPE_PERFORMANCE_PRICE_ID=        # Recurring $40/month Stripe Price ID
 
 # Resend (email)
 RESEND_API_KEY=                     # SECRET — server only

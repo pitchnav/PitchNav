@@ -25,12 +25,13 @@ export default async function MotionLabPage({ searchParams }: { searchParams: Pr
     trimStartSecs: number | null
     trimEndSecs: number | null
     captureFps: number | null
+    amountPaidCents: number | null
   } | null = null
 
   if (videoId) {
     const { data: submission } = await supabase
       .from('video_submissions')
-      .select('id,order_id,storage_path,file_name,mime_type,frame_rate,trim_start_secs,trim_end_secs,orders!inner(user_id,athlete_profile_id,athlete_profiles(throwing_hand))')
+      .select('id,order_id,storage_path,file_name,mime_type,frame_rate,trim_start_secs,trim_end_secs,orders!inner(user_id,athlete_profile_id,amount_paid_cents,athlete_profiles(throwing_hand))')
       .eq('id', videoId)
       .eq('orders.user_id', user.id)
       .single()
@@ -51,6 +52,7 @@ export default async function MotionLabPage({ searchParams }: { searchParams: Pr
           trimStartSecs: submission.trim_start_secs ?? null,
           trimEndSecs: submission.trim_end_secs ?? null,
           captureFps: [60, 120, 240].includes(Number(submission.frame_rate)) ? Number(submission.frame_rate) : null,
+          amountPaidCents: order?.amount_paid_cents ?? null,
         }
       }
     }

@@ -21,7 +21,7 @@ export default async function AdminOrderMotionLabPage({
   const supabase = await createClient()
   const { data: submission } = await supabase
     .from('video_submissions')
-    .select('id,order_id,user_id,storage_path,file_name,mime_type,angle,trim_start_secs,trim_end_secs,orders!inner(id,user_id,athlete_profile_id,athlete_profiles(throwing_hand))')
+    .select('id,order_id,user_id,storage_path,file_name,mime_type,angle,trim_start_secs,trim_end_secs,orders!inner(id,user_id,athlete_profile_id,amount_paid_cents,athlete_profiles(throwing_hand))')
     .eq('id', videoId)
     .eq('order_id', orderId)
     .single()
@@ -47,6 +47,7 @@ export default async function AdminOrderMotionLabPage({
         orderId,
         ownerUserId: order.user_id,
         staffProcessing: true,
+        amountPaidCents: order.amount_paid_cents ?? null,
         athleteProfileId: order.athlete_profile_id,
         handedness: athlete?.throwing_hand === 'left' ? 'left' : 'right',
         trimStartSecs: submission.trim_start_secs ?? null,

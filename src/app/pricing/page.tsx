@@ -5,10 +5,10 @@ import { SafetyDisclaimer } from '@/components/ui/SafetyDisclaimer'
 
 export const metadata: Metadata = {
   title: 'Pricing',
-  description: 'Pitch Nav membership — $40/month. Staff-reviewed pitching analysis every two weeks, velocity estimates, progress tracking, and an eight-week development plan.',
+  description: 'Choose $25/month for throwing development or $40/month for throwing, strength, and mobility programming.',
 }
 
-const included = [
+const throwingIncluded = [
   { item: 'Open-side video review', note: null },
   { item: 'Six-position mechanics breakdown', note: 'Peak leg lift, hand separation, lead-foot contact, max external rotation, ball release, finish & deceleration' },
   { item: 'Mechanics scorecard', note: '6 categories scored 1–5, Delivery Score out of 30' },
@@ -17,13 +17,18 @@ const included = [
   { item: '3 development priorities', note: null },
   { item: '3 personalized drills', note: 'Sets, reps, coaching cues, and common mistakes for each' },
   { item: 'Eight-week Monday–Sunday development plan', note: 'Daily priorities, drills, recovery, progress checkboxes, and a retest date' },
-  { item: 'Tailored eight-week strength & mobility plan', note: 'Conservative weekly lifting, mobility, recovery, cues, and progress tracking tied to the report’s primary focus' },
   { item: 'One new analysis every two weeks', note: 'Compare deliveries and track score, angle, and velocity trends over time' },
   { item: 'Staff approval before release', note: 'Your results are reviewed before appearing in your dashboard' },
   { item: 'Voice-over video analysis', note: 'Your reviewer walks through the report verbally' },
   { item: 'Downloadable PDF report', note: null },
   { item: 'Annotated position images', note: null },
   { item: 'Follow-up analysis option', note: 'Available at a separate discounted rate after your first report' },
+]
+
+const performanceExtras = [
+  { item: 'Tailored eight-week strength plan', note: 'Conservative lifting recommendations tied to the report’s primary focus' },
+  { item: 'Monday–Sunday mobility calendar', note: 'Mobility, recovery, cues, common mistakes, and completion tracking' },
+  { item: 'Strength-to-throwing coordination', note: 'Programming designed to complement—not replace—the athlete’s existing throwing and coaching plan' },
 ]
 
 const faqs = [
@@ -36,8 +41,8 @@ const faqs = [
     a: 'If your videos do not meet quality standards, your reviewer will notify you and explain what is needed. You can upload replacement videos at no additional charge within 14 days of the request.',
   },
   {
-    q: 'What does the $40 monthly membership include?',
-    a: 'Your membership includes secure video storage, one staff-reviewed analysis every two weeks, scientific 2D pose visualization, video-estimated velocity when eligible, eight-week pitching plus strength-and-mobility plans, and progress comparisons.',
+    q: 'What is the difference between the $25 and $40 memberships?',
+    a: 'The $25 Throwing Development membership includes the pitching analysis, throwing drills, feedback, and eight-week throwing plan. The $40 Complete Performance membership includes everything in the $25 option plus a tailored eight-week strength and mobility plan.',
   },
   {
     q: 'How much does a follow-up analysis cost?',
@@ -59,48 +64,34 @@ export default function PricingPage() {
           </p>
         </div>
 
-        {/* Main pricing card */}
-        <div className="relative card overflow-hidden mb-16">
-          <div className="absolute top-0 left-0 right-0 h-1 bg-accent-gradient" aria-hidden />
-
-          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-6 mb-8">
-            <div>
-              <h2 className="text-2xl font-black text-white">Pitch Nav Development Membership</h2>
-              <p className="text-slate-400 mt-2 max-w-lg">
-                A continuous pitching-development workspace with staff-reviewed video analysis, a clear biggest opportunity, velocity context, and a practical two-month roadmap.
-              </p>
+        {/* Membership options */}
+        <div className="mb-16 grid gap-6 lg:grid-cols-2">
+          <article className="card relative overflow-hidden flex flex-col">
+            <div className="absolute inset-x-0 top-0 h-1 bg-electric-blue" aria-hidden />
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-electric-blue-light">Throwing Development</p>
+            <div className="mt-3 text-5xl font-black text-white">$25<span className="text-base font-medium text-slate-400">/month</span></div>
+            <p className="mt-3 text-sm leading-relaxed text-slate-400">Complete pitching analysis, throwing feedback, personalized drills, and an eight-week throwing plan.</p>
+            <div className="my-6 space-y-3 flex-1">
+              {throwingIncluded.map(({ item, note }) => <div key={item} className="flex items-start gap-3"><CheckCircle className="mt-0.5 h-5 w-5 shrink-0 text-electric-blue-light" /><div><p className="text-sm font-medium text-white">{item}</p>{note && <p className="mt-0.5 text-xs text-slate-500">{note}</p>}</div></div>)}
             </div>
-            <div className="flex-shrink-0">
-              <div className="text-5xl font-black text-white">$40</div>
-              <p className="text-slate-500 text-sm mt-1">per month · cancel anytime</p>
+            <Link href="/start-analysis?plan=throwing" className="btn-primary w-full justify-center py-4">Choose $25 Throwing Plan <ArrowRight className="h-5 w-5" /></Link>
+          </article>
+
+          <article className="card relative overflow-hidden flex flex-col border-accent-green/35">
+            <div className="absolute inset-x-0 top-0 h-1 bg-accent-green" aria-hidden />
+            <span className="absolute right-5 top-5 rounded-full bg-accent-green/15 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-accent-green">Most complete</span>
+            <p className="pr-28 text-xs font-bold uppercase tracking-[0.2em] text-accent-green">Complete Performance</p>
+            <div className="mt-3 text-5xl font-black text-white">$40<span className="text-base font-medium text-slate-400">/month</span></div>
+            <p className="mt-3 text-sm leading-relaxed text-slate-400">Everything in Throwing Development, plus a tailored two-month lifting and mobility plan.</p>
+            <div className="my-6 space-y-3 flex-1">
+              <div className="flex items-start gap-3"><CheckCircle className="mt-0.5 h-5 w-5 shrink-0 text-accent-green" /><p className="text-sm font-medium text-white">Everything in the $25 membership</p></div>
+              {performanceExtras.map(({ item, note }) => <div key={item} className="flex items-start gap-3"><CheckCircle className="mt-0.5 h-5 w-5 shrink-0 text-accent-green" /><div><p className="text-sm font-medium text-white">{item}</p>{note && <p className="mt-0.5 text-xs text-slate-500">{note}</p>}</div></div>)}
             </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-12 gap-y-4 mb-8">
-            {included.map(({ item, note }) => (
-              <div key={item} className="flex items-start gap-3">
-                <CheckCircle className="h-5 w-5 text-accent-green flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-sm font-medium text-white">{item}</p>
-                  {note && <p className="text-xs text-slate-500 mt-0.5">{note}</p>}
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="flex flex-col sm:flex-row gap-4">
-            <Link href="/start-analysis" className="btn-accent flex-1 justify-center text-base py-4">
-              Start Membership — $40/month <ArrowRight className="h-5 w-5" />
-            </Link>
-            <Link href="/sample-report" className="btn-secondary flex-1 justify-center text-base py-4">
-              View Sample Report
-            </Link>
-          </div>
-
-          <p className="mt-4 text-xs text-slate-600 text-center">
-            Secure checkout powered by Stripe. Pitch Nav does not store your card number.
-          </p>
+            <Link href="/start-analysis?plan=performance" className="btn-accent w-full justify-center py-4">Choose $40 Complete Plan <ArrowRight className="h-5 w-5" /></Link>
+          </article>
         </div>
+
+        <p className="-mt-10 mb-16 text-center text-xs text-slate-600">Secure checkout powered by Stripe. Both memberships renew monthly and may be cancelled according to the membership terms.</p>
 
         {/* Delivery score note */}
         <div className="card mb-12 border-electric-blue/20">

@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createCheckoutSession } from '@/lib/stripe'
+import type { MembershipTier } from '@/lib/stripe'
 
 export async function POST(request: NextRequest) {
   try {
@@ -11,9 +12,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { orderId } = await request.json()
+    const { orderId, membershipTier } = await request.json() as {
+      orderId?: string
+      membershipTier?: MembershipTier
+    }
     if (!orderId) {
       return NextResponse.json({ error: 'Order ID is required' }, { status: 400 })
+    }
+    if (membershipTier !== 'throwing' && membershipTier !== 'performance') {
+      return NextResponse.json({ error: 'Choose a valid membership option' }, { status: 400 })
     }
 
     // Fetch and validate the order
@@ -39,8 +46,9 @@ export async function POST(request: NextRequest) {
       orderId,
       athleteName,
       userId: user.id,
+      membershipTier,
       successUrl: `${appUrl}/success?orderId=${orderId}&session_id={CHECKOUT_SESSION_ID}`,
-      cancelUrl: `${appUrl}/checkout?orderId=${orderId}`,
+      cancelUrl: `${appUrl}/checkout?orderId=${orderId}&plan=${membershipTier}`,
     })
 
     // Store the session ID on the order for webhook verification

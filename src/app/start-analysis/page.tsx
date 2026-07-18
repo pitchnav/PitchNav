@@ -26,10 +26,20 @@ export default function StartAnalysisPage() {
   const [athleteProfileId, setAthleteProfileId] = useState<string | null>(null)
   const [userId, setUserId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  const [membershipPlan, setMembershipPlan] = useState<'throwing' | 'performance'>('throwing')
   const router = useRouter()
   const supabase = createClient()
 
   useEffect(() => {
+    const requestedPlan = new URLSearchParams(window.location.search).get('plan')
+    const selectedPlan = requestedPlan === 'performance' ? 'performance' : requestedPlan === 'throwing' ? 'throwing' : null
+    if (selectedPlan) {
+      localStorage.setItem('pitch-nav-membership-plan', selectedPlan)
+      setMembershipPlan(selectedPlan)
+    } else if (localStorage.getItem('pitch-nav-membership-plan') === 'performance') {
+      setMembershipPlan('performance')
+    }
+
     async function checkAuth() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) {
@@ -66,7 +76,7 @@ export default function StartAnalysisPage() {
       setCurrentStep((s) => s + 1)
     } else {
       // Navigate to video upload step with the created profile
-      router.push(`/start-analysis/upload?profileId=${athleteProfileId}`)
+      router.push(`/start-analysis/upload?profileId=${athleteProfileId}&plan=${membershipPlan}`)
     }
   }
 
@@ -90,6 +100,9 @@ export default function StartAnalysisPage() {
           <h1 className="text-3xl font-black text-white">Start Your Analysis</h1>
           <p className="mt-2 text-slate-400">
             Complete your athlete profile to begin. Your information is saved as you go.
+          </p>
+          <p className="mt-3 text-sm font-semibold text-electric-blue-light">
+            Selected: {membershipPlan === 'performance' ? '$40/month Complete Performance' : '$25/month Throwing Development'}
           </p>
         </div>
 

@@ -541,6 +541,7 @@ type InitialVideo = {
   trimStartSecs?: number | null
   trimEndSecs?: number | null
   captureFps?: number | null
+  amountPaidCents?: number | null
   athleteProfileId: string | null
   handedness: Handedness
 } | null
@@ -1261,7 +1262,11 @@ export function MotionAnalysisStudio({ initialVideo = null }: { initialVideo?: I
         ],
         completed: false,
       }))
-      const strengthMobilityWeeks = buildStrengthMobilityPlan(categoryFeedback)
+      // The $25 Throwing Development plan intentionally excludes lifting and
+      // mobility programming. Only paid $40 Complete Performance orders receive it.
+      const strengthMobilityWeeks = (initialVideo?.amountPaidCents ?? 0) >= 4000
+        ? buildStrengthMobilityPlan(categoryFeedback)
+        : []
       const followUp = new Date()
       followUp.setDate(followUp.getDate() + planWeeks * 7)
       const { error: planError } = await supabase.from('training_plans').insert({

@@ -54,6 +54,7 @@ function UploadContent() {
   const searchParams = useSearchParams()
   const profileId = searchParams.get('profileId')
   const paidOrderId = searchParams.get('orderId')
+  const requestedPlan = searchParams.get('plan') === 'performance' ? 'performance' : 'throwing'
   const router = useRouter()
   const supabase = useMemo(() => createClient(), [])
 
@@ -142,10 +143,10 @@ function UploadContent() {
         order = result.data
       }
       if (!order) { setLoading(false); return }
-      router.replace(`/checkout?orderId=${order.id}`)
+      router.replace(`/checkout?orderId=${order.id}&plan=${requestedPlan}`)
     }
     void init()
-  }, [profileId, paidOrderId, router, supabase])
+  }, [profileId, paidOrderId, requestedPlan, router, supabase])
 
   function beginVideoSelection(file: File | null = null) {
     setPendingDrop(file)

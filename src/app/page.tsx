@@ -208,7 +208,7 @@ function WhatIsIncluded() {
             </ul>
             <div className="mt-10 flex gap-4">
               <Link href="/start-analysis" className="btn-primary">
-                Get Started — $40/month <ArrowRight className="h-4 w-4" />
+                View Membership Options <ArrowRight className="h-4 w-4" />
               </Link>
               <Link href="/pricing" className="btn-secondary">
                 See Pricing Details
@@ -220,11 +220,11 @@ function WhatIsIncluded() {
           <div className="card bg-card-gradient">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <p className="text-xs text-slate-500 uppercase tracking-widest">Complete Package</p>
-                <p className="text-3xl font-black text-white mt-1">$40/month</p>
+                <p className="text-xs text-slate-500 uppercase tracking-widest">Memberships</p>
+                <p className="text-3xl font-black text-white mt-1">From $25/month</p>
               </div>
               <div className="rounded-lg bg-accent-green/10 px-3 py-1">
-                <span className="text-sm font-semibold text-accent-green">All Included</span>
+                <span className="text-sm font-semibold text-accent-green">Core analysis included</span>
               </div>
             </div>
 
@@ -375,56 +375,46 @@ function WhyPitchNav() {
 // ── Pricing Section ───────────────────────────────────────────
 
 function PricingSection() {
+  const common = [
+    'Staff-reviewed open-side analysis',
+    'Six-position mechanics breakdown',
+    'Mechanics scorecard and velocity context',
+    'Three personalized throwing drills',
+    'Eight-week throwing development plan',
+    'One analysis every two weeks',
+  ]
+
   return (
     <section className="py-24 bg-navy-900" id="pricing">
-      <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 text-center">
-        <h2 className="section-heading">Simple, Transparent Pricing</h2>
-        <p className="section-subheading">One package. Everything included. No hidden fees.</p>
+      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 text-center">
+        <h2 className="section-heading">Choose the Support You Need</h2>
+        <p className="section-subheading">Start with throwing development, or add tailored strength and mobility programming.</p>
 
-        <div className="mt-12 card relative overflow-hidden">
-          {/* Glow border effect */}
-          <div className="absolute inset-0 rounded-xl ring-1 ring-electric-blue/30" aria-hidden />
+        <div className="mt-12 grid gap-6 text-left lg:grid-cols-2">
+          <article className="card relative overflow-hidden flex flex-col">
+            <div className="absolute inset-x-0 top-0 h-1 bg-electric-blue" aria-hidden />
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-electric-blue-light">Throwing Development</p>
+            <p className="mt-3 text-4xl font-black text-white">$25<span className="text-base font-medium text-slate-400">/month</span></p>
+            <p className="mt-3 text-sm text-slate-400">Pitching mechanics, feedback, drills, and your complete throwing roadmap.</p>
+            <div className="my-6 flex-1 space-y-3">{common.map((item) => <div key={item} className="flex items-center gap-2.5"><CheckCircle className="h-4 w-4 shrink-0 text-electric-blue-light" /><span className="text-sm text-slate-300">{item}</span></div>)}</div>
+            <Link href="/start-analysis?plan=throwing" className="btn-primary w-full justify-center py-4">Choose $25 Plan <ArrowRight className="h-5 w-5" /></Link>
+          </article>
 
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <h3 className="text-2xl font-black text-white">Pitch Nav Development Membership</h3>
-              <p className="text-slate-400 mt-1">Everything you need to improve your delivery</p>
+          <article className="card relative overflow-hidden flex flex-col border-accent-green/35">
+            <div className="absolute inset-x-0 top-0 h-1 bg-accent-green" aria-hidden />
+            <span className="absolute right-5 top-5 rounded-full bg-accent-green/15 px-3 py-1 text-[10px] font-bold uppercase text-accent-green">Most complete</span>
+            <p className="pr-28 text-xs font-bold uppercase tracking-[0.2em] text-accent-green">Complete Performance</p>
+            <p className="mt-3 text-4xl font-black text-white">$40<span className="text-base font-medium text-slate-400">/month</span></p>
+            <p className="mt-3 text-sm text-slate-400">Everything in Throwing Development, plus a tailored two-month strength and mobility plan.</p>
+            <div className="my-6 flex-1 space-y-3">
+              <div className="flex items-center gap-2.5"><CheckCircle className="h-4 w-4 shrink-0 text-accent-green" /><span className="text-sm text-slate-300">Everything in the $25 plan</span></div>
+              {['Eight-week strength plan','Monday–Sunday mobility calendar','Lifting cues, recovery guidance, and tracking'].map((item) => <div key={item} className="flex items-center gap-2.5"><CheckCircle className="h-4 w-4 shrink-0 text-accent-green" /><span className="text-sm text-slate-300">{item}</span></div>)}
             </div>
-            <div className="text-right">
-              <p className="text-4xl font-black text-white">$40/month</p>
-              <p className="text-slate-500 text-sm">one-time</p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8">
-            {[
-              'Open-side video review',
-              'Six-position mechanics breakdown',
-              'Mechanics scorecard',
-              'Velocity profile (athlete-provided)',
-              '3 identified strengths',
-              '3 development priorities',
-              '3 personalized drills',
-              'Eight-week focus plan',
-              'Voice-over video',
-              'Downloadable PDF report',
-              'Follow-up analysis option',
-            ].map((item) => (
-              <div key={item} className="flex items-center gap-2.5">
-                <CheckCircle className="h-4 w-4 text-accent-green flex-shrink-0" />
-                <span className="text-sm text-slate-300">{item}</span>
-              </div>
-            ))}
-          </div>
-
-          <Link href="/start-analysis" className="btn-accent w-full justify-center text-base py-4">
-            Start My Analysis — $40/month <ArrowRight className="h-5 w-5" />
-          </Link>
+            <Link href="/start-analysis?plan=performance" className="btn-accent w-full justify-center py-4">Choose $40 Plan <ArrowRight className="h-5 w-5" /></Link>
+          </article>
         </div>
 
-        <p className="mt-6 text-xs text-slate-600">
-          Secure payment powered by Stripe. Pitch Nav does not store your payment information.
-        </p>
+        <p className="mt-6 text-xs text-slate-600">Monthly memberships. Secure payment powered by Stripe.</p>
       </div>
     </section>
   )

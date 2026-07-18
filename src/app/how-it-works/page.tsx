@@ -60,7 +60,7 @@ const steps = [
     details: [
       'Secure checkout powered by Stripe',
       'Pitch Nav does not store your card number',
-      'Monthly $40 membership — cancel anytime',
+      '$25 throwing or $40 complete monthly membership',
       'Order confirmation email sent immediately',
       'Order immediately enters the review queue',
     ],
@@ -173,8 +173,8 @@ export default function HowItWorksPage() {
         <SafetyDisclaimer />
 
         <div className="mt-12 text-center">
-          <Link href="/start-analysis" className="btn-primary text-base px-8 py-4">
-            Start My Analysis — $40/month <ArrowRight className="h-5 w-5" />
+          <Link href="/pricing" className="btn-primary text-base px-8 py-4">
+            Choose My Membership <ArrowRight className="h-5 w-5" />
           </Link>
           <p className="mt-4 text-sm text-slate-500">
             Have questions first?{' '}

@@ -156,5 +156,7 @@ export const ACCEPTED_VIDEO_TYPES = [
 
 export const MAX_VIDEO_SIZE_BYTES = 500 * 1024 * 1024 // 500 MB
 
-export const PACKAGE_PRICE_CENTS = 4000
-export const PACKAGE_NAME = 'Complete Pitching Analysis'
+export const THROWING_MEMBERSHIP_PRICE_CENTS = 2500
+export const PERFORMANCE_MEMBERSHIP_PRICE_CENTS = 4000
+export const PACKAGE_PRICE_CENTS = THROWING_MEMBERSHIP_PRICE_CENTS
+export const PACKAGE_NAME = 'Pitch Nav Throwing Development Membership'
