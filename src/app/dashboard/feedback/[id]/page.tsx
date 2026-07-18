@@ -10,8 +10,9 @@ type Category = { category: string; score: number; confidence: string; strength:
 type Phase = { key: string; label: string; time: number; storage_path: string; confidence_note: string; signedUrl?: string }
 type PlanDay = { day: string; focus: string; work: string }
 type PlanWeek = { week: number; priority: string; coaching_cue?: string; prescription?: string; days?: PlanDay[] }
-type StrengthDay = { day: string; focus: string; work: string; cues?: string[]; common_mistake?: string }
-type StrengthWeek = { week: number; phase: string; tailored_focus: string; days: StrengthDay[] }
+type PerformanceCorrelation = { assessment_category: string; score: number; observed_deficiency: string; lift_emphasis: string; mobility_emphasis: string; rationale: string }
+type StrengthDay = { day: string; focus: string; work: string; cues?: string[]; common_mistake?: string; correlation?: string }
+type StrengthWeek = { week: number; phase: string; tailored_focus: string; correlations?: PerformanceCorrelation[]; days: StrengthDay[] }
 
 export default async function FeedbackReportPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params

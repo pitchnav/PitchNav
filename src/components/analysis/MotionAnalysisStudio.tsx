@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Activity, AlertTriangle, Download, Pause, Play, RotateCcw, Upload, Video } from 'lucide-react'
 import type { NormalizedLandmark, PoseLandmarker } from '@mediapipe/tasks-vision'
 import { createClient } from '@/lib/supabase/client'
+import { buildBaseballPerformancePlan } from '@/lib/performance-plan'
 
 type Handedness = 'right' | 'left'
 type SelectionMode = 'calibrationA' | 'calibrationB' | 'ballStart' | 'ballEnd' | null
@@ -132,38 +133,6 @@ function buildCategoryFeedback(frames: FrameMetrics[], summary: ClipSummary): Ca
       evidence: `Single-pitch body-pose review; separation variation was ${Math.round(separationSpread)}°. The baseball itself is not reliably tracked.`,
     },
   ]
-}
-
-function buildStrengthMobilityPlan(categories: CategoryFeedback[]) {
-  const lowest = [...categories].sort((a, b) => a.score - b.score)[0]?.category ?? 'Posture'
-  const tailored = lowest === 'Front-Side Stability'
-    ? { primary: 'Rear-foot-elevated split squat isometric', secondary: 'Controlled step-down', mobility: 'Ankle dorsiflexion and hip-flexor mobility' }
-    : lowest === 'Lower-Half Sequencing' || lowest === 'Direction'
-      ? { primary: 'Goblet split squat', secondary: 'Single-leg Romanian deadlift', mobility: 'Adductor rock-back and hip rotation mobility' }
-      : lowest === 'Upper-Half Timing' || lowest === 'Release Consistency'
-        ? { primary: 'Chest-supported row', secondary: 'Half-kneeling cable press', mobility: 'Thoracic rotation and shoulder controlled-articular rotations' }
-        : { primary: 'Suitcase carry', secondary: 'Dead bug with full exhale', mobility: 'Thoracic rotation and hip-flexor mobility' }
-
-  return Array.from({ length: 8 }, (_, index) => {
-    const week = index + 1
-    const phase = week <= 2 ? 'Foundation' : week <= 4 ? 'Build' : week <= 6 ? 'Strength-to-power transfer' : week === 7 ? 'Deload' : 'Retest preparation'
-    const sets = week === 7 ? '2 sets' : week <= 2 ? '3 sets of 8' : week <= 4 ? '3 sets of 6–8' : '3–4 sets of 4–6'
-    const effort = week === 7 ? 'RPE 4–5' : week <= 2 ? 'RPE 5–6' : 'RPE 6–7'
-    return {
-      week,
-      phase,
-      tailored_focus: `Support ${lowest.toLowerCase()} without changing pitching mechanics through fatigue.`,
-      days: [
-        { day: 'Monday', focus: 'Lower body + trunk', work: `${tailored.primary}: ${sets}; split-stance Pallof press: 3 × 8/side; calf raise: 3 × 10. ${effort}.`, cues: ['Move under control', 'Finish every rep balanced'], common_mistake: 'Adding load when position or tempo changes.' },
-        { day: 'Tuesday', focus: 'Mobility + recovery', work: `${tailored.mobility}: 2–3 gentle rounds; easy aerobic recovery 15–20 minutes.`, cues: ['Stay in a pain-free range', 'Use slow breathing'], common_mistake: 'Forcing end range.' },
-        { day: 'Wednesday', focus: 'Upper body + scapular control', work: `${tailored.secondary}: ${sets}; one-arm row: 3 × 8/side; serratus wall slide: 2 × 10. ${effort}.`, cues: ['Keep ribs stacked', 'Control the return'], common_mistake: 'Shrugging or rushing the repetition.' },
-        { day: 'Thursday', focus: 'Recovery mobility', work: 'Light shoulder, thoracic, hip, and ankle mobility; no fatigue-focused lifting.', cues: ['Leave the session feeling better', 'Stop with pain'], common_mistake: 'Turning recovery into another hard workout.' },
-        { day: 'Friday', focus: 'Total-body power', work: week <= 2 ? 'Technique week: med-ball scoop-toss setup and low-intent jumps, 3 × 3 each.' : 'Medicine-ball scoop toss and countermovement jump, 3–4 × 3 with full rest.', cues: ['Fast intent, low fatigue', 'Land quietly and balanced'], common_mistake: 'Chasing fatigue instead of quality.' },
-        { day: 'Saturday', focus: 'Movement preparation', work: 'Dynamic warm-up, light carries, and mobility only; coordinate with the athlete’s throwing schedule.', cues: ['Keep volume low', 'Prioritize readiness'], common_mistake: 'Heavy training immediately before a high-intent throwing day.' },
-        { day: 'Sunday', focus: 'Rest + check-in', work: 'No required lifting. Record soreness, throwing workload, sleep, and completion.', cues: ['Be honest about soreness', 'Use the check-in to adjust'], common_mistake: 'Ignoring pain or unusual fatigue.' },
-      ],
-    }
-  })
 }
 
 function formatAngle(value: number | null) {
@@ -1265,7 +1234,7 @@ export function MotionAnalysisStudio({ initialVideo = null }: { initialVideo?: I
       // The $25 Throwing Development plan intentionally excludes lifting and
       // mobility programming. Only paid $40 Complete Performance orders receive it.
       const strengthMobilityWeeks = (initialVideo?.amountPaidCents ?? 0) >= 4000
-        ? buildStrengthMobilityPlan(categoryFeedback)
+        ? buildBaseballPerformancePlan(categoryFeedback, immediatePriorities)
         : []
       const followUp = new Date()
       followUp.setDate(followUp.getDate() + planWeeks * 7)

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient, createClient } from '@/lib/supabase/server'
+import { buildBaseballPerformancePlan, type CategoryAssessment } from '@/lib/performance-plan'
 
 export const runtime = 'nodejs'
 export const maxDuration = 300
@@ -57,7 +58,7 @@ export async function POST(request: Request) {
     }
     if (images.length < 12) return NextResponse.json({ error: 'Six phase screenshots are required. Run and save Motion Lab first.' }, { status: 409 })
     const athlete = Array.isArray(analysis.athlete_profiles) ? analysis.athlete_profiles[0] : analysis.athlete_profiles
-    const prompt = `Prepare a conservative baseball pitching-coach draft for mandatory human review. Analyze only visible evidence in these side-view phase candidates and supplied 2D pose data. Do not diagnose injury, calculate injury risk, claim laboratory biomechanics, infer exact internal joint rotation, or promise velocity gains. Lower confidence for obscured phases. Maximum external rotation and ball release are only candidates. Scores are internal coaching scores, not medical scores. Be specific and evidence-based; avoid generic filler.
+    const prompt = `Prepare a conservative baseball pitching-coach draft for mandatory human review. Analyze only visible evidence in these side-view phase candidates and supplied 2D pose data. Do not diagnose injury, calculate injury risk, claim laboratory biomechanics, infer exact internal joint rotation, or promise velocity gains. Lower confidence for obscured phases. Maximum external rotation and ball release are only candidates. Scores are internal coaching scores, not medical scores. Be specific and evidence-based; avoid generic filler. Every development priority must name an observable weakness and the phase/evidence supporting it, because verified category weaknesses will be mapped directly to baseball strength and mobility work. Do not prescribe a lift as a guaranteed mechanics correction.
 Athlete: ${JSON.stringify(athlete ?? {})}
 Capture FPS: ${analysis.capture_fps ?? 'unknown'}
 Clip summary: ${JSON.stringify(analysis.clip_summary ?? {})}
@@ -73,6 +74,27 @@ Deterministic candidates (supporting data only): ${JSON.stringify(analysis.categ
     const notes = new Map(draft.phase_notes.map((phase) => [phase.key, phase]))
     const { error } = await admin.from('motion_analyses').update({ delivery_score: draft.delivery_score, strengths: draft.strengths, development_priorities: draft.development_priorities, coach_feedback: draft.overall_assessment, category_scores: draft.categories, phase_snapshots: snapshots.map((shot) => ({ ...shot, ...(notes.get(shot.key) ?? {}) })), biggest_opportunity: draft.biggest_opportunity, ai_draft_status: 'ready_for_staff_review', ai_generated_at: new Date().toISOString(), ai_model: model }).eq('id', analysisId)
     if (error) throw error
+
+    // Performance members already have a non-empty strength/mobility plan.
+    // Rebuild it from the final AI-assisted category weaknesses so the plan
+    // correlates to the assessment the staff member is about to verify.
+    const { data: plan, error: planLoadError } = await admin.from('training_plans')
+      .select('id,strength_mobility_weeks')
+      .eq('motion_analysis_id', analysisId)
+      .maybeSingle()
+    if (planLoadError) throw planLoadError
+    const currentPerformanceWeeks = Array.isArray(plan?.strength_mobility_weeks) ? plan.strength_mobility_weeks : []
+    if (plan && currentPerformanceWeeks.length > 0) {
+      const correlatedPlan = buildBaseballPerformancePlan(
+        draft.categories as CategoryAssessment[],
+        draft.development_priorities
+      )
+      const { error: planUpdateError } = await admin.from('training_plans')
+        .update({ strength_mobility_weeks: correlatedPlan })
+        .eq('id', plan.id)
+      if (planUpdateError) throw planUpdateError
+    }
+
     return NextResponse.json({ ok: true })
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : 'Could not generate AI mechanics draft.' }, { status: 500 })
