@@ -1,6 +1,6 @@
 import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
-import { AlertTriangle, ArrowLeft, CalendarDays, CheckCircle } from 'lucide-react'
+import { AlertTriangle, ArrowLeft } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { ProgressBar } from '@/components/ui/ProgressBar'
 import { SafetyDisclaimer } from '@/components/ui/SafetyDisclaimer'
@@ -40,6 +40,14 @@ export default async function FeedbackReportPage({ params }: { params: Promise<{
   const strengthWeeks = (planRecord?.strength_mobility_weeks ?? []) as StrengthWeek[]
   const strengths = (analysis.strengths ?? []) as string[]
   const priorities = (analysis.development_priorities ?? []) as string[]
+  const todayParts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Detroit',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(new Date())
+  const todayPart = (type: 'year' | 'month' | 'day') => todayParts.find((part) => part.type === type)?.value ?? ''
+  const todayDate = `${todayPart('year')}-${todayPart('month')}-${todayPart('day')}`
 
   return (
     <div className="mx-auto max-w-6xl space-y-8">
@@ -79,6 +87,9 @@ export default async function FeedbackReportPage({ params }: { params: Promise<{
         weeks={weeks}
         strengthWeeks={strengthWeeks}
         initialProgress={planRecord?.progress ?? {}}
+        planStartDate={planRecord?.starts_on ?? planRecord?.published_at ?? analysis.published_at ?? analysis.created_at}
+        todayDate={todayDate}
+        membershipTier={strengthWeeks.length > 0 ? 'performance' : 'throwing'}
       />
       <SafetyDisclaimer />
     </div>

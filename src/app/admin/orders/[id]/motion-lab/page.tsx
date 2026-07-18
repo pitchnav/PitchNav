@@ -14,9 +14,9 @@ export default async function AdminOrderMotionLabPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>
-  searchParams: Promise<{ videoId?: string }>
+  searchParams: Promise<{ videoId?: string; auto?: string }>
 }) {
-  const [{ id: orderId }, { videoId }] = await Promise.all([params, searchParams])
+  const [{ id: orderId }, { videoId, auto }] = await Promise.all([params, searchParams])
   if (!videoId) notFound()
   const supabase = await createClient()
   const { data: submission } = await supabase
@@ -52,7 +52,7 @@ export default async function AdminOrderMotionLabPage({
         handedness: athlete?.throwing_hand === 'left' ? 'left' : 'right',
         trimStartSecs: submission.trim_start_secs ?? null,
         trimEndSecs: submission.trim_end_secs ?? null,
-      }} />
+      }} autoProcess={auto === '1'} />
     </div>
   )
 }

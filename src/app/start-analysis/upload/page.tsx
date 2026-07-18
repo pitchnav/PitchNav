@@ -333,7 +333,7 @@ function UploadContent() {
     setOrderLoading(true)
     try {
       await supabase.from('orders').update({ status: 'submitted', submitted_at: new Date().toISOString(), delivery_estimate_text: 'Staff review completed within one business day.' }).eq('id', orderId)
-      router.push(`/dashboard/motion-lab?videoId=${sideVideoId}`)
+      router.push(`/dashboard/motion-lab?videoId=${sideVideoId}&auto=1`)
     } catch {
       setOrderLoading(false)
     }

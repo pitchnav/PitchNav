@@ -8,8 +8,8 @@ export const metadata: Metadata = {
   description: 'Create an estimated skeleton overlay and coaching-oriented joint-angle visualization from pitching video.',
 }
 
-export default async function MotionLabPage({ searchParams }: { searchParams: Promise<{ videoId?: string }> }) {
-  const { videoId } = await searchParams
+export default async function MotionLabPage({ searchParams }: { searchParams: Promise<{ videoId?: string; auto?: string }> }) {
+  const { videoId, auto } = await searchParams
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login?redirectTo=/dashboard/motion-lab')
@@ -58,5 +58,5 @@ export default async function MotionLabPage({ searchParams }: { searchParams: Pr
     }
   }
 
-  return <MotionAnalysisStudio initialVideo={initialVideo} />
+  return <MotionAnalysisStudio initialVideo={initialVideo} autoProcess={auto === '1' && Boolean(initialVideo)} />
 }

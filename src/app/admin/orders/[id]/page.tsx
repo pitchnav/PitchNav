@@ -37,6 +37,7 @@ type AutomatedPhase = {
 
 type AutomatedAnalysis = {
   id: string
+  order_id?: string | null
   delivery_score: number | null
   category_scores: AutomatedCategory[]
   phase_snapshots: AutomatedPhase[]
@@ -130,25 +131,37 @@ export default function AdminOrderDetailPage() {
     setVelocityJob((latestVelocityJob as AutomaticVelocityJob | null) ?? null)
 
     const athleteProfileId = orderData.athlete_profiles?.id
-    if (athleteProfileId) {
-      const { data: automated } = await supabase
+    const automatedSelect = 'id,order_id,delivery_score,category_scores,phase_snapshots,strengths,development_priorities,coach_feedback,velocity_estimate_low,velocity_estimate_high,velocity_confidence,ai_draft_status,ai_generated_at,ai_model'
+    const { data: orderAnalysis } = await supabase
+      .from('motion_analyses')
+      .select(automatedSelect)
+      .eq('order_id', id)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    let typed = orderAnalysis as AutomatedAnalysis | null
+    // Legacy analyses created before order linking can still be found by athlete.
+    if (!typed && athleteProfileId) {
+      const { data: legacyAnalysis } = await supabase
         .from('motion_analyses')
-        .select('id,delivery_score,category_scores,phase_snapshots,strengths,development_priorities,coach_feedback,velocity_estimate_low,velocity_estimate_high,velocity_confidence,ai_draft_status,ai_generated_at,ai_model')
+        .select(automatedSelect)
         .eq('athlete_profile_id', athleteProfileId)
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle()
-      const typed = automated as AutomatedAnalysis | null
-      setAutomatedAnalysis(typed)
-      const snapshots = Array.isArray(typed?.phase_snapshots) ? typed.phase_snapshots : []
-      const signed: Record<string, string> = {}
-      for (const snapshot of snapshots) {
-        if (!snapshot.storage_path) continue
-        const { data } = await supabase.storage.from('analysis-assets').createSignedUrl(snapshot.storage_path, 3600)
-        if (data?.signedUrl) signed[snapshot.key] = data.signedUrl
-      }
-      setPhaseUrls(signed)
+      typed = legacyAnalysis as AutomatedAnalysis | null
     }
+
+    setAutomatedAnalysis(typed)
+    const snapshots = Array.isArray(typed?.phase_snapshots) ? typed.phase_snapshots : []
+    const signed: Record<string, string> = {}
+    for (const snapshot of snapshots) {
+      if (!snapshot.storage_path) continue
+      const { data } = await supabase.storage.from('analysis-assets').createSignedUrl(snapshot.storage_path, 3600)
+      if (data?.signedUrl) signed[snapshot.key] = data.signedUrl
+    }
+    setPhaseUrls(signed)
 
     // Report fields
     const { data: report } = await supabase
@@ -654,8 +667,8 @@ export default function AdminOrderDetailPage() {
                     )}
                   </div>
 
-                  <a href={`/admin/orders/${id}/motion-lab?videoId=${video.id}`} className="btn-primary w-full justify-center">
-                    Process mechanics in Motion Lab →
+                  <a href={`/admin/orders/${id}/motion-lab?videoId=${video.id}&auto=1`} className="btn-primary w-full justify-center">
+                    Retry automatic processing (only if needed) →
                   </a>
                 </div>
               )}
@@ -698,12 +711,12 @@ export default function AdminOrderDetailPage() {
                   </button>
                 </div>
               ) : videos.find((video) => video.angle === 'open_side') ? (
-                <a href={`/admin/orders/${id}/motion-lab?videoId=${videos.find((video) => video.angle === 'open_side')!.id}`} className="btn-primary shrink-0">
-                  Generate draft from side-view video →
+                <a href={`/admin/orders/${id}/motion-lab?videoId=${videos.find((video) => video.angle === 'open_side')!.id}&auto=1`} className="btn-primary shrink-0">
+                  Retry automatic processing →
                 </a>
               ) : null}
             </div>
-            {!automatedAnalysis && <p className="mt-3 text-sm text-yellow-300">The video is uploaded, but it has not been processed yet. Click “Generate draft from side-view video,” analyze the trimmed clip, and save it. You will then return here to verify and apply the generated material.</p>}
+            {!automatedAnalysis && <p className="mt-3 text-sm text-yellow-300">Automatic processing has not finished for this order. The athlete does not need to run Motion Lab again. Use “Retry automatic processing” only if the original processing screen was closed or interrupted.</p>}
             {automatedAnalysis && <p className="mt-3 text-xs text-slate-400">Step 1: generate the AI coaching draft from the six saved phase images. Step 2: visually verify it. Step 3: apply the verified draft. AI output is educational and is not laboratory or medical analysis.</p>}
             {draftMessage && <p className="mt-3 text-sm text-accent-green">{draftMessage}</p>}
           </div>

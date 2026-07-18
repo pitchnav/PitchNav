@@ -527,7 +527,15 @@ type InitialVideo = {
   handedness: Handedness
 } | null
 
-export function MotionAnalysisStudio({ initialVideo = null }: { initialVideo?: InitialVideo }) {
+type AutomaticStage = 'loading' | 'analyzing' | 'saving' | 'complete' | 'error'
+
+export function MotionAnalysisStudio({
+  initialVideo = null,
+  autoProcess = false,
+}: {
+  initialVideo?: InitialVideo
+  autoProcess?: boolean
+}) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const landmarkerRef = useRef<PoseLandmarker | null>(null)
@@ -549,9 +557,13 @@ export function MotionAnalysisStudio({ initialVideo = null }: { initialVideo?: I
   const exportPoseRef = useRef<NormalizedLandmark[] | null>(null)
   const exportFrameTransformRef = useRef<ExportFrameTransform | null>(null)
   const watermarkRef = useRef<HTMLCanvasElement | null>(null)
+  const autoAnalyzeStartedRef = useRef(false)
+  const autoSaveStartedRef = useRef(false)
 
   const [fileUrl, setFileUrl] = useState<string | null>(null)
   const [loadingInitialVideo, setLoadingInitialVideo] = useState(Boolean(initialVideo))
+  const [videoReady, setVideoReady] = useState(false)
+  const [automaticStage, setAutomaticStage] = useState<AutomaticStage>('loading')
   const [fileName, setFileName] = useState('')
   const [modelStatus, setModelStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle')
   const [playing, setPlaying] = useState(false)
@@ -808,6 +820,7 @@ export function MotionAnalysisStudio({ initialVideo = null }: { initialVideo?: I
       return
     }
     if (fileUrl) URL.revokeObjectURL(fileUrl)
+    setVideoReady(false)
     setFileUrl(URL.createObjectURL(file))
     selectedFileRef.current = file
     renderedBlobRef.current = null
@@ -958,6 +971,7 @@ export function MotionAnalysisStudio({ initialVideo = null }: { initialVideo?: I
     const frames = samplesRef.current.filter((frame) => frame.confidence >= 0.45)
     if (!frames.length) {
       setError('No sufficiently visible pose was detected. Try a clearer full-body video.')
+      if (autoProcess) setAutomaticStage('error')
       analyzingRef.current = false
       setAnalyzing(false)
       return
@@ -1131,11 +1145,21 @@ export function MotionAnalysisStudio({ initialVideo = null }: { initialVideo?: I
     const output: Array<{ key: string; label: string; time: number; storage_path: string; confidence_note: string }> = []
     video.pause()
     for (const phase of phases) {
-      await new Promise<void>((resolve) => {
-        const done = () => resolve()
-        video.addEventListener('seeked', done, { once: true })
-        video.currentTime = Math.max(0, Math.min(video.duration - 0.01, phase.time))
-      })
+      const targetTime = Math.max(0, Math.min(video.duration - 0.01, phase.time))
+      if (Math.abs(video.currentTime - targetTime) > 0.002) {
+        await new Promise<void>((resolve) => {
+          let settled = false
+          const finish = () => {
+            if (settled) return
+            settled = true
+            video.removeEventListener('seeked', finish)
+            resolve()
+          }
+          video.addEventListener('seeked', finish, { once: true })
+          video.currentTime = targetTime
+          window.setTimeout(finish, 2500)
+        })
+      }
       drawFrame()
       await new Promise((resolve) => requestAnimationFrame(() => resolve(null)))
       const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png', 0.92))
@@ -1154,14 +1178,26 @@ export function MotionAnalysisStudio({ initialVideo = null }: { initialVideo?: I
     return output
   }
 
-  async function saveAnalysisToDashboard() {
-    if (!summary || !selectedFileRef.current) return
+  async function saveAnalysisToDashboard(): Promise<boolean> {
+    if (!summary || !selectedFileRef.current) return false
     setSavingAnalysis(true)
     setSaveMessage('')
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Please sign in again.')
       const targetUserId = initialVideo?.ownerUserId ?? user.id
+      if (initialVideo?.orderId) {
+        const { data: existingAnalysis, error: existingError } = await supabase
+          .from('motion_analyses')
+          .select('id')
+          .eq('order_id', initialVideo.orderId)
+          .maybeSingle()
+        if (existingError) throw existingError
+        if (existingAnalysis) {
+          setSaveMessage('Your six-phase analysis is already prepared and waiting for staff review.')
+          return true
+        }
+      }
       const cutoff = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString()
       const { data: recentAnalysis } = await supabase.from('motion_analyses').select('id,created_at').eq('user_id', targetUserId).eq('cooldown_exempt', false).gte('created_at', cutoff).order('created_at', { ascending: false }).limit(1).maybeSingle()
       if (recentAnalysis && !initialVideo?.staffProcessing) {
@@ -1194,9 +1230,13 @@ export function MotionAnalysisStudio({ initialVideo = null }: { initialVideo?: I
         if (renderError) throw renderError
       }
       const phaseSnapshots = await capturePhaseScreenshots(targetUserId, analysisId)
+      if (phaseSnapshots.length !== 6) {
+        throw new Error('The six phase frames could not all be saved. Keep this page open and retry automatic processing.')
+      }
 
       const { data: analysis, error: analysisError } = await supabase.from('motion_analyses').insert({
         id: analysisId,
+        order_id: initialVideo?.orderId ?? null,
         user_id: targetUserId,
         athlete_profile_id: initialVideo?.athleteProfileId ?? null,
         title: fileName.replace(/\.[^.]+$/, '') || 'Motion Lab Analysis',
@@ -1257,6 +1297,8 @@ export function MotionAnalysisStudio({ initialVideo = null }: { initialVideo?: I
         title: `${planWeeks}-Week Pitching Development Plan`,
         weeks,
         strength_mobility_weeks: strengthMobilityWeeks,
+        starts_on: new Date().toISOString().slice(0, 10),
+        rolling_window_days: 14,
         follow_up_date: followUp.toISOString().slice(0, 10),
         published_at: null,
       })
@@ -1272,13 +1314,51 @@ export function MotionAnalysisStudio({ initialVideo = null }: { initialVideo?: I
       } else {
         setSaveMessage('Submitted for staff review. Your analysis is safely in the admin dashboard, but the staff notification email could not be delivered. Pitch Nav staff can still review it there.')
       }
+      return true
     } catch (reason) {
       console.error(reason)
       setSaveMessage(reason instanceof Error ? reason.message : 'Could not save this analysis.')
+      return false
     } finally {
       setSavingAnalysis(false)
     }
   }
+
+  useEffect(() => {
+    if (!autoProcess || autoAnalyzeStartedRef.current || !fileUrl || loadingInitialVideo || !videoReady || modelStatus !== 'ready') return
+    autoAnalyzeStartedRef.current = true
+    setAutomaticStage('analyzing')
+    setPlaybackSpeed(1)
+    playbackSpeedRef.current = 1
+    void analyzeFullClip().catch((reason) => {
+      console.error(reason)
+      autoAnalyzeStartedRef.current = false
+      setAutomaticStage('error')
+      setError('Automatic processing could not start. Press Retry below and keep this page open.')
+    })
+  // Automatic processing starts only after the secure video and pose model are ready.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoProcess, fileUrl, loadingInitialVideo, videoReady, modelStatus, automaticStage])
+
+  useEffect(() => {
+    if (!autoProcess || !summary || autoSaveStartedRef.current) return
+    autoSaveStartedRef.current = true
+    setAutomaticStage('saving')
+    void saveAnalysisToDashboard().then((saved) => {
+      if (saved) {
+        setAutomaticStage('complete')
+        const destination = initialVideo?.staffProcessing && initialVideo.orderId
+          ? `/admin/orders/${initialVideo.orderId}`
+          : '/dashboard?processing=submitted'
+        window.location.assign(destination)
+      } else {
+        autoSaveStartedRef.current = false
+        setAutomaticStage('error')
+      }
+    })
+  // The completed summary is the handoff from pose processing to secure persistence.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoProcess, summary])
 
   const metricCards = useMemo(() => [
     { label: 'Throwing elbow', value: formatAngle(metrics?.throwingElbow ?? null) },
@@ -1289,6 +1369,36 @@ export function MotionAnalysisStudio({ initialVideo = null }: { initialVideo?: I
 
   return (
     <div className="mx-auto max-w-6xl space-y-8">
+      {autoProcess && (
+        <section className="rounded-2xl border border-electric-blue/35 bg-electric-blue/10 p-6" aria-live="polite">
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-electric-blue-light">Automatic six-phase processing</p>
+          <h1 className="mt-2 text-2xl font-black text-white">
+            {automaticStage === 'loading' && 'Loading your secure video…'}
+            {automaticStage === 'analyzing' && 'Analyzing the trimmed delivery…'}
+            {automaticStage === 'saving' && 'Saving all six phase frames…'}
+            {automaticStage === 'complete' && 'Analysis submitted for staff review'}
+            {automaticStage === 'error' && 'Automatic processing needs another try'}
+          </h1>
+          <p className="mt-2 max-w-3xl text-sm leading-relaxed text-slate-300">
+            Keep this page open while Pitch Nav prepares the six phase screenshots, score candidates, and plan draft. You do not need to run the video through Motion Lab again, and staff will verify the draft before release.
+          </p>
+          {automaticStage === 'error' && (
+            <button
+              type="button"
+              className="btn-primary mt-4"
+              onClick={() => {
+                setError('')
+                setAutomaticStage('loading')
+                autoAnalyzeStartedRef.current = false
+                autoSaveStartedRef.current = false
+                if (summary) setSummary(null)
+              }}
+            >
+              Retry automatic processing
+            </button>
+          )}
+        </section>
+      )}
       <div>
         <p className="text-xs font-bold uppercase tracking-[0.2em] text-electric-blue-light">Pitch Nav Motion Lab</p>
         <h1 className="mt-2 text-3xl font-black text-white sm:text-4xl">Skeleton Video Analysis</h1>
@@ -1367,6 +1477,7 @@ export function MotionAnalysisStudio({ initialVideo = null }: { initialVideo?: I
                   const trimEnd = analysisEndRef.current
                   if (trimEnd !== null && trimEnd > event.currentTarget.duration) analysisEndRef.current = event.currentTarget.duration
                   event.currentTarget.currentTime = Math.min(event.currentTarget.duration - 0.01, analysisStartRef.current)
+                  setVideoReady(true)
                   drawFrame()
                   void detectVideoFrameRate(event.currentTarget)
                 }}

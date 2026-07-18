@@ -56,7 +56,9 @@ export async function POST(request: Request) {
         images.push({ type: 'input_image', image_url: data.signedUrl, detail: 'high' })
       }
     }
-    if (images.length < 12) return NextResponse.json({ error: 'Six phase screenshots are required. Run and save Motion Lab first.' }, { status: 409 })
+    if (images.length < 12) return NextResponse.json({
+      error: 'Automatic six-phase processing has not finished for this order. Retry automatic processing only if the customer processing screen was interrupted.',
+    }, { status: 409 })
     const athlete = Array.isArray(analysis.athlete_profiles) ? analysis.athlete_profiles[0] : analysis.athlete_profiles
     const prompt = `Prepare a conservative baseball pitching-coach draft for mandatory human review. Analyze only visible evidence in these side-view phase candidates and supplied 2D pose data. Do not diagnose injury, calculate injury risk, claim laboratory biomechanics, infer exact internal joint rotation, or promise velocity gains. Lower confidence for obscured phases. Maximum external rotation and ball release are only candidates. Scores are internal coaching scores, not medical scores. Be specific and evidence-based; avoid generic filler. Every development priority must name an observable weakness and the phase/evidence supporting it, because verified category weaknesses will be mapped directly to baseball strength and mobility work. Do not prescribe a lift as a guaranteed mechanics correction.
 Athlete: ${JSON.stringify(athlete ?? {})}
