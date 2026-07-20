@@ -11,6 +11,78 @@ const confirmations = [
   'Full body is visible from head to toe',
 ]
 
+// A restrained, anatomically proportioned reference silhouette in the
+// balance/leg-lift position — replaces abstract circles/ovals with a pose an
+// athlete can actually line their body up against. Grounded on a floor line
+// with a mound, a flat rubber, a contact shadow, and a projected landing
+// zone; thin strokes and small joint markers, no cartoon outline or fill.
+function PitcherAlignmentGuide() {
+  return (
+    <svg
+      viewBox="0 0 160 90"
+      preserveAspectRatio="xMidYMax meet"
+      className="absolute inset-0 h-full w-full"
+      aria-hidden="true"
+    >
+      {/* Ground line and mound slope */}
+      <path
+        d="M 0 83 L 70 83 Q 88 83 100 80.5 Q 110 79 160 82"
+        fill="none"
+        stroke="rgba(56,189,248,0.4)"
+        strokeWidth={0.7}
+      />
+      {/* Pitching rubber, flat on the ground */}
+      <rect x={90} y={79.4} width={15} height={1.8} rx={0.4} fill="rgba(248,250,252,0.85)" />
+      {/* Projected landing zone for the lead foot */}
+      <ellipse
+        cx={126}
+        cy={82.5}
+        rx={9}
+        ry={2.4}
+        fill="none"
+        stroke="rgba(0,229,160,0.75)"
+        strokeDasharray="1.6 1.6"
+        strokeWidth={0.7}
+      />
+      {/* Contact shadow under the pivot foot */}
+      <ellipse cx={99} cy={82.5} rx={6} ry={1.4} fill="rgba(0,0,0,0.4)" />
+
+      {/* Skeleton: pivot leg, torso, lead leg, arms */}
+      <g fill="none" stroke="rgba(248,250,252,0.85)" strokeWidth={1.1} strokeLinecap="round">
+        {/* Pivot (back) leg */}
+        <path d="M 99 81 L 96 63 L 92.5 45.5" />
+        {/* Spine */}
+        <path d="M 92.5 45.5 L 85.5 27" />
+        {/* Lead (raised) leg */}
+        <path d="M 92.5 45.5 L 104 40 L 111 58" />
+        {/* Throwing-side arm, bent to the balance-point hand position */}
+        <path d="M 85.5 27 L 75 34 L 80 45" />
+        {/* Glove-side arm */}
+        <path d="M 85.5 27 L 91 35 L 81.5 45.5" />
+      </g>
+
+      {/* Head */}
+      <circle cx={80.5} cy={18} r={6.2} fill="none" stroke="rgba(248,250,252,0.85)" strokeWidth={1.1} />
+
+      {/* Joint markers — subtle tracking points, not decoration */}
+      <g fill="#f8fafc" stroke="#7dd3fc" strokeWidth={0.5}>
+        {[
+          [85.5, 27], // shoulder
+          [92.5, 45.5], // hip
+          [96, 63], // pivot knee
+          [99, 81], // pivot ankle
+          [104, 40], // lead knee
+          [111, 58], // lead ankle (lifted)
+          [80, 45], // throwing hand
+          [81.5, 45.5], // glove hand
+        ].map(([cx, cy], i) => (
+          <circle key={i} cx={cx} cy={cy} r={1.3} />
+        ))}
+      </g>
+    </svg>
+  )
+}
+
 export function CameraAlignmentStudio() {
   const videoRef = useRef<HTMLVideoElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
@@ -46,17 +118,17 @@ export function CameraAlignmentStudio() {
     <div className="mt-6 grid gap-6 lg:grid-cols-[1.5fr_1fr]">
       <div className="relative aspect-video overflow-hidden rounded-2xl border border-electric-blue/30 bg-black">
         <video ref={videoRef} muted playsInline className="h-full w-full object-cover" />
-        {!active && <div className="absolute inset-0 flex flex-col items-center justify-center bg-navy-950 text-center"><Camera className="h-10 w-10 text-slate-600" /><p className="mt-3 text-sm text-slate-400">Open the camera to display the alignment overlay</p></div>}
-        <div className="pointer-events-none absolute inset-[6%] rounded-[2rem] border-2 border-dashed border-electric-blue/70">
-          <div className="absolute left-1/2 top-[4%] h-[15%] w-[10%] -translate-x-1/2 rounded-full border-2 border-white/75" />
-          <div className="absolute left-1/2 top-[19%] h-[43%] w-[20%] -translate-x-1/2 rounded-[45%] border-2 border-white/70" />
-          <div className="absolute left-[22%] top-[25%] h-[28%] w-[28%] rounded-full border border-dashed border-yellow-300/80" />
-          <div className="absolute bottom-[2%] left-[34%] h-[12%] w-[32%] rounded-[50%] border-2 border-electric-blue/80" />
-          <div className="absolute bottom-[3%] right-[3%] h-[12%] w-[26%] rounded-lg border-2 border-dashed border-accent-green/80" />
-          <span className="absolute left-2 top-2 rounded bg-black/60 px-2 py-1 text-[10px] font-bold text-white">HEAD + FULL BODY</span>
-          <span className="absolute left-[23%] top-[23%] rounded bg-black/60 px-2 py-1 text-[10px] font-bold text-yellow-200">THROWING HAND</span>
-          <span className="absolute bottom-[14%] left-[42%] rounded bg-black/60 px-2 py-1 text-[10px] font-bold text-electric-blue-light">MOUND</span>
-          <span className="absolute bottom-[16%] right-[4%] rounded bg-black/60 px-2 py-1 text-[10px] font-bold text-accent-green">LANDING FOOT</span>
+        {!active && (
+          <div className="absolute inset-0 flex items-start justify-center bg-navy-950 pt-3">
+            <Camera className="h-6 w-6 text-slate-600" />
+          </div>
+        )}
+        <div className="pointer-events-none absolute inset-[6%] rounded-2xl border-2 border-dashed border-electric-blue/70">
+          <PitcherAlignmentGuide />
+          <span className="absolute left-1.5 top-1.5 rounded bg-black/60 px-1 py-0.5 text-[8px] font-bold leading-tight text-white sm:left-2 sm:top-2 sm:px-2 sm:py-1 sm:text-[10px]">HEAD + FULL BODY</span>
+          <span className="absolute left-[46%] top-[56%] rounded bg-black/60 px-1 py-0.5 text-[8px] font-bold leading-tight text-electric-blue-glow sm:px-2 sm:py-1 sm:text-[10px]">THROWING HAND</span>
+          <span className="absolute bottom-[24%] left-[61%] -translate-x-1/2 rounded bg-black/60 px-1 py-0.5 text-[8px] font-bold leading-tight text-electric-blue-light sm:px-2 sm:py-1 sm:text-[10px]">MOUND</span>
+          <span className="absolute bottom-[6%] right-[3%] rounded bg-black/60 px-1 py-0.5 text-[8px] font-bold leading-tight text-accent-green sm:right-[4%] sm:px-2 sm:py-1 sm:text-[10px]">LANDING FOOT</span>
         </div>
       </div>
       <div>

@@ -2,9 +2,10 @@
 
 import { Suspense, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { CheckCircle, AlertCircle, Camera, Eye, ChevronRight } from 'lucide-react'
+import { CheckCircle, AlertCircle, Eye, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { CameraAlignmentStudio } from '@/components/camera/CameraAlignmentStudio'
+import { CameraPositionDiagram } from '@/components/camera/CameraPositionDiagram'
 
 type Angle = 'open_side'
 
@@ -138,12 +139,15 @@ function CameraSetupContent() {
           ))}
         </div>
 
-        {/* Camera diagram placeholder */}
-        <div className="card mb-8 flex flex-col items-center justify-center py-16 border-dashed border-electric-blue/20">
-          <Camera className="h-16 w-16 text-electric-blue/30 mb-4" />
-          <p className="text-slate-600 text-sm">
-            [Camera position diagram for {ANGLES.find(a => a.key === activeAngle)?.label} — replace with actual SVG diagram before launch]
+        {/* Camera position diagram */}
+        <div className="card mb-8">
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-electric-blue-light mb-1">
+            {ANGLES.find((a) => a.key === activeAngle)?.label}
           </p>
+          <h2 className="text-lg font-bold text-white mb-4">Camera Position, Top-Down</h2>
+          <div className="mx-auto max-w-sm">
+            <CameraPositionDiagram />
+          </div>
         </div>
 
         {/* Guide content */}
