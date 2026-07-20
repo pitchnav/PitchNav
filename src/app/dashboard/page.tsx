@@ -47,11 +47,11 @@ export default async function DashboardPage() {
       {/* Quick stats */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-8">
         {[
-          { label: 'Total Analyses', value: (orders?.length ?? 0) + (motionAnalyses?.length ?? 0), icon: Activity, accentClassName: 'text-electric-blue-light' },
-          { label: 'Active', value: activeOrders.length, icon: Clock, accentClassName: 'text-yellow-300' },
-          { label: 'Completed', value: completedOrders.length, icon: CheckCircle, accentClassName: 'text-accent-green' },
-        ].map(({ label, value, icon, accentClassName }, i) => (
-          <AnimatedStat key={label} label={label} value={value} icon={icon} accentClassName={accentClassName} delayMs={i * 90} />
+          { label: 'Total Analyses', value: (orders?.length ?? 0) + (motionAnalyses?.length ?? 0), icon: <Activity className="h-5 w-5 text-electric-blue-light" aria-hidden="true" /> },
+          { label: 'Active', value: activeOrders.length, icon: <Clock className="h-5 w-5 text-yellow-300" aria-hidden="true" /> },
+          { label: 'Completed', value: completedOrders.length, icon: <CheckCircle className="h-5 w-5 text-accent-green" aria-hidden="true" /> },
+        ].map(({ label, value, icon }, i) => (
+          <AnimatedStat key={label} label={label} value={value} icon={icon} delayMs={i * 90} />
         ))}
       </div>
 
