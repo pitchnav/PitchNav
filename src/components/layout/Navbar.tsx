@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { Menu, X, ChevronDown, User, LogOut, LayoutDashboard, Settings } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
@@ -25,6 +26,7 @@ export function Navbar() {
   const pathname = usePathname()
   const router = useRouter()
   const supabase = useMemo(() => createClient(), [])
+  const prefersReducedMotion = useReducedMotion()
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 10)
@@ -187,8 +189,15 @@ export function Navbar() {
       </div>
 
       {/* Mobile menu */}
-      {isOpen && (
-        <div className="md:hidden border-t border-surface-border bg-navy-900/98 backdrop-blur-md">
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.2, ease: 'easeOut' }}
+            className="md:hidden overflow-hidden border-t border-surface-border bg-navy-900"
+          >
           <div className="px-4 py-4 space-y-1">
             {NAV_LINKS.map((link) => (
               <Link
@@ -239,8 +248,9 @@ export function Navbar() {
               </div>
             )}
           </div>
-        </div>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </nav>
   )
 }

@@ -70,7 +70,7 @@ export default async function DashboardPage() {
               return (
                 <div
                   key={analysis.id}
-                  className="card animate-slide-up transition-all duration-200 [animation-fill-mode:backwards] hover:-translate-y-1 hover:border-electric-blue/30"
+                  className="card-interactive animate-slide-up [animation-fill-mode:backwards]"
                   style={{ animationDelay: `${i * 70}ms` }}
                 >
                   <div className="flex items-start justify-between gap-3">
@@ -130,7 +130,7 @@ export default async function DashboardPage() {
               return (
                 <div
                   key={order.id}
-                  className="card animate-slide-up flex flex-col gap-4 transition-all duration-200 [animation-fill-mode:backwards] hover:-translate-y-1 hover:border-electric-blue/30 sm:flex-row sm:items-center sm:justify-between"
+                  className="card-interactive animate-slide-up flex flex-col gap-4 [animation-fill-mode:backwards] sm:flex-row sm:items-center sm:justify-between"
                   style={{ animationDelay: `${i * 70}ms` }}
                 >
                   <div>
@@ -170,7 +170,7 @@ export default async function DashboardPage() {
               return (
                 <div
                   key={order.id}
-                  className="card animate-slide-up flex flex-col gap-4 transition-all duration-200 [animation-fill-mode:backwards] hover:-translate-y-1 hover:border-accent-green/30 sm:flex-row sm:items-center sm:justify-between"
+                  className="card-interactive-accent animate-slide-up flex flex-col gap-4 [animation-fill-mode:backwards] sm:flex-row sm:items-center sm:justify-between"
                   style={{ animationDelay: `${i * 70}ms` }}
                 >
                   <div className="flex items-center gap-3">

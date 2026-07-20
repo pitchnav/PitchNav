@@ -160,7 +160,7 @@ function CheckoutContent() {
                 <button
                   type="button"
                   onClick={() => setMembershipTier('throwing')}
-                  className={`rounded-xl border p-4 text-left transition ${membershipTier === 'throwing' ? 'border-electric-blue bg-electric-blue/10 ring-2 ring-electric-blue/25' : 'border-surface-border bg-navy-950 hover:border-slate-600'}`}
+                  className={`rounded-xl border p-4 text-left transition motion-reduce:transition-none hover:-translate-y-0.5 active:scale-[0.99] motion-reduce:hover:translate-y-0 motion-reduce:active:scale-100 ${membershipTier === 'throwing' ? 'border-electric-blue bg-electric-blue/10 ring-2 ring-electric-blue/25' : 'border-surface-border bg-navy-950 hover:border-slate-600'}`}
                 >
                   <p className="text-xs font-bold uppercase tracking-wider text-electric-blue-light">Throwing Development</p>
                   <p className="mt-2 text-3xl font-black text-white">$25<span className="text-sm font-medium text-slate-400">/month</span></p>
@@ -169,7 +169,7 @@ function CheckoutContent() {
                 <button
                   type="button"
                   onClick={() => setMembershipTier('performance')}
-                  className={`relative rounded-xl border p-4 text-left transition ${membershipTier === 'performance' ? 'border-accent-green bg-accent-green/10 ring-2 ring-accent-green/20' : 'border-surface-border bg-navy-950 hover:border-slate-600'}`}
+                  className={`relative rounded-xl border p-4 text-left transition motion-reduce:transition-none hover:-translate-y-0.5 active:scale-[0.99] motion-reduce:hover:translate-y-0 motion-reduce:active:scale-100 ${membershipTier === 'performance' ? 'border-accent-green bg-accent-green/10 ring-2 ring-accent-green/20' : 'border-surface-border bg-navy-950 hover:border-slate-600'}`}
                 >
                   <span className="absolute right-3 top-3 rounded-full bg-accent-green/15 px-2 py-1 text-[10px] font-bold uppercase text-accent-green">Most complete</span>
                   <p className="pr-20 text-xs font-bold uppercase tracking-wider text-accent-green">Complete Performance</p>
