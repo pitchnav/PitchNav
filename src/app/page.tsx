@@ -257,8 +257,8 @@ function WhatIsIncluded() {
             </div>
 
             <p className="text-xs text-slate-600 mt-4 leading-relaxed">
-              ★ Scores are internal coaching tools for tracking development in the same athlete
-              over time. Not a medical or laboratory biomechanics score.
+              ★ Scores are a coaching tool for tracking your own progress over time — not a
+              medical or laboratory score.
             </p>
           </div>
         </div>

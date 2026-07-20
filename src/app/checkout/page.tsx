@@ -263,7 +263,7 @@ function CheckoutContent() {
               <div className="text-xs text-slate-600 space-y-1">
                 <p>✓ Secure encrypted connection</p>
                 <p>✓ Monthly membership · cancel according to the membership terms</p>
-                <p>✓ Video stored in private, access-controlled storage</p>
+                <p>✓ Your video is stored privately</p>
               </div>
             </div>
           </div>

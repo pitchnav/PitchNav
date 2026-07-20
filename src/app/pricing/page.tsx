@@ -100,10 +100,10 @@ export default function PricingPage() {
             <div>
               <h3 className="text-base font-semibold text-white mb-2">About the Delivery Score</h3>
               <p className="text-sm text-slate-400 leading-relaxed">
-                The Delivery Score (out of 30) is an internal coaching tool used to track changes
-                in the same athlete over time. It is <strong className="text-white">not</strong> a
-                medical score, a laboratory biomechanics measurement, or a prediction of injury or
-                performance. It is intended purely as a relative development benchmark.
+                The Delivery Score (out of 30) is a coaching tool that tracks your own progress
+                over time. It is <strong className="text-white">not</strong> a medical score, a
+                laboratory measurement, or a prediction of injury or performance. It&apos;s meant
+                only to show your own development over time.
               </p>
             </div>
           </div>

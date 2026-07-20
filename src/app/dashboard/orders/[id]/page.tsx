@@ -164,12 +164,12 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                 <div className="min-w-0 flex-1">
                   <h2 className="text-base font-semibold text-white">Automatic velocity review</h2>
                   <p className="mt-1 text-sm text-slate-400">
-                    {automaticVelocity.status === 'queued' && 'Your paid side-view clip is queued for secure processing.'}
-                    {automaticVelocity.status === 'processing' && 'The system is checking frame rate, calibration, and the visible baseball path.'}
-                    {automaticVelocity.status === 'completed' && !automaticVelocity.staff_approved && 'A video-estimated range was produced and is waiting for staff verification.'}
-                    {automaticVelocity.status === 'completed' && automaticVelocity.staff_approved && 'Staff verified the video-estimated range. It will appear in your completed report.'}
-                    {automaticVelocity.status === 'unavailable' && 'The video did not support a defensible velocity estimate. Mechanics review can still continue.'}
-                    {automaticVelocity.status === 'failed' && 'Automatic velocity processing could not finish. Staff can retry it without another upload.'}
+                    {automaticVelocity.status === 'queued' && 'Your video is in line for a velocity check.'}
+                    {automaticVelocity.status === 'processing' && 'We’re checking your video’s frame rate, calibration marker, and ball path.'}
+                    {automaticVelocity.status === 'completed' && !automaticVelocity.staff_approved && 'An estimated range is ready and waiting for a coach to verify it.'}
+                    {automaticVelocity.status === 'completed' && automaticVelocity.staff_approved && 'A coach verified your estimated range. It will appear in your finished report.'}
+                    {automaticVelocity.status === 'unavailable' && 'Your video didn’t qualify for a velocity estimate. Your mechanics review continues as normal.'}
+                    {automaticVelocity.status === 'failed' && 'The velocity check didn’t finish. A coach can retry it without you re-uploading.'}
                   </p>
                   {automaticVelocity.status === 'unavailable' && automaticVelocity.rejection_reason && (
                     <p className="mt-2 text-xs text-yellow-300">Reason: {automaticVelocity.rejection_reason}</p>

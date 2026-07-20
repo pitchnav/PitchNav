@@ -22,32 +22,30 @@ const steps = [
       'Health and safety screening questions',
       'Parent or guardian consent for athletes under 18',
     ],
-    note: 'Athletes under 13 are not accepted in the current version.',
+    note: 'Athletes under 13 are not accepted at this time.',
   },
   {
     icon: <Camera className="h-8 w-8" />,
     number: '02',
     title: 'Set Up Your Camera',
-    description: 'Follow the interactive camera-setup wizard before you film. Every angle has a diagram, distance recommendation, and a checklist you confirm before continuing.',
+    description: 'Follow the camera-setup wizard before you film. It gives you a diagram, a distance guide, and a checklist to confirm before you continue.',
     details: [
       'Open-side view: film from the throwing-arm side, perpendicular to the pitch',
-      'Camera height: approximately chest-high for both angles',
+      'Camera height: 6 feet high, with the lens level',
       'Recommended frame rate: 120 or 240 fps if your device supports it',
       'Full body must remain in frame through release',
       'Do not zoom or move the camera during the pitch',
     ],
-    note: 'Submit one clear, complete pitch from each required angle.',
+    note: 'Submit one clear, complete pitch from the open-side angle.',
   },
   {
     icon: <Upload className="h-8 w-8" />,
     number: '03',
-    title: 'Upload Your Videos',
-    description: 'Record directly from your device or upload existing videos from your camera roll. We support MP4, MOV, and most common formats.',
+    title: 'Upload Your Video',
+    description: 'Record directly from your device or upload an existing video from your camera roll. We support MP4, MOV, and most common formats.',
     details: [
       'One open-side video (required)',
-      'Front-view video (optional)',
       'Radar screenshot or radar-backed video (optional)',
-      'Previous delivery video for comparison (optional)',
       'Video quality checklist before final submission',
     ],
     note: 'Videos are stored securely in a private bucket. Only you and your assigned reviewer can access your files.',
@@ -62,7 +60,7 @@ const steps = [
       'Pitch Nav does not store your card number',
       '$25 throwing or $40 complete monthly membership',
       'Order confirmation email sent immediately',
-      'Order immediately enters the review queue',
+      'Your order goes straight into review',
     ],
     note: null,
   },
@@ -70,7 +68,7 @@ const steps = [
     icon: <Clock className="h-8 w-8" />,
     number: '05',
     title: 'Track Your Order',
-    description: 'Watch your order progress through the review pipeline in your athlete dashboard. You\'ll receive email notifications when your status changes.',
+    description: 'Track your order in your dashboard. You\'ll get an email whenever your status changes.',
     details: [
       'Real-time status tracking in your dashboard',
       'Email notifications at key milestones',
@@ -161,9 +159,7 @@ export default function HowItWorksPage() {
             <div>
               <h3 className="text-base font-semibold text-white mb-2">Privacy & Security</h3>
               <p className="text-sm text-slate-400 leading-relaxed">
-                Your videos are stored in a private, access-controlled storage bucket.
-                Row-level security ensures you can only access your own files.
-                Your reviewer is the only person who can view your submitted videos.
+                Your videos are stored privately. Only you and your assigned reviewer can see them.
                 You can request deletion of your videos or your entire account at any time from your dashboard.
               </p>
             </div>

@@ -684,7 +684,7 @@ export function MotionAnalysisStudio({
     } catch (reason) {
       console.error(reason)
       setModelStatus('error')
-      setError('The pose model could not load. Check your connection and try again.')
+      setError('Could not start video tracking. Check your connection and try again.')
       return null
     }
   }, [])
@@ -998,7 +998,7 @@ export function MotionAnalysisStudio({
   function finishAnalysis() {
     const frames = samplesRef.current.filter((frame) => frame.confidence >= 0.45)
     if (!frames.length) {
-      setError('No sufficiently visible pose was detected. Try a clearer full-body video.')
+      setError('We could not get a clear view of your body in this video. Try a clearer, full-body video.')
       if (autoProcess) setAutomaticStage('error')
       analyzingRef.current = false
       setAnalyzing(false)
@@ -1388,7 +1388,7 @@ export function MotionAnalysisStudio({
       console.error(reason)
       autoAnalyzeStartedRef.current = false
       setAutomaticStage('error')
-      setError('Automatic processing could not start. Press Retry below and keep this page open.')
+      setError('Your video could not start processing. Press Retry below and keep this page open.')
     })
   // Automatic processing starts only after the secure video and pose model are ready.
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1431,10 +1431,10 @@ export function MotionAnalysisStudio({
             {automaticStage === 'analyzing' && 'Analyzing the trimmed delivery…'}
             {automaticStage === 'saving' && 'Saving all six phase frames…'}
             {automaticStage === 'complete' && 'Analysis submitted for staff review'}
-            {automaticStage === 'error' && 'Automatic processing needs another try'}
+            {automaticStage === 'error' && 'Let’s give that another try'}
           </h1>
           <p className="mt-2 max-w-3xl text-sm leading-relaxed text-slate-300">
-            Keep this page open while Pitch Nav prepares the six phase screenshots, score candidates, and plan draft. You do not need to run the video through Motion Lab again, and staff will verify the draft before release.
+            Keep this page open while Pitch Nav prepares your six phase screenshots, scores, and plan. You won&apos;t need to run this video through Motion Lab again — a coach will verify everything before it&apos;s released to you.
           </p>
           {automaticStage === 'error' && (
             <button
@@ -1646,13 +1646,13 @@ export function MotionAnalysisStudio({
           <div className="flex items-start gap-3">
             <Activity className="mt-1 h-6 w-6 flex-none text-electric-blue-light" />
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-electric-blue-light">Staff-side processing</p>
-              <h2 className="mt-1 text-xl font-bold text-white">Velocity review runs behind the scenes</h2>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-electric-blue-light">Velocity check</p>
+              <h2 className="mt-1 text-xl font-bold text-white">Nothing else for you to do</h2>
               <p className="mt-2 max-w-3xl text-sm leading-relaxed text-slate-400">
-                No calibration clicks or baseball-point selections are required here. After a paid side-view video is uploaded,
-                Pitch Nav’s secure worker checks capture FPS, the calibration marker, and visible ball tracking. Staff reviews every
-                result before release. If the clip is not suitable, no video-estimated velocity is reported. Radar readings remain
-                separately labeled as verified.
+                You don&apos;t click any calibration points. Once your video is uploaded, Pitch Nav checks the frame
+                rate, the calibration marker, and the ball tracking, and a coach reviews the result before you see it.
+                If your video doesn&apos;t qualify, no velocity estimate is shown. Radar readings are always labeled
+                separately as verified.
               </p>
               <p className="mt-3 text-xs text-slate-500">240 FPS is recommended. 120 FPS is accepted with reduced confidence. 60 FPS is mechanics-only.</p>
             </div>
