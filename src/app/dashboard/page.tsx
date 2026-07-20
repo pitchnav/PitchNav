@@ -1,8 +1,9 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowRight, Plus, CheckCircle } from 'lucide-react'
+import { ArrowRight, Plus, CheckCircle, Activity, Clock, Video } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { OrderStatusBadge } from '@/components/ui/Badge'
+import { AnimatedStat } from '@/components/dashboard/AnimatedStat'
 import { formatDateShort } from '@/lib/utils'
 import type { Order, AthleteProfile } from '@/types/database'
 
@@ -36,7 +37,7 @@ export default async function DashboardPage() {
   return (
     <div className="max-w-5xl mx-auto">
       {/* Welcome */}
-      <div className="mb-8">
+      <div className="mb-8 animate-fade-in">
         <h1 className="text-3xl font-black text-white">
           Welcome back{profile?.full_name ? `, ${profile.full_name.split(' ')[0]}` : ''}!
         </h1>
@@ -46,14 +47,11 @@ export default async function DashboardPage() {
       {/* Quick stats */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-8">
         {[
-          { label: 'Total Analyses', value: (orders?.length ?? 0) + (motionAnalyses?.length ?? 0) },
-          { label: 'Active', value: activeOrders.length },
-          { label: 'Completed', value: completedOrders.length },
-        ].map(({ label, value }) => (
-          <div key={label} className="card text-center">
-            <p className="text-3xl font-black text-white">{value}</p>
-            <p className="text-sm text-slate-500 mt-1">{label}</p>
-          </div>
+          { label: 'Total Analyses', value: (orders?.length ?? 0) + (motionAnalyses?.length ?? 0), icon: Activity, accentClassName: 'text-electric-blue-light' },
+          { label: 'Active', value: activeOrders.length, icon: Clock, accentClassName: 'text-yellow-300' },
+          { label: 'Completed', value: completedOrders.length, icon: CheckCircle, accentClassName: 'text-accent-green' },
+        ].map(({ label, value, icon, accentClassName }, i) => (
+          <AnimatedStat key={label} label={label} value={value} icon={icon} accentClassName={accentClassName} delayMs={i * 90} />
         ))}
       </div>
 
@@ -67,10 +65,14 @@ export default async function DashboardPage() {
             </div>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
-            {motionAnalyses.map((analysis) => {
+            {motionAnalyses.map((analysis, i) => {
               const plan = Array.isArray(analysis.training_plans) ? analysis.training_plans[0] : analysis.training_plans
               return (
-                <div key={analysis.id} className="card">
+                <div
+                  key={analysis.id}
+                  className="card animate-slide-up transition-all duration-200 [animation-fill-mode:backwards] hover:-translate-y-1 hover:border-electric-blue/30"
+                  style={{ animationDelay: `${i * 70}ms` }}
+                >
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <p className="font-bold text-white">{analysis.title}</p>
@@ -91,9 +93,23 @@ export default async function DashboardPage() {
                       <p className="mt-1 text-sm text-white">{plan.weeks[0]?.priority}</p>
                     </div>
                   )}
-                  <div className="mt-4 flex flex-wrap gap-4">
-                    {analysis.status === 'published' ? <Link href={`/dashboard/feedback/${analysis.id}`} className="inline-flex text-sm font-semibold text-accent-green hover:text-white">View approved feedback & calendar <ArrowRight className="ml-1 h-4 w-4" /></Link> : <span className="text-sm font-semibold text-yellow-300">Staff review in progress — we’ll email you when ready</span>}
-                    <Link href="/dashboard/motion-lab" className="inline-flex text-sm font-semibold text-electric-blue-light hover:text-white">Open Motion Lab <ArrowRight className="ml-1 h-4 w-4" /></Link>
+                  <div className="mt-4 flex flex-wrap items-center gap-4">
+                    {analysis.status === 'published' ? (
+                      <Link href={`/dashboard/feedback/${analysis.id}`} className="group inline-flex items-center text-sm font-semibold text-accent-green hover:text-white">
+                        View approved feedback & calendar <ArrowRight className="ml-1 h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
+                      </Link>
+                    ) : (
+                      <span className="inline-flex items-center gap-2 text-sm font-semibold text-yellow-300">
+                        <span className="relative flex h-2 w-2">
+                          <span className="absolute inline-flex h-full w-full animate-pulse-slow rounded-full bg-yellow-300 opacity-75" />
+                          <span className="relative inline-flex h-2 w-2 rounded-full bg-yellow-300" />
+                        </span>
+                        Staff review in progress — we’ll email you when ready
+                      </span>
+                    )}
+                    <Link href="/dashboard/motion-lab" className="group inline-flex items-center text-sm font-semibold text-electric-blue-light hover:text-white">
+                      Open Motion Lab <ArrowRight className="ml-1 h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
+                    </Link>
                   </div>
                 </div>
               )
@@ -107,12 +123,16 @@ export default async function DashboardPage() {
         <div className="mb-8">
           <h2 className="text-lg font-bold text-white mb-4">Active Orders</h2>
           <div className="space-y-3">
-            {activeOrders.map((order) => {
+            {activeOrders.map((order, i) => {
               const ap = order.athlete_profiles as Partial<AthleteProfile>
               const submittedVideos = (order.video_submissions ?? []) as Array<{ id: string; angle: string }>
               const openSideVideo = submittedVideos.find((video) => video.angle === 'open_side')
               return (
-                <div key={order.id} className="card flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div
+                  key={order.id}
+                  className="card animate-slide-up flex flex-col gap-4 transition-all duration-200 [animation-fill-mode:backwards] hover:-translate-y-1 hover:border-electric-blue/30 sm:flex-row sm:items-center sm:justify-between"
+                  style={{ animationDelay: `${i * 70}ms` }}
+                >
                   <div>
                     <div className="flex items-center gap-3 mb-1">
                       <p className="font-semibold text-white">{ap?.athlete_full_name ?? 'Athlete'}</p>
@@ -124,8 +144,14 @@ export default async function DashboardPage() {
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    {openSideVideo && <Link href={`/dashboard/motion-lab?videoId=${openSideVideo.id}`} className="btn-primary text-sm px-4 py-2">Analyze Now <ArrowRight className="h-4 w-4" /></Link>}
-                    <Link href={`/dashboard/orders/${order.id}`} className="btn-secondary text-sm px-4 py-2 flex-shrink-0">View Details <ArrowRight className="h-4 w-4" /></Link>
+                    {openSideVideo && (
+                      <Link href={`/dashboard/motion-lab?videoId=${openSideVideo.id}`} className="btn-primary group text-sm px-4 py-2">
+                        Analyze Now <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
+                      </Link>
+                    )}
+                    <Link href={`/dashboard/orders/${order.id}`} className="btn-secondary group text-sm px-4 py-2 flex-shrink-0">
+                      View Details <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
+                    </Link>
                   </div>
                 </div>
               )
@@ -139,10 +165,14 @@ export default async function DashboardPage() {
         <div className="mb-8">
           <h2 className="text-lg font-bold text-white mb-4">Completed Reports</h2>
           <div className="space-y-3">
-            {completedOrders.map((order) => {
+            {completedOrders.map((order, i) => {
               const ap = order.athlete_profiles as Partial<AthleteProfile>
               return (
-                <div key={order.id} className="card flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div
+                  key={order.id}
+                  className="card animate-slide-up flex flex-col gap-4 transition-all duration-200 [animation-fill-mode:backwards] hover:-translate-y-1 hover:border-accent-green/30 sm:flex-row sm:items-center sm:justify-between"
+                  style={{ animationDelay: `${i * 70}ms` }}
+                >
                   <div className="flex items-center gap-3">
                     <CheckCircle className="h-5 w-5 text-accent-green flex-shrink-0" />
                     <div>
@@ -154,9 +184,9 @@ export default async function DashboardPage() {
                   </div>
                   <Link
                     href={`/dashboard/reports/${order.id}`}
-                    className="btn-accent text-sm px-4 py-2 flex-shrink-0"
+                    className="btn-accent group text-sm px-4 py-2 flex-shrink-0"
                   >
-                    View Report <ArrowRight className="h-4 w-4" />
+                    View Report <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
                   </Link>
                 </div>
               )
@@ -167,27 +197,31 @@ export default async function DashboardPage() {
 
       {/* Empty state */}
       {!orders?.length && !motionAnalyses?.length && (
-        <div className="card text-center py-16">
-          <div className="text-5xl mb-4">⚾</div>
+        <div className="card animate-fade-in py-16 text-center">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-electric-blue/10 shadow-glow">
+            <Video className="h-6 w-6 text-electric-blue-light" aria-hidden="true" />
+          </div>
           <h2 className="text-xl font-bold text-white mb-2">No analyses yet</h2>
           <p className="text-slate-400 mb-6 max-w-sm mx-auto">
             Start your first pitching analysis to begin understanding your delivery and developing your velocity.
           </p>
-          <Link href="/start-analysis" className="btn-primary">
+          <Link href="/start-analysis" className="btn-primary group">
             <Plus className="h-4 w-4" /> Start My First Analysis
+            <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
           </Link>
         </div>
       )}
 
       {/* CTA to start new */}
       {((orders?.length ?? 0) > 0 || (motionAnalyses?.length ?? 0) > 0) && (
-        <div className="card border-electric-blue/20 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="card animate-fade-in border-electric-blue/20 flex flex-col items-center justify-between gap-4 transition-all duration-200 hover:-translate-y-1 hover:border-electric-blue/40 sm:flex-row">
           <div>
             <h3 className="font-semibold text-white">Ready for a follow-up?</h3>
             <p className="text-sm text-slate-400">Track your development with another analysis.</p>
           </div>
-          <Link href="/start-analysis" className="btn-primary flex-shrink-0">
+          <Link href="/start-analysis" className="btn-primary group flex-shrink-0">
             <Plus className="h-4 w-4" /> New Analysis
+            <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
           </Link>
         </div>
       )}
