@@ -1,0 +1,50 @@
+{
+  "schemaVersion": "1.0.0",
+  "campaignId": "REPLACE-WITH-KEBAB-CASE-ID",
+  "campaignName": "Replace with a short human name",
+  "objective": "What should the viewer think, feel, or do after watching? Be specific.",
+  "audience": "Who this is for, e.g. 'travel-ball pitchers 13-18 and their parents' or 'pitching coaches evaluating tools for their staff'",
+  "contentType": "organic-reel",
+  "scriptFormat": "A-mechanics-breakdown",
+  "hook": "The exact first line/text on screen, 0:00-0:02",
+  "hookCategory": "mechanics-mystery",
+  "coreInsight": "The one coaching or product idea this video actually teaches",
+  "openLoop": "The question or tension raised early that keeps the viewer watching",
+  "payoff": "How and when the open loop resolves",
+  "callToAction": "Start your Pitch Nav analysis.",
+  "priceMention": null,
+  "totalDurationSeconds": 30,
+  "scenes": [
+    {
+      "id": "scene-1",
+      "timecode": "0:00-0:02",
+      "visualBeat": "Pattern-interrupt hook",
+      "cameraDirection": "Describe the shot",
+      "onScreenText": ["THREE TO SEVEN WORDS"],
+      "voiceOver": "",
+      "bRoll": [],
+      "soundDesign": "",
+      "assetReferences": []
+    }
+  ],
+  "voiceOverScript": "Full VO script, scene by scene, matched to the timecodes above.",
+  "onScreenText": ["Full caption list in order, one entry per visual beat"],
+  "bRollInstructions": "Plain-language notes for the editor on what supporting footage to cut in and when.",
+  "editingNotes": "Pacing, transition, and tone notes specific to this video.",
+  "soundDesign": "Music direction, SFX accents, and the rule that music stays under voice-over.",
+  "assetReferences": [
+    {
+      "kind": "real-pitching-footage",
+      "description": "What footage this is",
+      "path": "",
+      "status": "needed",
+      "aiGenerated": false,
+      "notes": ""
+    }
+  ],
+  "platform": ["instagram-reels"],
+  "distribution": "organic",
+  "testVariation": "hook-variant-1",
+  "status": "idea",
+  "performanceResults": null
+}

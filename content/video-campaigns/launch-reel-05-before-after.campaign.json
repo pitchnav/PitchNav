@@ -1,0 +1,146 @@
+{
+  "schemaVersion": "1.0.0",
+  "campaignId": "launch-reel-05-before-after",
+  "campaignName": "Launch Reel 5 — Six Weeks Apart",
+  "objective": "Before-and-after case-study Reel proving Pitch Nav works over time, structurally distinct (split-screen throughout) from the other four launch Reels.",
+  "audience": "Parents/athletes evaluating whether the product produces real, trackable change — mid-to-lower funnel.",
+  "contentType": "before-and-after",
+  "scriptFormat": "B-before-and-after",
+  "hook": "Same pitcher. Six weeks apart.",
+  "hookCategory": "case-study",
+  "coreInsight": "Front-side stability at foot strike visibly improved over six weeks of drill work targeting that exact priority, and timing is the next thing to work on.",
+  "openLoop": "The split-screen opening promises a real comparison — the viewer watches to see what actually changed.",
+  "payoff": "The synchronized comparison and overlay show the specific improvement, and an honest 'still needs work' beat makes the case study credible.",
+  "callToAction": "Start your Pitch Nav analysis.",
+  "priceMention": null,
+  "totalDurationSeconds": 26,
+  "scenes": [
+    {
+      "id": "scene-1",
+      "timecode": "0:00-0:02",
+      "visualBeat": "Side-by-side opening hook",
+      "cameraDirection": "Split screen, two real clips of the same athlete, both paused at the same starting pose.",
+      "onScreenText": ["SAME PITCHER"],
+      "voiceOver": "",
+      "bRoll": [],
+      "soundDesign": "Single low tick on the cut in.",
+      "assetReferences": [
+        { "kind": "real-pitching-footage", "description": "Athlete C, clip from week 0, side view", "status": "needed", "aiGenerated": false },
+        { "kind": "real-pitching-footage", "description": "Athlete C, clip from week 6, side view, matched framing", "status": "needed", "aiGenerated": false }
+      ]
+    },
+    {
+      "id": "scene-2",
+      "timecode": "0:02-0:05",
+      "visualBeat": "Clear timeframe",
+      "cameraDirection": "Both clips begin playing in sync from leg lift, still split screen.",
+      "onScreenText": ["SIX WEEKS APART"],
+      "voiceOver": "These two clips are six weeks apart.",
+      "bRoll": [],
+      "soundDesign": "Soft sync-start accent.",
+      "assetReferences": []
+    },
+    {
+      "id": "scene-3",
+      "timecode": "0:05-0:09",
+      "visualBeat": "One movement to watch",
+      "cameraDirection": "Freeze both clips at front-foot strike; blue overlay highlights front-leg/hip stability on both sides.",
+      "onScreenText": ["WATCH THE FRONT LEG"],
+      "voiceOver": "Watch the front leg at foot strike.",
+      "bRoll": [],
+      "soundDesign": "Freeze-frame stop accent, both sides simultaneously.",
+      "assetReferences": [
+        { "kind": "ai-generated-diagram", "description": "Blue overlay on front-leg/hip stability, both sides", "status": "needed", "aiGenerated": true }
+      ]
+    },
+    {
+      "id": "scene-4",
+      "timecode": "0:09-0:14",
+      "visualBeat": "Synchronized comparison",
+      "cameraDirection": "Both clips resume in sync, slow motion, playing through release, matched frame-for-frame, still split screen.",
+      "onScreenText": ["WATCH IT HOLD"],
+      "voiceOver": "Same pitch. Watch how the front side holds up differently.",
+      "bRoll": [],
+      "soundDesign": "Speed-ramp whoosh, both sides.",
+      "assetReferences": []
+    },
+    {
+      "id": "scene-5",
+      "timecode": "0:14-0:18",
+      "visualBeat": "What changed",
+      "cameraDirection": "Freeze both on release; overlay comparison shows the improved stability angle on the 'after' side.",
+      "onScreenText": ["MORE STABLE AT RELEASE"],
+      "voiceOver": "The front side is noticeably more stable at release now.",
+      "bRoll": [],
+      "soundDesign": "Freeze-frame stop accent.",
+      "assetReferences": [
+        { "kind": "ai-generated-diagram", "description": "Comparison overlay showing improved stability angle", "status": "needed", "aiGenerated": true }
+      ]
+    },
+    {
+      "id": "scene-6",
+      "timecode": "0:18-0:21",
+      "visualBeat": "What still needs work",
+      "cameraDirection": "Cut to a single, non-split clip of the most recent rep — honest, not celebratory.",
+      "onScreenText": ["TIMING IS NEXT"],
+      "voiceOver": "Timing still needs work — that's the next priority.",
+      "bRoll": [],
+      "soundDesign": "Clean cut, music dips slightly for the honest beat.",
+      "assetReferences": [
+        { "kind": "real-pitching-footage", "description": "Most recent rep, single frame, not split screen", "status": "needed", "aiGenerated": false }
+      ]
+    },
+    {
+      "id": "scene-7",
+      "timecode": "0:21-0:24",
+      "visualBeat": "Pitch Nav product output",
+      "cameraDirection": "Screen recording of the progress-tracking calendar spanning the six-week window, priority updated.",
+      "onScreenText": ["TRACKED THE WHOLE WAY"],
+      "voiceOver": "Pitch Nav tracked the whole six weeks.",
+      "bRoll": [],
+      "soundDesign": "UI tap accent, music builds.",
+      "assetReferences": [
+        { "kind": "real-screen-recording", "description": "Progress calendar spanning the six-week window", "status": "needed", "aiGenerated": false }
+      ]
+    },
+    {
+      "id": "scene-8",
+      "timecode": "0:24-0:26",
+      "visualBeat": "One clear CTA",
+      "cameraDirection": "Static end card: wordmark small at top, CTA centered.",
+      "onScreenText": ["START YOUR ANALYSIS"],
+      "voiceOver": "Start your Pitch Nav analysis.",
+      "bRoll": [],
+      "soundDesign": "Music resolves.",
+      "assetReferences": [
+        { "kind": "brand-asset", "description": "Pitch Nav wordmark/logo, small, bottom-safe", "path": "public/pitch-nav-logo-source.png", "status": "available", "aiGenerated": false }
+      ]
+    }
+  ],
+  "voiceOverScript": "These two clips are six weeks apart. Watch the front leg at foot strike. Same pitch. Watch how the front side holds up differently. The front side is noticeably more stable at release now. Timing still needs work — that's the next priority. Pitch Nav tracked the whole six weeks. Start your Pitch Nav analysis.",
+  "onScreenText": [
+    "SAME PITCHER",
+    "SIX WEEKS APART",
+    "WATCH THE FRONT LEG",
+    "WATCH IT HOLD",
+    "MORE STABLE AT RELEASE",
+    "TIMING IS NEXT",
+    "TRACKED THE WHOLE WAY",
+    "START YOUR ANALYSIS"
+  ],
+  "bRollInstructions": "Both clips must be real footage of the same, real, consenting athlete, genuinely six weeks apart, matched framing/angle so the split screen lines up honestly. Do not simulate the 'after' clip.",
+  "editingNotes": "Split-screen persists through most of the runtime — the only Reel in this set structured that way. Frame changes every 1-3 seconds. The 'what still needs work' beat (0:18-0:21) is mandatory — do not cut it even under time pressure, per content/video-templates/formats/format-b-before-and-after.md.",
+  "soundDesign": "Uplifting, gradual build — a progress/achievement feel, but restrained. Music dips slightly during the honest 'timing is next' beat, then resumes building into the product-output and CTA beats.",
+  "assetReferences": [
+    { "kind": "real-pitching-footage", "description": "Athlete C, two clips six weeks apart, matched side-view framing", "status": "needed", "aiGenerated": false },
+    { "kind": "real-screen-recording", "description": "Progress calendar spanning the six-week window", "status": "needed", "aiGenerated": false },
+    { "kind": "ai-generated-diagram", "description": "Blue stability overlay, both freeze-frame comparisons", "status": "needed", "aiGenerated": true },
+    { "kind": "brand-asset", "description": "Logo for end card", "path": "public/pitch-nav-logo-source.png", "status": "available", "aiGenerated": false },
+    { "kind": "music", "description": "Uplifting, gradual build — progress/achievement feel", "status": "needed", "aiGenerated": false }
+  ],
+  "platform": ["instagram-reels"],
+  "distribution": "organic",
+  "testVariation": "launch-reel-5-before-after",
+  "status": "scripted",
+  "performanceResults": null
+}

@@ -1,0 +1,51 @@
+<svg width="1080" height="1920" viewBox="0 0 1080 1920" xmlns="http://www.w3.org/2000/svg">
+  <!--
+    Pitch Nav Reels/paid-ad safe-zone overlay guide.
+    Transparent background — import over your timeline as a guide track,
+    toggle visibility while placing text/logo/CTA, then hide or delete
+    before final export. See safe-zone-overlay-guide.md for pixel sources
+    and instructions.
+  -->
+  <defs>
+    <style>
+      .label { font-family: Inter, Arial, sans-serif; font-weight: 700; font-size: 26px; fill: #ffffff; }
+      .label-bg { fill: #05080f; opacity: 0.75; }
+      .unsafe { fill: #ef4444; fill-opacity: 0.16; stroke: #ef4444; stroke-width: 3; stroke-dasharray: 14 10; }
+      .ideal { fill: #00e5a0; fill-opacity: 0.10; stroke: #00e5a0; stroke-width: 3; stroke-dasharray: 14 10; }
+      .marker { fill: #2563eb; fill-opacity: 0.22; stroke: #2563eb; stroke-width: 3; }
+    </style>
+  </defs>
+
+  <!-- Top obstruction zone (recording UI / cross-post story bar) -->
+  <rect x="0" y="0" width="1080" height="250" class="unsafe" />
+  <rect x="24" y="24" width="430" height="40" class="label-bg" />
+  <text x="34" y="52" class="label">TOP OBSTRUCTION ZONE</text>
+
+  <!-- Right-side engagement rail (like / comment / share / save / audio) -->
+  <rect x="900" y="950" width="180" height="760" class="unsafe" />
+  <rect x="700" y="1300" width="380" height="40" class="label-bg" />
+  <text x="710" y="1328" class="label">ENGAGEMENT RAIL</text>
+
+  <!-- Bottom caption / username / CTA-obstruction zone (IG native UI) -->
+  <rect x="0" y="1620" width="1080" height="300" class="unsafe" />
+  <rect x="24" y="1852" width="470" height="40" class="label-bg" />
+  <text x="34" y="1880" class="label">IG CAPTION / UI ZONE</text>
+
+  <!-- Ideal text region -->
+  <rect x="60" y="270" width="840" height="1330" class="ideal" />
+  <rect x="80" y="290" width="330" height="40" class="label-bg" />
+  <text x="90" y="318" class="label">IDEAL TEXT REGION</text>
+
+  <!-- Ideal logo position (in-video, top-left, minimal use) -->
+  <rect x="60" y="90" width="300" height="130" class="marker" />
+  <rect x="70" y="100" width="280" height="36" class="label-bg" />
+  <text x="78" y="126" class="label" style="font-size:22px;">IDEAL LOGO POSITION</text>
+
+  <!-- Ideal CTA position (above IG UI zone, centered, inside ideal text region) -->
+  <rect x="140" y="1420" width="800" height="180" class="marker" />
+  <rect x="160" y="1440" width="290" height="36" class="label-bg" />
+  <text x="168" y="1466" class="label" style="font-size:22px;">IDEAL CTA POSITION</text>
+
+  <!-- Center-safe crosshair for quick alignment -->
+  <line x1="540" y1="0" x2="540" y2="1920" stroke="#2563eb" stroke-opacity="0.25" stroke-width="1" />
+</svg>

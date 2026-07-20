@@ -1,0 +1,136 @@
+{
+  "schemaVersion": "1.0.0",
+  "campaignId": "launch-reel-01-glove-side",
+  "campaignName": "Launch Reel 1 — The Glove Side",
+  "objective": "Organic mechanics-breakdown Reel built around a different observation than the flagship/paid set (glove-side elbow timing, not foot-strike rotation) so it reads as new content, not a repeat.",
+  "audience": "Competitive travel-ball and high-school pitchers (14-18) and their parents who follow mechanics-focused content.",
+  "contentType": "mechanics-breakdown",
+  "scriptFormat": "A-mechanics-breakdown",
+  "hook": "This delivery has one hidden inefficiency.",
+  "hookCategory": "mechanics-mystery",
+  "coreInsight": "The glove-side elbow dropping early during arm swing pulls the front shoulder open before the front foot lands, which a tall-and-tight glove drill directly addresses.",
+  "openLoop": "\"One hidden inefficiency\" promises a specific, findable flaw — the viewer watches to see what it is.",
+  "payoff": "The freeze frame and overlay name the exact moment and joint; a second rep confirms it, then the drill and product priority resolve it.",
+  "callToAction": "Start your Pitch Nav analysis.",
+  "priceMention": null,
+  "totalDurationSeconds": 20,
+  "scenes": [
+    {
+      "id": "scene-1",
+      "timecode": "0:00-0:02",
+      "visualBeat": "Pattern-interrupt hook",
+      "cameraDirection": "Real full-speed side-view pitch, hard cut in, no logo, no intro.",
+      "onScreenText": ["THIS DELIVERY HAS ONE HIDDEN INEFFICIENCY"],
+      "voiceOver": "",
+      "bRoll": [],
+      "soundDesign": "Single low tick on the cut in.",
+      "assetReferences": [
+        { "kind": "real-pitching-footage", "description": "Full-speed side-view pitch, subject B, rep 1", "status": "needed", "aiGenerated": false }
+      ]
+    },
+    {
+      "id": "scene-2",
+      "timecode": "0:02-0:04",
+      "visualBeat": "Visual proof",
+      "cameraDirection": "Same rep continues, eases into slow motion approaching leg lift/arm swing.",
+      "onScreenText": ["WATCH THE GLOVE SIDE"],
+      "voiceOver": "At full speed you'd never catch it.",
+      "bRoll": [],
+      "soundDesign": "Speed-ramp whoosh into slow motion.",
+      "assetReferences": [
+        { "kind": "real-pitching-footage", "description": "Same rep, slow-motion capture", "status": "needed", "aiGenerated": false }
+      ]
+    },
+    {
+      "id": "scene-3",
+      "timecode": "0:04-0:08",
+      "visualBeat": "Reveal the problem",
+      "cameraDirection": "Freeze frame at peak arm swing; blue overlay animates onto the glove-side elbow and front shoulder line.",
+      "onScreenText": ["ELBOW DROPS EARLY"],
+      "voiceOver": "Right here — the glove-side elbow drops early and pulls the front shoulder open before the foot even lands.",
+      "bRoll": [],
+      "soundDesign": "Freeze-frame stop accent; overlay draw-on sound, subtle.",
+      "assetReferences": [
+        { "kind": "ai-generated-diagram", "description": "Blue overlay on glove-side elbow/front-shoulder line", "status": "needed", "aiGenerated": true, "notes": "Motion-graphic overlay only — pitcher footage underneath is real." }
+      ]
+    },
+    {
+      "id": "scene-4",
+      "timecode": "0:08-0:12",
+      "visualBeat": "Curiosity loop / repeated pattern",
+      "cameraDirection": "Split screen: rep 1 freeze frame (left) and rep 2 freeze frame (right), same phase, same overlay.",
+      "onScreenText": ["SAME PATTERN AGAIN"],
+      "voiceOver": "Same pitch. Same pattern.",
+      "bRoll": [],
+      "soundDesign": "Split-screen wipe.",
+      "assetReferences": [
+        { "kind": "real-pitching-footage", "description": "Full-speed + slow-motion side-view pitch, subject B, rep 2", "status": "needed", "aiGenerated": false }
+      ]
+    },
+    {
+      "id": "scene-5",
+      "timecode": "0:12-0:16",
+      "visualBeat": "Coaching insight / solution",
+      "cameraDirection": "Cut to real drill footage: tall-and-tight glove-side drill, one rep.",
+      "onScreenText": ["ONE DRILL. ONE PRIORITY."],
+      "voiceOver": "One drill keeps that arm connected longer — more direction, less spin-out.",
+      "bRoll": ["Tall-and-tight glove drill, real footage"],
+      "soundDesign": "Music bed enters, low under VO.",
+      "assetReferences": [
+        { "kind": "real-pitching-footage", "description": "Drill demonstration footage", "status": "needed", "aiGenerated": false }
+      ]
+    },
+    {
+      "id": "scene-6",
+      "timecode": "0:16-0:18",
+      "visualBeat": "Pitch Nav product output",
+      "cameraDirection": "Screen recording: report scrolling to the flagged priority card and matching drill.",
+      "onScreenText": ["FLAGGED AUTOMATICALLY"],
+      "voiceOver": "Pitch Nav catches this from one upload.",
+      "bRoll": [],
+      "soundDesign": "UI tap accent.",
+      "assetReferences": [
+        { "kind": "real-screen-recording", "description": "Report/priority/drill card walkthrough", "status": "needed", "aiGenerated": false }
+      ]
+    },
+    {
+      "id": "scene-7",
+      "timecode": "0:18-0:20",
+      "visualBeat": "One clear CTA",
+      "cameraDirection": "Static end card: wordmark small at top, CTA centered.",
+      "onScreenText": ["START YOUR ANALYSIS"],
+      "voiceOver": "Start your Pitch Nav analysis.",
+      "bRoll": [],
+      "soundDesign": "Music resolves.",
+      "assetReferences": [
+        { "kind": "brand-asset", "description": "Pitch Nav wordmark/logo, small, bottom-safe", "path": "public/pitch-nav-logo-source.png", "status": "available", "aiGenerated": false }
+      ]
+    }
+  ],
+  "voiceOverScript": "At full speed you'd never catch it. Right here — the glove-side elbow drops early and pulls the front shoulder open before the foot even lands. Same pitch. Same pattern. One drill keeps that arm connected longer — more direction, less spin-out. Pitch Nav catches this from one upload. Start your Pitch Nav analysis.",
+  "onScreenText": [
+    "THIS DELIVERY HAS ONE HIDDEN INEFFICIENCY",
+    "WATCH THE GLOVE SIDE",
+    "ELBOW DROPS EARLY",
+    "SAME PATTERN AGAIN",
+    "ONE DRILL. ONE PRIORITY.",
+    "FLAGGED AUTOMATICALLY",
+    "START YOUR ANALYSIS"
+  ],
+  "bRollInstructions": "Two reps from the same athlete, matched to peak arm swing. One real drill rep. Real screen recording, no mockups.",
+  "editingNotes": "Follows content/video-templates/timelines/20s.md exactly. Frame changes every 1-3 seconds. No price card — this is an organic awareness Reel, not a conversion-priced ad.",
+  "soundDesign": "Low-key analytical music bed, ducked under VO, tension builds through the split screen then eases at the drill beat. One whoosh, one freeze-stop accent, one wipe, sparing UI taps.",
+  "assetReferences": [
+    { "kind": "real-pitching-footage", "description": "Subject B, two reps, full-speed + slow-motion, side view", "status": "needed", "aiGenerated": false },
+    { "kind": "real-pitching-footage", "description": "Tall-and-tight glove drill demonstration", "status": "needed", "aiGenerated": false },
+    { "kind": "real-screen-recording", "description": "Report/priority/drill walkthrough", "status": "needed", "aiGenerated": false },
+    { "kind": "ai-generated-diagram", "description": "Blue overlay on glove-side elbow/shoulder", "status": "needed", "aiGenerated": true },
+    { "kind": "brand-asset", "description": "Logo for end card", "path": "public/pitch-nav-logo-source.png", "status": "available", "aiGenerated": false },
+    { "kind": "music", "description": "Tense, analytical low synth pulse building to a confident resolve", "status": "needed", "aiGenerated": false }
+  ],
+  "platform": ["instagram-reels"],
+  "distribution": "organic",
+  "testVariation": "launch-reel-1-glove-side-mechanics",
+  "status": "scripted",
+  "performanceResults": null
+}

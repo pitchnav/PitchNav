@@ -1,0 +1,127 @@
+{
+  "schemaVersion": "1.0.0",
+  "campaignId": "flagship-understand-your-delivery",
+  "campaignName": "Flagship Ad — Understand Your Delivery",
+  "objective": "The single hero Pitch Nav ad: establish the core product promise (a slow-motion video reveals what full speed hides) with premium, restrained pacing, then convert to a paid analysis.",
+  "audience": "Broad primary audience — competitive pitchers 13-18 and their parents, plus pitching coaches evaluating the product for their athletes.",
+  "contentType": "paid-ad",
+  "scriptFormat": "G-paid-ad",
+  "hook": "THIS LOOKS LIKE A GOOD DELIVERY…",
+  "hookCategory": "mechanics-mystery",
+  "coreInsight": "A delivery can look sound at full speed while the upper half is already rotating before the front side becomes stable — visible only once the video is stopped at foot strike.",
+  "openLoop": "\"This looks like a good delivery…\" sets an expectation the very next line undercuts — the viewer keeps watching to see what the freeze frame reveals.",
+  "payoff": "The freeze frame and overlay reveal the pattern; a second rep proves it's repeatable; the dashboard shows Pitch Nav surfaces exactly this kind of detail automatically.",
+  "callToAction": "Start your Pitch Nav analysis.",
+  "priceMention": "$25/month",
+  "totalDurationSeconds": 30,
+  "scenes": [
+    {
+      "id": "scene-1",
+      "timecode": "0:00-0:02",
+      "visualBeat": "Open on real action, immediately",
+      "cameraDirection": "Real full-speed side-view pitch, no logo animation, no slow build.",
+      "onScreenText": ["THIS LOOKS LIKE A GOOD DELIVERY…"],
+      "voiceOver": "",
+      "bRoll": [],
+      "soundDesign": "Single low tick on the cut in; music bed starts quiet.",
+      "assetReferences": [
+        { "kind": "real-pitching-footage", "description": "Full-speed side-view pitch, subject A, rep 1", "status": "needed", "aiGenerated": false }
+      ]
+    },
+    {
+      "id": "scene-2",
+      "timecode": "0:02-0:05",
+      "visualBeat": "Visual proof continues, tension builds toward the freeze",
+      "cameraDirection": "Same rep continues at full speed, then eases into slow motion as it approaches foot strike.",
+      "onScreenText": [],
+      "voiceOver": "",
+      "bRoll": [],
+      "soundDesign": "Speed-ramp whoosh as slow motion begins.",
+      "assetReferences": [
+        { "kind": "real-pitching-footage", "description": "Same rep, slow-motion capture approaching foot strike", "status": "needed", "aiGenerated": false }
+      ]
+    },
+    {
+      "id": "scene-3",
+      "timecode": "0:05-0:11",
+      "visualBeat": "Freeze at the key phase, reveal the pattern",
+      "cameraDirection": "Hard freeze at foot strike. Blue overlay animates onto the shoulders/hips to highlight the rotation-vs-stability pattern.",
+      "onScreenText": ["UNTIL YOU STOP IT HERE."],
+      "voiceOver": "At full speed, this looks normal. But when we stop it at foot strike, the upper half begins rotating before the front side becomes stable.",
+      "bRoll": [],
+      "soundDesign": "Freeze-frame stop accent; overlay draw-on sound, subtle; music dips under VO.",
+      "assetReferences": [
+        { "kind": "ai-generated-diagram", "description": "Blue overlay highlighting the rotation-vs-stability pattern", "status": "needed", "aiGenerated": true, "notes": "Motion-graphic overlay only — pitcher footage underneath is real." }
+      ]
+    },
+    {
+      "id": "scene-4",
+      "timecode": "0:11-0:16",
+      "visualBeat": "Curiosity loop — second rep confirms the pattern",
+      "cameraDirection": "Cut to a second rep, same freeze-and-overlay treatment at the same phase.",
+      "onScreenText": ["SAME PATTERN. ANOTHER PITCH."],
+      "voiceOver": "",
+      "bRoll": [],
+      "soundDesign": "Freeze-frame stop accent, second instance, slightly harder.",
+      "assetReferences": [
+        { "kind": "real-pitching-footage", "description": "Full-speed + slow-motion side-view pitch, subject A, rep 2", "status": "needed", "aiGenerated": false }
+      ]
+    },
+    {
+      "id": "scene-5",
+      "timecode": "0:16-0:25",
+      "visualBeat": "Pitch Nav product output",
+      "cameraDirection": "Screen recording: dashboard and report, moving through priority, drills, and progress tracking — not a static frame.",
+      "onScreenText": [],
+      "voiceOver": "Pitch Nav turns your slow-motion pitching video into a clear mechanics breakdown, a development priority, drills, and progress tracking.",
+      "bRoll": [],
+      "soundDesign": "UI tap accents, sparing; music builds slightly toward the final card.",
+      "assetReferences": [
+        { "kind": "real-screen-recording", "description": "Dashboard + report + priority + drills + progress calendar walkthrough", "status": "needed", "aiGenerated": false }
+      ]
+    },
+    {
+      "id": "scene-6",
+      "timecode": "0:25-0:30",
+      "visualBeat": "Final screen — one clear CTA",
+      "cameraDirection": "Static end card: wordmark small at top, headline, CTA, price, and small-print disclaimer beneath.",
+      "onScreenText": [
+        "UNDERSTAND YOUR DELIVERY.",
+        "START YOUR ANALYSIS.",
+        "$25/MONTH",
+        "Video-based training estimates. Not medical or laboratory measurements."
+      ],
+      "voiceOver": "Understand your delivery. Start your Pitch Nav analysis. Twenty-five dollars a month.",
+      "bRoll": [],
+      "soundDesign": "Music resolves; no additional SFX.",
+      "assetReferences": [
+        { "kind": "brand-asset", "description": "Pitch Nav wordmark/logo, small, bottom-safe", "path": "public/pitch-nav-logo-source.png", "status": "available", "aiGenerated": false }
+      ]
+    }
+  ],
+  "voiceOverScript": "At full speed, this looks normal. But when we stop it at foot strike, the upper half begins rotating before the front side becomes stable. Pitch Nav turns your slow-motion pitching video into a clear mechanics breakdown, a development priority, drills, and progress tracking. Understand your delivery. Start your Pitch Nav analysis. Twenty-five dollars a month.",
+  "onScreenText": [
+    "THIS LOOKS LIKE A GOOD DELIVERY…",
+    "UNTIL YOU STOP IT HERE.",
+    "SAME PATTERN. ANOTHER PITCH.",
+    "UNDERSTAND YOUR DELIVERY.",
+    "START YOUR ANALYSIS.",
+    "$25/MONTH",
+    "Video-based training estimates. Not medical or laboratory measurements."
+  ],
+  "bRollInstructions": "Two reps from the same athlete, matched phase-to-phase, same freeze point (foot strike) both times. Dashboard footage must be a real, moving screen recording — not a static screenshot — and must show the priority, drills, and progress-tracking views the VO names.",
+  "editingNotes": "This ad uses a slightly slower 6-beat structure than the standard 30s scaffold (see content/video-templates/timelines/30s.md) — the freeze-and-reveal is the entire point, so it's allowed to breathe for up to 6 seconds instead of the usual 5. Even so, something changes on screen at least every 1-3 seconds within each beat (overlay draw-on, split-second holds, UI taps). Open on the pitch, never the logo. The disclaimer must be legibly sized, not buried — see content/captions/caption-style-guide.md for minimum readable size at mobile scale.",
+  "soundDesign": "Music bed under everything, ducked below voice-over, building slightly toward the final card. One whoosh on the speed ramp, two freeze-frame stop accents, sparing UI taps. No glitch transitions, no screen shake.",
+  "assetReferences": [
+    { "kind": "real-pitching-footage", "description": "Subject A, two reps, full-speed + slow-motion, side view, matched to foot strike", "status": "needed", "aiGenerated": false },
+    { "kind": "real-screen-recording", "description": "Dashboard/report walkthrough: priority, drills, progress calendar", "status": "needed", "aiGenerated": false },
+    { "kind": "ai-generated-diagram", "description": "Blue overlay highlighting the mechanical pattern", "status": "needed", "aiGenerated": true },
+    { "kind": "brand-asset", "description": "Logo for end card", "path": "public/pitch-nav-logo-source.png", "status": "available", "aiGenerated": false },
+    { "kind": "music", "description": "Premium, restrained sports-tech bed, no lyrics, slight build toward the end card", "status": "needed", "aiGenerated": false }
+  ],
+  "platform": ["instagram-ads", "website"],
+  "distribution": "paid",
+  "testVariation": "flagship-hero",
+  "status": "scripted",
+  "performanceResults": null
+}

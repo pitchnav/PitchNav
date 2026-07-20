@@ -1,0 +1,137 @@
+{
+  "schemaVersion": "1.0.0",
+  "campaignId": "launch-ad-02-velocity-opportunity",
+  "campaignName": "Launch Ad 2 — Velocity Opportunity Hook",
+  "objective": "Stop velocity-focused pitchers/parents mid-scroll with a sequencing-over-effort observation, then convert to a Pitch Nav analysis. Shares its scenes 2-7 verbatim with launch-ad-01 through launch-ad-05 — only the hook (scene 1) and framing change, so results isolate hook performance.",
+  "audience": "Pitchers and parents focused on velocity development, active on the showcase/travel-ball circuit and searching for a competitive edge.",
+  "contentType": "paid-ad",
+  "scriptFormat": "G-paid-ad",
+  "hook": "He is moving fast, but the sequence tells a different story.",
+  "hookCategory": "velocity-curiosity",
+  "coreInsight": "A delivery can look clean at full speed while a specific mechanical pattern — the upper half rotating before the front side is stable — is easy to miss without frame-by-frame video.",
+  "openLoop": "The hook implies raw effort/speed isn't the whole picture — the viewer keeps watching to find out what the sequence actually shows.",
+  "payoff": "The freeze frame and blue overlay show the exact moment and pattern; a second rep confirms it's repeatable, not a fluke.",
+  "callToAction": "Start your Pitch Nav analysis.",
+  "priceMention": "$25/month",
+  "totalDurationSeconds": 30,
+  "scenes": [
+    {
+      "id": "scene-1",
+      "timecode": "0:00-0:02",
+      "visualBeat": "Pattern-interrupt hook",
+      "cameraDirection": "Real full-speed side-view pitch, mid-windup, hard cut in — no logo, no intro.",
+      "onScreenText": ["MOVING FAST"],
+      "voiceOver": "",
+      "bRoll": [],
+      "soundDesign": "Single low tick on the cut in.",
+      "assetReferences": [
+        { "kind": "real-pitching-footage", "description": "Full-speed side-view pitch, subject A, rep 1", "status": "needed", "aiGenerated": false }
+      ]
+    },
+    {
+      "id": "scene-2",
+      "timecode": "0:02-0:05",
+      "visualBeat": "Immediate visual proof",
+      "cameraDirection": "Same rep continues, ease into slow motion at foot strike.",
+      "onScreenText": ["BUT WATCH THE SEQUENCE"],
+      "voiceOver": "At full speed, everything here looks normal.",
+      "bRoll": [],
+      "soundDesign": "Speed-ramp whoosh into slow motion.",
+      "assetReferences": [
+        { "kind": "real-pitching-footage", "description": "Same rep, slow-motion capture", "status": "needed", "aiGenerated": false }
+      ]
+    },
+    {
+      "id": "scene-3",
+      "timecode": "0:05-0:10",
+      "visualBeat": "Reveal the problem",
+      "cameraDirection": "Freeze frame at foot strike; blue joint-marker overlay animates onto shoulders/hips.",
+      "onScreenText": ["UPPER HALF OPENS EARLY"],
+      "voiceOver": "Stop it right at foot strike, and the upper half is already rotating before the front side is stable.",
+      "bRoll": [],
+      "soundDesign": "Freeze-frame stop accent; overlay draw-on sound, subtle.",
+      "assetReferences": [
+        { "kind": "ai-generated-diagram", "description": "Blue joint-marker/angle overlay graphic", "status": "needed", "aiGenerated": true, "notes": "Motion-graphic overlay only — pitcher footage underneath is real." }
+      ]
+    },
+    {
+      "id": "scene-4",
+      "timecode": "0:10-0:15",
+      "visualBeat": "Curiosity loop / repeated pattern",
+      "cameraDirection": "Split screen: rep 1 freeze frame (left) and rep 2 freeze frame (right), same phase, same overlay.",
+      "onScreenText": ["SAME PATTERN AGAIN"],
+      "voiceOver": "Same pattern. Another pitch. That's how force transfer gets left on the table.",
+      "bRoll": [],
+      "soundDesign": "Split-screen wipe.",
+      "assetReferences": [
+        { "kind": "real-pitching-footage", "description": "Full-speed + slow-motion side-view pitch, subject A, rep 2", "status": "needed", "aiGenerated": false }
+      ]
+    },
+    {
+      "id": "scene-5",
+      "timecode": "0:15-0:21",
+      "visualBeat": "Coaching insight / solution",
+      "cameraDirection": "Cut to a single drill rep addressing front-side stability; caption states the priority.",
+      "onScreenText": ["ONE CLEAR PRIORITY", "PERSONALIZED DRILLS"],
+      "voiceOver": "One priority: stabilize the front side before the rotation starts. That's what the drill work targets.",
+      "bRoll": ["Drill demonstration, front-side stability drill, real footage"],
+      "soundDesign": "Music bed enters, low under VO.",
+      "assetReferences": [
+        { "kind": "real-pitching-footage", "description": "Drill demonstration footage", "status": "needed", "aiGenerated": false }
+      ]
+    },
+    {
+      "id": "scene-6",
+      "timecode": "0:21-0:26",
+      "visualBeat": "Pitch Nav product output",
+      "cameraDirection": "Screen recording: report view scrolling to priority + drills + progress calendar.",
+      "onScreenText": ["TRACK YOUR PROGRESS"],
+      "voiceOver": "Pitch Nav turns one slow-motion video into a clear breakdown — one priority, personalized drills, and progress you can track.",
+      "bRoll": [],
+      "soundDesign": "UI tap accents, sparing.",
+      "assetReferences": [
+        { "kind": "real-screen-recording", "description": "Report + drills + progress calendar walkthrough", "status": "needed", "aiGenerated": false }
+      ]
+    },
+    {
+      "id": "scene-7",
+      "timecode": "0:26-0:30",
+      "visualBeat": "One clear CTA",
+      "cameraDirection": "Static end card: wordmark small at top, CTA centered, price beneath.",
+      "onScreenText": ["START YOUR ANALYSIS", "$25/MONTH"],
+      "voiceOver": "Start your Pitch Nav analysis. $25 a month.",
+      "bRoll": [],
+      "soundDesign": "Music resolves; no additional SFX.",
+      "assetReferences": [
+        { "kind": "brand-asset", "description": "Pitch Nav wordmark/logo, small, bottom-safe", "path": "public/pitch-nav-logo-source.png", "status": "available", "aiGenerated": false }
+      ]
+    }
+  ],
+  "voiceOverScript": "At full speed, everything here looks normal. Stop it right at foot strike, and the upper half is already rotating before the front side is stable. Same pattern. Another pitch. That's how force transfer gets left on the table. One priority: stabilize the front side before the rotation starts. That's what the drill work targets. Pitch Nav turns one slow-motion video into a clear breakdown — one priority, personalized drills, and progress you can track. Start your Pitch Nav analysis. $25 a month.",
+  "onScreenText": [
+    "MOVING FAST",
+    "BUT WATCH THE SEQUENCE",
+    "UPPER HALF OPENS EARLY",
+    "SAME PATTERN AGAIN",
+    "ONE CLEAR PRIORITY",
+    "PERSONALIZED DRILLS",
+    "TRACK YOUR PROGRESS",
+    "START YOUR ANALYSIS",
+    "$25/MONTH"
+  ],
+  "bRollInstructions": "Two reps from the same athlete, matched phase-to-phase. Drill footage is real, one rep, no more. Product screens are real, live UI, no mockups.",
+  "editingNotes": "Frame changes every 1-3 seconds throughout, per content/video-templates/timelines/30s.md. Open on the pitch, not the logo. Hold the freeze frame only as long as the overlay is animating. See content/editing-style-rules.md before final cut. Never imply a guaranteed velocity gain — 'force transfer' language describes sequencing efficiency, not a promised outcome.",
+  "soundDesign": "Music bed under everything, ducked below voice-over. One whoosh on the speed ramp, one tick on the hook cut, one soft accent on the overlay draw-on. No glitch transitions.",
+  "assetReferences": [
+    { "kind": "real-pitching-footage", "description": "Subject A, two reps, full-speed + slow-motion, side view", "status": "needed", "aiGenerated": false },
+    { "kind": "real-screen-recording", "description": "Report/dashboard walkthrough: priority, drills, progress calendar", "status": "needed", "aiGenerated": false },
+    { "kind": "ai-generated-diagram", "description": "Blue joint-marker overlay graphic", "status": "needed", "aiGenerated": true },
+    { "kind": "brand-asset", "description": "Logo for end card", "path": "public/pitch-nav-logo-source.png", "status": "available", "aiGenerated": false },
+    { "kind": "music", "description": "Low-key, tension-building sports-tech bed, no lyrics", "status": "needed", "aiGenerated": false }
+  ],
+  "platform": ["instagram-ads"],
+  "distribution": "paid",
+  "testVariation": "hook-variant-2-velocity-opportunity",
+  "status": "scripted",
+  "performanceResults": null
+}

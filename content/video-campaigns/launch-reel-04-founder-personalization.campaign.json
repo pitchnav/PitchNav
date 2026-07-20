@@ -1,0 +1,135 @@
+{
+  "schemaVersion": "1.0.0",
+  "campaignId": "launch-reel-04-founder-personalization",
+  "campaignName": "Launch Reel 4 — Two Pitchers, Two Plans",
+  "objective": "Founder-led Reel proving personalization (two different athletes get two different priorities/drills) instead of repeating the mechanics-freeze-frame device used elsewhere in the launch set.",
+  "audience": "Parents and coaches who weigh credibility and personalization heavily before buying.",
+  "contentType": "founder-led",
+  "scriptFormat": "E-founder-video",
+  "hook": "I wanted pitchers to see what coaches are trying to explain.",
+  "hookCategory": "founder-and-credibility",
+  "coreInsight": "Generic 'work on your mechanics' feedback isn't actionable; Pitch Nav builds a distinct priority and drill plan from each athlete's own video, which is why two different pitchers get two different plans.",
+  "openLoop": "The founder names a gap in typical coaching feedback — the viewer watches to see the specific proof that Pitch Nav closes it.",
+  "payoff": "Two real athletes' priority/drill screens, shown side by side, prove the personalization claim rather than just asserting it.",
+  "callToAction": "Start your Pitch Nav analysis.",
+  "priceMention": null,
+  "totalDurationSeconds": 27,
+  "scenes": [
+    {
+      "id": "scene-1",
+      "timecode": "0:00-0:02",
+      "visualBeat": "Direct-to-camera hook",
+      "cameraDirection": "Founder direct-to-camera, medium shot, real footage, speaking the hook line immediately.",
+      "onScreenText": ["SEE WHAT COACHES MEAN"],
+      "voiceOver": "I wanted pitchers to see what coaches are trying to explain.",
+      "bRoll": [],
+      "soundDesign": "Single low tick on the cut in.",
+      "assetReferences": [
+        { "kind": "real-founder-footage", "description": "Direct-to-camera hook line", "status": "needed", "aiGenerated": false }
+      ]
+    },
+    {
+      "id": "scene-2",
+      "timecode": "0:02-0:06",
+      "visualBeat": "Founder problem statement",
+      "cameraDirection": "Founder continues direct-to-camera or cuts to a 3/4-angle B-roll shot while VO continues.",
+      "onScreenText": ["\"WORK ON YOUR MECHANICS\" ISN'T ENOUGH"],
+      "voiceOver": "Every pitcher gets the same generic note — 'work on your mechanics.' That's not specific enough to act on.",
+      "bRoll": ["Founder side-angle B-roll"],
+      "soundDesign": "Clean cut.",
+      "assetReferences": [
+        { "kind": "real-founder-footage", "description": "Side-angle explanation B-roll", "status": "needed", "aiGenerated": false }
+      ]
+    },
+    {
+      "id": "scene-3",
+      "timecode": "0:06-0:10",
+      "visualBeat": "Product reason — personalization proof",
+      "cameraDirection": "Real screen recording, split screen of two different athletes' priority cards side by side (different priorities named on each).",
+      "onScreenText": ["BUILT FROM YOUR VIDEO"],
+      "voiceOver": "Pitch Nav builds a priority from your video — not a template.",
+      "bRoll": [],
+      "soundDesign": "Split-screen wipe.",
+      "assetReferences": [
+        { "kind": "real-screen-recording", "description": "Two athletes' priority cards, side by side", "status": "needed", "aiGenerated": false }
+      ]
+    },
+    {
+      "id": "scene-4",
+      "timecode": "0:10-0:14",
+      "visualBeat": "Quick platform demo",
+      "cameraDirection": "Screen recording: each athlete's drill list, still split screen, showing two different drill sets.",
+      "onScreenText": ["YOUR PRIORITY. YOUR DRILLS."],
+      "voiceOver": "Two pitchers. Two different priorities. Two different drill plans.",
+      "bRoll": [],
+      "soundDesign": "UI tap accents, both sides.",
+      "assetReferences": [
+        { "kind": "real-screen-recording", "description": "Two athletes' drill lists, side by side", "status": "needed", "aiGenerated": false }
+      ]
+    },
+    {
+      "id": "scene-5",
+      "timecode": "0:14-0:18",
+      "visualBeat": "Quick platform demo continued",
+      "cameraDirection": "Screen recording of the progress calendar view (single screen, not split).",
+      "onScreenText": ["TRACK WHAT CHANGES"],
+      "voiceOver": "And a plan that tracks what's actually changing.",
+      "bRoll": [],
+      "soundDesign": "UI tap accent.",
+      "assetReferences": [
+        { "kind": "real-screen-recording", "description": "Progress calendar view", "status": "needed", "aiGenerated": false }
+      ]
+    },
+    {
+      "id": "scene-6",
+      "timecode": "0:18-0:22",
+      "visualBeat": "Outcome",
+      "cameraDirection": "Cut back to founder direct-to-camera, calm and direct.",
+      "onScreenText": ["WHAT EVERY PITCHER SHOULD HAVE"],
+      "voiceOver": "This is what I wanted every pitcher to have.",
+      "bRoll": [],
+      "soundDesign": "Music settles.",
+      "assetReferences": [
+        { "kind": "real-founder-footage", "description": "Direct-to-camera outcome line", "status": "needed", "aiGenerated": false }
+      ]
+    },
+    {
+      "id": "scene-7",
+      "timecode": "0:22-0:27",
+      "visualBeat": "CTA delivered on camera",
+      "cameraDirection": "Founder delivers the CTA line directly to camera; wordmark appears beside them, small, bottom-safe.",
+      "onScreenText": ["START YOUR ANALYSIS"],
+      "voiceOver": "Start your Pitch Nav analysis.",
+      "bRoll": [],
+      "soundDesign": "Music resolves.",
+      "assetReferences": [
+        { "kind": "real-founder-footage", "description": "Direct-to-camera CTA", "status": "needed", "aiGenerated": false },
+        { "kind": "brand-asset", "description": "Wordmark beside founder", "path": "public/pitch-nav-logo-source.png", "status": "available", "aiGenerated": false }
+      ]
+    }
+  ],
+  "voiceOverScript": "I wanted pitchers to see what coaches are trying to explain. Every pitcher gets the same generic note — 'work on your mechanics.' That's not specific enough to act on. Pitch Nav builds a priority from your video — not a template. Two pitchers. Two different priorities. Two different drill plans. And a plan that tracks what's actually changing. This is what I wanted every pitcher to have. Start your Pitch Nav analysis.",
+  "onScreenText": [
+    "SEE WHAT COACHES MEAN",
+    "\"WORK ON YOUR MECHANICS\" ISN'T ENOUGH",
+    "BUILT FROM YOUR VIDEO",
+    "YOUR PRIORITY. YOUR DRILLS.",
+    "TRACK WHAT CHANGES",
+    "WHAT EVERY PITCHER SHOULD HAVE",
+    "START YOUR ANALYSIS"
+  ],
+  "bRollInstructions": "Founder must be real, on camera — no AI-generated presenter. Both athletes' screens must be real accounts (anonymized/first-name-only if needed) with genuinely different priorities, not the same data duplicated.",
+  "editingNotes": "This Reel bookends on the founder (opens and closes on camera) instead of a static end card — a deliberate structural difference from the other four launch Reels. Frame changes every 1-3 seconds. No price shown; this is a trust-building Reel, not a direct-response ad.",
+  "soundDesign": "Warm, grounded, minimal music bed — founder-trust tone, not tension-building. UI tap accents kept quiet under the split-screen beats so the founder's VO stays the clear focus.",
+  "assetReferences": [
+    { "kind": "real-founder-footage", "description": "Direct-to-camera hook, problem statement, outcome, and CTA", "status": "needed", "aiGenerated": false },
+    { "kind": "real-screen-recording", "description": "Two athletes' priority cards, drill lists, and one progress calendar", "status": "needed", "aiGenerated": false },
+    { "kind": "brand-asset", "description": "Wordmark beside founder on final beat", "path": "public/pitch-nav-logo-source.png", "status": "available", "aiGenerated": false },
+    { "kind": "music", "description": "Warm, grounded, minimal — founder trust", "status": "needed", "aiGenerated": false }
+  ],
+  "platform": ["instagram-reels"],
+  "distribution": "organic",
+  "testVariation": "launch-reel-4-founder-personalization",
+  "status": "scripted",
+  "performanceResults": null
+}

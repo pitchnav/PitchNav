@@ -1,0 +1,150 @@
+{
+  "schemaVersion": "1.0.0",
+  "campaignId": "launch-reel-03-product-walkthrough",
+  "campaignName": "Launch Reel 3 — A Video Goes In",
+  "objective": "Condensed full product-journey Reel (upload through progress tracking) for tool-curious viewers who haven't seen the whole product, not just one mechanics observation.",
+  "audience": "Pitchers/parents comparing training tools, consideration-stage.",
+  "contentType": "product-explanation",
+  "scriptFormat": "D-product-walkthrough",
+  "hook": "A pitching video goes in. This is what comes back.",
+  "hookCategory": "product-demonstration",
+  "coreInsight": "One slow-motion upload becomes a six-phase breakdown, one clear priority, personalized drills, and a trackable plan — the full journey, not one flagged pattern.",
+  "openLoop": "The hook promises to show the entire input-to-output journey — the viewer watches to see the whole thing, not just a single screen.",
+  "payoff": "Each product stage appears in sequence, ending on the progress tracker, proving the full journey is real and complete.",
+  "callToAction": "Start your Pitch Nav analysis.",
+  "priceMention": "$25/month",
+  "totalDurationSeconds": 28,
+  "scenes": [
+    {
+      "id": "scene-1",
+      "timecode": "0:00-0:02",
+      "visualBeat": "Pattern-interrupt hook — opens on the product itself",
+      "cameraDirection": "Real screen recording: athlete selecting and uploading a slow-motion clip in the app, hard cut in.",
+      "onScreenText": ["A VIDEO GOES IN"],
+      "voiceOver": "",
+      "bRoll": [],
+      "soundDesign": "Single low tick on the cut in.",
+      "assetReferences": [
+        { "kind": "real-screen-recording", "description": "Video upload screen, real UI", "status": "needed", "aiGenerated": false }
+      ]
+    },
+    {
+      "id": "scene-2",
+      "timecode": "0:02-0:05",
+      "visualBeat": "Processing, sped up",
+      "cameraDirection": "Screen recording of the processing/progress state, sped up 3-4x so the wait reads as motion, not a pause.",
+      "onScreenText": ["THIS IS WHAT COMES BACK"],
+      "voiceOver": "One upload. Real processing — not a guess.",
+      "bRoll": [],
+      "soundDesign": "Processing-hum SFX, sped up in pitch slightly with the visual speed-up.",
+      "assetReferences": [
+        { "kind": "real-screen-recording", "description": "Processing/progress screen", "status": "needed", "aiGenerated": false }
+      ]
+    },
+    {
+      "id": "scene-3",
+      "timecode": "0:05-0:09",
+      "visualBeat": "Six-phase breakdown",
+      "cameraDirection": "Screen recording scrolling through the six phase screenshots quickly, each phase label visible for roughly half a second.",
+      "onScreenText": ["SIX PHASES"],
+      "voiceOver": "Six phases, broken down automatically.",
+      "bRoll": [],
+      "soundDesign": "Quick UI tap accent per phase.",
+      "assetReferences": [
+        { "kind": "real-screen-recording", "description": "Six-phase screenshot breakdown", "status": "needed", "aiGenerated": false }
+      ]
+    },
+    {
+      "id": "scene-4",
+      "timecode": "0:09-0:13",
+      "visualBeat": "Proof it's built from the real video",
+      "cameraDirection": "Cut to the real full-speed pitch footage that was uploaded, matched to one of the phase screenshots just shown.",
+      "onScreenText": ["YOUR ACTUAL DELIVERY"],
+      "voiceOver": "Built from your actual video.",
+      "bRoll": [],
+      "soundDesign": "Clean cut, no accent.",
+      "assetReferences": [
+        { "kind": "real-pitching-footage", "description": "The real uploaded pitch, matched to a phase screenshot", "status": "needed", "aiGenerated": false }
+      ]
+    },
+    {
+      "id": "scene-5",
+      "timecode": "0:13-0:17",
+      "visualBeat": "Priority",
+      "cameraDirection": "Screen recording showing the single flagged priority card, highlighted in electric blue.",
+      "onScreenText": ["ONE CLEAR PRIORITY"],
+      "voiceOver": "One clear priority — not a wall of numbers.",
+      "bRoll": [],
+      "soundDesign": "UI tap accent.",
+      "assetReferences": [
+        { "kind": "real-screen-recording", "description": "Priority card view", "status": "needed", "aiGenerated": false }
+      ]
+    },
+    {
+      "id": "scene-6",
+      "timecode": "0:17-0:21",
+      "visualBeat": "Drills",
+      "cameraDirection": "Screen recording scrolling the drill list, quick 1-second cut to real drill footage matching the named drill.",
+      "onScreenText": ["PERSONALIZED DRILLS"],
+      "voiceOver": "Personalized drills that match it.",
+      "bRoll": ["One real drill rep matching the named drill"],
+      "soundDesign": "UI tap accent, then clean cut to drill footage.",
+      "assetReferences": [
+        { "kind": "real-screen-recording", "description": "Drill list view", "status": "needed", "aiGenerated": false },
+        { "kind": "real-pitching-footage", "description": "Matching drill demonstration", "status": "needed", "aiGenerated": false }
+      ]
+    },
+    {
+      "id": "scene-7",
+      "timecode": "0:21-0:25",
+      "visualBeat": "Progress tracking",
+      "cameraDirection": "Screen recording of the rolling training calendar view.",
+      "onScreenText": ["TRACK YOUR PROGRESS"],
+      "voiceOver": "And a plan you can actually track.",
+      "bRoll": [],
+      "soundDesign": "UI tap accent, music builds slightly.",
+      "assetReferences": [
+        { "kind": "real-screen-recording", "description": "Rolling progress calendar", "status": "needed", "aiGenerated": false }
+      ]
+    },
+    {
+      "id": "scene-8",
+      "timecode": "0:25-0:28",
+      "visualBeat": "One clear CTA",
+      "cameraDirection": "Static end card: wordmark small at top, CTA centered, price beneath.",
+      "onScreenText": ["START YOUR ANALYSIS", "$25/MONTH"],
+      "voiceOver": "Start your Pitch Nav analysis. Twenty-five dollars a month.",
+      "bRoll": [],
+      "soundDesign": "Music resolves.",
+      "assetReferences": [
+        { "kind": "brand-asset", "description": "Pitch Nav wordmark/logo, small, bottom-safe", "path": "public/pitch-nav-logo-source.png", "status": "available", "aiGenerated": false }
+      ]
+    }
+  ],
+  "voiceOverScript": "One upload. Real processing — not a guess. Six phases, broken down automatically. Built from your actual video. One clear priority — not a wall of numbers. Personalized drills that match it. And a plan you can actually track. Start your Pitch Nav analysis. Twenty-five dollars a month.",
+  "onScreenText": [
+    "A VIDEO GOES IN",
+    "THIS IS WHAT COMES BACK",
+    "SIX PHASES",
+    "YOUR ACTUAL DELIVERY",
+    "ONE CLEAR PRIORITY",
+    "PERSONALIZED DRILLS",
+    "TRACK YOUR PROGRESS",
+    "START YOUR ANALYSIS",
+    "$25/MONTH"
+  ],
+  "bRollInstructions": "Every screen must be a real, live screen recording of the actual product — no mocked-up UI. The real-footage cutaway in Scene 4 must actually correspond to the phase screenshots shown in Scene 3, not a generic clip.",
+  "editingNotes": "This Reel opens on product UI instead of pitching footage, unlike the other four launch Reels — that's intentional; it's the product-demonstration format and the UI itself is the hook payoff. Frame changes every 1-3 seconds throughout. Price appears once, on the final card only.",
+  "soundDesign": "Confident, propulsive, tech-forward music bed that builds steadily from Scene 2 through the end card. UI tap accents on every screen transition, kept short and consistent so they read as a system sound, not a gimmick.",
+  "assetReferences": [
+    { "kind": "real-screen-recording", "description": "Full journey: upload, processing, six phases, priority, drills, progress calendar", "status": "needed", "aiGenerated": false },
+    { "kind": "real-pitching-footage", "description": "The uploaded pitch + one matching drill demonstration", "status": "needed", "aiGenerated": false },
+    { "kind": "brand-asset", "description": "Logo for end card", "path": "public/pitch-nav-logo-source.png", "status": "available", "aiGenerated": false },
+    { "kind": "music", "description": "Confident, propulsive, tech-forward build", "status": "needed", "aiGenerated": false }
+  ],
+  "platform": ["instagram-reels"],
+  "distribution": "organic",
+  "testVariation": "launch-reel-3-product-walkthrough",
+  "status": "scripted",
+  "performanceResults": null
+}

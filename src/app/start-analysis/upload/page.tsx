@@ -1,0 +1,610 @@
+'use client'
+
+import { Suspense, useState, useEffect, useMemo } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
+import { Upload, Video, CheckCircle, X, AlertCircle, Camera } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
+import { formatFileSize, ACCEPTED_VIDEO_TYPES, MAX_VIDEO_SIZE_BYTES } from '@/lib/utils'
+import { SafetyDisclaimer } from '@/components/ui/SafetyDisclaimer'
+
+type UploadedVideo = {
+  angle: 'open_side'
+  file: File
+  url: string
+  uploading: boolean
+  progress: number
+  error: string | null
+  submissionId: string | null
+  checklistConfirmed: boolean
+  quality: VideoQuality | null
+  captureFps: 60 | 120 | 240
+}
+
+type VideoQuality = {
+  frameRate: number | null
+  width: number
+  height: number
+  duration: number
+  orientation: 'Landscape' | 'Portrait' | 'Square'
+  rating: 'Ready for analysis' | 'Usable, but limited' | 'Please record again'
+  warnings: string[]
+}
+
+const CHECKLIST = [
+  'Full body is visible from head to toe',
+  'Throwing hand is visible through ball release',
+  'Landing foot is visible throughout the pitch',
+  'Video is not blurry',
+  'Camera did not move during the pitch',
+  'Lighting is adequate',
+  'Video is at normal game or bullpen intensity',
+  'Angle matches the selected guide',
+]
+
+const RECORDING_REQUIREMENTS = [
+  'Recorded in the phone Camera app’s Slo-mo mode',
+  'Camera is approximately 15 feet from the pitcher',
+  'Camera is approximately 6 feet high and stationary',
+  'Camera is on the pitcher’s throwing-arm side',
+  'Full body, throwing hand, mound, and landing foot stay visible',
+  'Video is landscape with strong, even lighting',
+]
+
+function UploadContent() {
+  const searchParams = useSearchParams()
+  const profileId = searchParams.get('profileId')
+  const paidOrderId = searchParams.get('orderId')
+  const requestedPlan = searchParams.get('plan') === 'performance' ? 'performance' : 'throwing'
+  const router = useRouter()
+  const supabase = useMemo(() => createClient(), [])
+
+  const [userId, setUserId] = useState<string | null>(null)
+  const [orderId, setOrderId] = useState<string | null>(null)
+  const [videos, setVideos] = useState<Record<string, UploadedVideo>>({})
+  const [checklistItems, setChecklistItems] = useState<Record<string, boolean>>({})
+  const [checklistAngle, setChecklistAngle] = useState<string | null>(null)
+  const [checklistAutoSubmitting, setChecklistAutoSubmitting] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [orderLoading, setOrderLoading] = useState(false)
+  const [preflightAngle, setPreflightAngle] = useState<'open_side' | null>(null)
+  const [preflightChecks, setPreflightChecks] = useState<Record<string, boolean>>({})
+  const [captureFps, setCaptureFps] = useState<60 | 120 | 240>(240)
+  const [pendingDrop, setPendingDrop] = useState<File | null>(null)
+
+  const REQUIRED_ANGLES = ['open_side'] as const
+  const ALL_ANGLES = [...REQUIRED_ANGLES]
+
+  const ANGLE_LABELS: Record<string, string> = {
+    open_side: 'Throwing-Arm Side View (Required)',
+  }
+
+  async function inspectVideo(file: File, url: string): Promise<VideoQuality | null> {
+    return new Promise((resolve) => {
+      const probe = document.createElement('video')
+      probe.muted = true
+      probe.playsInline = true
+      probe.preload = 'metadata'
+      probe.src = url
+      probe.onloadedmetadata = async () => {
+        const width = probe.videoWidth
+        const height = probe.videoHeight
+        const duration = probe.duration
+        const orientation = width > height ? 'Landscape' : height > width ? 'Portrait' : 'Square'
+        let frameRate: number | null = null
+        if ('requestVideoFrameCallback' in probe && duration > 0) {
+          const times: number[] = []
+          try {
+            await probe.play()
+            await new Promise<void>((done) => {
+              let finished = false
+              const finish = () => { if (!finished) { finished = true; done() } }
+              const timeout = window.setTimeout(finish, 1500)
+              const sample = (_now: number, metadata: VideoFrameCallbackMetadata) => {
+                if (finished) return
+                if (!times.length || metadata.mediaTime !== times[times.length - 1]) times.push(metadata.mediaTime)
+                if (times.length >= 24 || probe.ended) { window.clearTimeout(timeout); finish() }
+                else probe.requestVideoFrameCallback(sample)
+              }
+              probe.requestVideoFrameCallback(sample)
+            })
+            const deltas = times.slice(1).map((time, index) => time - times[index]).filter((delta) => delta > 0.0001).sort((a, b) => a - b)
+            if (deltas.length) frameRate = Math.round(1 / deltas[Math.floor(deltas.length / 2)])
+          } catch { frameRate = null }
+          probe.pause()
+        }
+        const warnings: string[] = []
+        if (duration < 1) warnings.push('Clip is extremely short.')
+        if (width < 720 || height < 480) warnings.push('Resolution is below the recommended minimum.')
+        if (orientation !== 'Landscape') warnings.push('Landscape orientation is recommended.')
+        if (frameRate !== null && frameRate < 60) warnings.push('The playback track is below 60 FPS; confirm the original slow-motion capture setting.')
+        const rating = duration < 0.5 || Math.min(width, height) < 360
+          ? 'Please record again'
+          : warnings.length >= 2 ? 'Usable, but limited' : 'Ready for analysis'
+        resolve({ frameRate, width, height, duration, orientation, rating, warnings })
+      }
+      probe.onerror = () => resolve(null)
+    })
+  }
+
+  useEffect(() => {
+    async function init() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) { router.push('/login?redirectTo=/start-analysis'); return }
+      setUserId(user.id)
+      if (paidOrderId) {
+        const { data: paidOrder } = await supabase.from('orders').select('id,athlete_profile_id,payment_confirmed_at').eq('id', paidOrderId).eq('user_id', user.id).single()
+        if (!paidOrder?.payment_confirmed_at) { router.replace(`/success?orderId=${paidOrderId}&payment=processing`); return }
+        setOrderId(paidOrder.id); setLoading(false); return
+      }
+      if (!profileId) { router.push('/start-analysis'); return }
+      const { data: existing } = await supabase.from('orders').select('id,payment_confirmed_at').eq('user_id', user.id).eq('athlete_profile_id', profileId).is('payment_confirmed_at', null).eq('status', 'awaiting_payment').order('created_at', { ascending: false }).limit(1).maybeSingle()
+      let order = existing
+      if (!order) {
+        const result = await supabase.from('orders').insert({ user_id: user.id, athlete_profile_id: profileId, status: 'awaiting_payment', delivery_estimate_text: 'Staff review completed within one business day.' }).select('id,payment_confirmed_at').single()
+        order = result.data
+      }
+      if (!order) { setLoading(false); return }
+      router.replace(`/checkout?orderId=${order.id}&plan=${requestedPlan}`)
+    }
+    void init()
+  }, [profileId, paidOrderId, requestedPlan, router, supabase])
+
+  function beginVideoSelection(file: File | null = null) {
+    setPendingDrop(file)
+    setPreflightChecks({})
+    setPreflightAngle('open_side')
+  }
+
+  function preflightReady() {
+    return RECORDING_REQUIREMENTS.every((item) => preflightChecks[item])
+  }
+
+  async function finishPreflight() {
+    if (!preflightAngle || !preflightReady()) return
+    const dropped = pendingDrop
+    setPreflightAngle(null)
+    setPendingDrop(null)
+    if (dropped) await handleFileSelect('open_side', dropped, captureFps)
+    else window.setTimeout(() => document.getElementById('video-file-open_side')?.click(), 0)
+  }
+
+  async function handleFileSelect(angle: 'open_side', file: File, confirmedCaptureFps: 60 | 120 | 240) {
+    // Validate type
+    if (!ACCEPTED_VIDEO_TYPES.includes(file.type)) {
+      alert('Unsupported video format. Please use MP4, MOV, or WebM.')
+      return
+    }
+    if (file.size > MAX_VIDEO_SIZE_BYTES) {
+      alert('Video file is too large. Maximum size is 500 MB.')
+      return
+    }
+
+    const url = URL.createObjectURL(file)
+    setVideos((prev) => ({
+      ...prev,
+      [angle]: {
+        angle,
+        file,
+        url,
+        uploading: false,
+        progress: 0,
+        error: null,
+        submissionId: null,
+        checklistConfirmed: false,
+        quality: null,
+        captureFps: confirmedCaptureFps,
+      },
+    }))
+    const quality = await inspectVideo(file, url)
+    setVideos((prev) => prev[angle] ? ({ ...prev, [angle]: { ...prev[angle], quality } }) : prev)
+    setChecklistAngle(angle)
+    setChecklistItems({})
+  }
+
+  function allChecked() {
+    return CHECKLIST.every((item) => checklistItems[item])
+  }
+
+  async function confirmChecklistAndUpload() {
+    if (!allChecked() || !checklistAngle || !userId || !orderId || checklistAutoSubmitting) return
+
+    const angle = checklistAngle
+    const video = videos[angle]
+    if (!video) return
+
+    // The final confirmation starts the upload immediately. Closing the modal
+    // here prevents users from having to confirm the same clip twice.
+    setChecklistAutoSubmitting(true)
+    setChecklistAngle(null)
+
+    setVideos((prev) => ({
+      ...prev,
+      [angle]: { ...prev[angle], uploading: true, progress: 0, checklistConfirmed: true },
+    }))
+
+    try {
+      const ext = video.file.name.split('.').pop()
+      const filename = `${angle}_${Date.now()}.${ext}`
+      const storagePath = `${userId}/${orderId}/${filename}`
+
+      const { error: uploadError } = await supabase.storage
+        .from('pitch-videos')
+        .upload(storagePath, video.file, {
+          contentType: video.file.type,
+          upsert: false,
+        })
+
+      if (uploadError) throw uploadError
+
+      // Create video submission record
+      const { data: submission, error: dbError } = await supabase
+        .from('video_submissions')
+        .insert({
+          order_id: orderId,
+          user_id: userId,
+          angle,
+          storage_path: storagePath,
+          file_name: filename,
+          file_size_bytes: video.file.size,
+          mime_type: video.file.type,
+          duration_secs: video.quality ? Math.round(video.quality.duration) : null,
+          resolution: video.quality ? `${video.quality.width}x${video.quality.height}` : null,
+          // iPhone Slo-mo often stores 240 captured frames on a ~30 FPS
+          // playback timeline. Persist the confirmed Camera setting, while the
+          // metadata inspector separately reports playback FPS.
+          frame_rate: video.captureFps,
+          orientation: video.quality?.orientation.toLowerCase() ?? null,
+          checklist_confirmed: true,
+        })
+        .select()
+        .single()
+
+      if (dbError) throw dbError
+
+      // Automatic processing is server-side and only starts after payment has
+      // been confirmed. Upload success is not rolled back if the optional
+      // worker is temporarily unavailable; staff can retry it from the order.
+      try {
+        const enqueueResponse = await fetch('/api/velocity/enqueue', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ orderId, videoSubmissionId: submission.id }),
+        })
+        if (!enqueueResponse.ok) {
+          console.warn('[Automatic velocity] Staff will need to retry this video from the order.')
+        }
+      } catch (reason) {
+        console.warn('[Automatic velocity] Enqueue deferred', reason)
+      }
+
+      setVideos((prev) => ({
+        ...prev,
+        [angle]: {
+          ...prev[angle],
+          uploading: false,
+          progress: 100,
+          submissionId: submission.id,
+        },
+      }))
+    } catch (err) {
+      console.error(err)
+      setVideos((prev) => ({
+        ...prev,
+        [angle]: {
+          ...prev[angle],
+          uploading: false,
+          error: 'Upload failed. Please try again.',
+        },
+      }))
+    } finally {
+      setChecklistAutoSubmitting(false)
+    }
+  }
+
+  // Once the last quality box is checked, dismiss the checklist and upload.
+  // The guard above prevents React development-mode effects from submitting
+  // the same file more than once.
+  useEffect(() => {
+    if (!checklistAngle || checklistAutoSubmitting || !allChecked()) return
+    void confirmChecklistAndUpload()
+    // confirmChecklistAndUpload intentionally runs only when checklist state
+    // reaches complete; including the recreated function would retrigger it.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [checklistAngle, checklistItems, checklistAutoSubmitting, userId, orderId])
+
+  function removeVideo(angle: string) {
+    setVideos((prev) => {
+      const next = { ...prev }
+      if (next[angle]?.url) URL.revokeObjectURL(next[angle].url)
+      delete next[angle]
+      return next
+    })
+  }
+
+  const requiredUploaded = REQUIRED_ANGLES.every((a) => videos[a]?.submissionId)
+  const cameraGuideHref = orderId
+    ? `/camera-setup?orderId=${encodeURIComponent(orderId)}`
+    : '/camera-setup'
+
+  async function finishSubmission() {
+    if (!orderId) return
+    const sideVideoId = videos.open_side?.submissionId
+    if (!sideVideoId) return
+    setOrderLoading(true)
+    try {
+      await supabase.from('orders').update({ status: 'submitted', submitted_at: new Date().toISOString(), delivery_estimate_text: 'Staff review completed within one business day.' }).eq('id', orderId)
+      router.push(`/dashboard/motion-lab?videoId=${sideVideoId}&auto=1`)
+    } catch {
+      setOrderLoading(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-navy-950 pt-24 flex items-center justify-center">
+        <p className="text-slate-400">Loading...</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="min-h-screen bg-navy-950 pt-24 pb-16">
+      <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-black text-white">Upload Your Videos</h1>
+          <p className="mt-2 text-slate-400">
+            Submit one clear throwing-arm side-view video. It will open directly in Motion Lab after upload. Review the{' '}
+            <a href={cameraGuideHref} className="text-electric-blue-light hover:underline" target="_blank">
+              camera setup guide
+            </a>{' '}
+            before filming.
+          </p>
+        </div>
+
+        <section className="card mb-8 overflow-hidden border-electric-blue/30">
+          <div className="grid items-center gap-5 md:grid-cols-[0.9fr_1.1fr]"><div><p className="text-xs font-bold uppercase tracking-[0.18em] text-electric-blue-light">Before choosing files</p><h2 className="mt-1 text-xl font-black text-white">Confirm that you recorded in SLO-MO</h2><p className="mt-2 text-sm leading-relaxed text-slate-400">Use 240 FPS when available or 120 FPS when necessary. Normal Video mode—even when played slowly later—is not eligible for the velocity estimator.</p><a href={cameraGuideHref} target="_blank" className="mt-4 inline-flex text-sm font-bold text-electric-blue-light hover:text-white">Open the complete recording guide →</a></div><div><img src="/pitch-nav-slow-motion-guide.png?v=20260718" alt="How to configure iPhone Slo-mo recording at 240 or 120 FPS" className="w-full rounded-lg border border-surface-border" /><p className="mt-2 text-xs text-slate-500">If the graphic is unavailable: iPhone Settings → Camera → Record Slo-mo → 1080p HD at 240 fps (120 fps accepted).</p></div></div>
+        </section>
+
+        {/* Video slots */}
+        <div className="space-y-6 mb-8">
+          {ALL_ANGLES.map((angle) => {
+            const video = videos[angle]
+            const isRequired = REQUIRED_ANGLES.includes(angle as typeof REQUIRED_ANGLES[number])
+
+            return (
+              <div key={angle} className="card">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h3 className="text-base font-bold text-white">{ANGLE_LABELS[angle]}</h3>
+                    {!isRequired && <span className="text-xs text-slate-500">Optional</span>}
+                  </div>
+                  {video?.submissionId && (
+                    <span className="flex items-center gap-1.5 text-xs text-accent-green font-semibold">
+                      <CheckCircle className="h-4 w-4" /> Uploaded
+                    </span>
+                  )}
+                </div>
+
+                {!video ? (
+                  <div
+                    className="border-2 border-dashed border-surface-border rounded-lg p-8 text-center cursor-pointer hover:border-electric-blue/50 transition-colors"
+                    onClick={() => beginVideoSelection()}
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={(e) => {
+                      e.preventDefault()
+                      const file = e.dataTransfer.files[0]
+                      if (file) beginVideoSelection(file)
+                    }}
+                  >
+                    <Upload className="h-8 w-8 text-slate-600 mx-auto mb-3" />
+                    <p className="text-sm text-slate-400">Drag & drop or click to upload</p>
+                    <p className="text-xs text-slate-600 mt-1">MP4, MOV, WebM · Max 500 MB</p>
+                    <input
+                      id={`video-file-${angle}`}
+                      type="file"
+                      accept={ACCEPTED_VIDEO_TYPES.join(',')}
+                      className="hidden"
+                      onClick={(event) => event.stopPropagation()}
+                      onChange={(e) => {
+                        const file = e.target.files?.[0]
+                        if (file) handleFileSelect(angle, file, captureFps)
+                        e.target.value = ''
+                      }}
+                    />
+                    <button
+                      type="button"
+                      className="mt-4 btn-secondary text-sm px-4 py-2"
+                      onClick={(e) => { e.stopPropagation(); beginVideoSelection() }}
+                    >
+                      <Camera className="h-4 w-4" /> Choose File
+                    </button>
+                  </div>
+                ) : (
+                  <div>
+                    {/* Video preview */}
+                    <div className="relative rounded-lg overflow-hidden bg-black mb-3">
+                      <video
+                        src={video.url}
+                        controls
+                        className="w-full max-h-48 object-contain"
+                        aria-label={`Preview of ${ANGLE_LABELS[angle]}`}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between text-xs text-slate-500 mb-3">
+                      <span>{video.file.name}</span>
+                      <span>{formatFileSize(video.file.size)}</span>
+                    </div>
+
+                    {video.quality && (
+                      <div className="mb-3 rounded-xl border border-surface-border bg-navy-950 p-4">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Automatic file check</p>
+                          <span className={`rounded-full px-3 py-1 text-xs font-bold ${video.quality.rating === 'Ready for analysis' ? 'bg-accent-green/10 text-accent-green' : video.quality.rating === 'Usable, but limited' ? 'bg-yellow-400/10 text-yellow-300' : 'bg-red-400/10 text-red-300'}`}>{video.quality.rating}</span>
+                        </div>
+                        <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
+                          {[
+                            ['Camera capture', `${video.captureFps} FPS confirmed`],
+                            ['Playback timeline (normal for Slo-mo)', video.quality.frameRate ? `~${video.quality.frameRate} FPS` : 'Not exposed'],
+                            ['Resolution', `${video.quality.width}×${video.quality.height}`],
+                            ['Length', `${video.quality.duration.toFixed(1)} sec`],
+                            ['Orientation', video.quality.orientation],
+                            ['File size', formatFileSize(video.file.size)],
+                          ].map(([label, value]) => <div key={label} className="rounded-lg bg-navy-900 p-2"><p className="text-[10px] uppercase text-slate-600">{label}</p><p className="mt-1 text-xs font-semibold text-white">{value}</p></div>)}
+                        </div>
+                        {video.quality.warnings.filter((warning) => !(video.captureFps >= 120 && warning.includes('playback track is below 60 FPS'))).map((warning) => <p key={warning} className="mt-2 text-xs text-yellow-300">• {warning}</p>)}
+                        <p className="mt-3 rounded-lg border border-electric-blue/20 bg-electric-blue/10 p-2 text-xs text-electric-blue-light"><strong>Your 240 FPS confirmation is saved.</strong> iPhone Slo-mo normally exports a roughly 30 FPS playback timeline so the pitch plays slowly. That does not mean the camera captured only 30 FPS.</p>
+                        {video.captureFps === 60 && <p className="mt-2 text-xs font-semibold text-yellow-300">60 FPS is mechanics-only. No video velocity estimate will be produced.</p>}
+                      </div>
+                    )}
+
+                    {video.error && (
+                      <div className="rounded-lg bg-red-500/10 border border-red-500/20 p-3 mb-3 flex items-center gap-2">
+                        <AlertCircle className="h-4 w-4 text-red-400" />
+                        <p className="text-xs text-red-400">{video.error}</p>
+                      </div>
+                    )}
+
+                    {!video.submissionId && !video.uploading && (
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          className="btn-secondary text-sm px-3 py-2 flex-1"
+                          onClick={() => removeVideo(angle)}
+                        >
+                          <X className="h-4 w-4" /> Remove
+                        </button>
+                        <button
+                          type="button"
+                          className="btn-primary text-sm px-3 py-2 flex-1"
+                          onClick={() => { setChecklistAngle(angle); setChecklistItems({}) }}
+                        >
+                          <Video className="h-4 w-4" /> Confirm & Upload
+                        </button>
+                      </div>
+                    )}
+
+                    {video.uploading && (
+                      <div className="rounded-lg bg-electric-blue/10 p-3 text-sm text-electric-blue-light flex items-center gap-2">
+                        <div className="h-4 w-4 rounded-full border-2 border-electric-blue border-t-transparent animate-spin" />
+                        Uploading securely...
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+
+        {/* Recording requirements appear before the device file picker. */}
+        {preflightAngle && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
+            <div className="card max-h-[92vh] w-full max-w-xl overflow-y-auto border-electric-blue/40">
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-electric-blue-light">Required before upload</p>
+              <h3 className="mt-2 text-2xl font-black text-white">Confirm the side-view recording setup</h3>
+              <p className="mt-2 text-sm leading-relaxed text-slate-400">These confirmations improve pose tracking and help staff decide whether measurements are usable. They do not guarantee laboratory accuracy.</p>
+
+              <fieldset className="mt-5">
+                <legend className="text-sm font-bold text-white">Original Camera capture setting</legend>
+                <div className="mt-3 grid grid-cols-3 gap-2">
+                  {([240, 120, 60] as const).map((fps) => <button key={fps} type="button" onClick={() => setCaptureFps(fps)} className={`rounded-xl border px-3 py-3 text-sm font-bold ${captureFps === fps ? 'border-electric-blue bg-electric-blue/15 text-white' : 'border-surface-border bg-navy-950 text-slate-400'}`}>{fps} FPS<span className="mt-1 block text-[10px] font-medium">{fps === 240 ? 'Preferred' : fps === 120 ? 'Accepted' : 'Mechanics only'}</span></button>)}
+                </div>
+                <p className="mt-2 text-xs text-slate-500">Choose the setting used in Camera → Record Slo-mo. Do not choose 240 simply because the video plays slowly.</p>
+              </fieldset>
+
+              <div className="mt-5 space-y-3">
+                {RECORDING_REQUIREMENTS.map((item) => <label key={item} className="flex cursor-pointer items-start gap-3 rounded-lg bg-navy-950 p-3"><input type="checkbox" checked={!!preflightChecks[item]} onChange={(event) => setPreflightChecks((current) => ({ ...current, [item]: event.target.checked }))} className="mt-0.5 h-5 w-5 accent-electric-blue" /><span className="text-sm text-slate-300">{item}</span></label>)}
+              </div>
+
+              {captureFps === 60 && <p className="mt-4 rounded-lg border border-yellow-400/25 bg-yellow-400/10 p-3 text-xs text-yellow-200">This clip may still receive mechanics feedback, but Pitch Nav will not calculate video-estimated velocity from 60 FPS.</p>}
+              <div className="mt-6 flex gap-3">
+                <button type="button" className="btn-secondary flex-1 justify-center" onClick={() => { setPreflightAngle(null); setPendingDrop(null) }}>Cancel</button>
+                <button type="button" disabled={!preflightReady()} className="btn-primary flex-1 justify-center" onClick={finishPreflight}>Continue to video</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Checklist modal overlay */}
+        {checklistAngle && !videos[checklistAngle]?.submissionId && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+            <div className="card max-w-lg w-full max-h-[90vh] overflow-y-auto">
+              <h3 className="text-lg font-bold text-white mb-2">Video Quality Checklist</h3>
+              <p className="text-sm text-slate-400 mb-6">
+                Confirm each item. The upload starts automatically after the final check.
+              </p>
+              <div className="space-y-3 mb-6">
+                {CHECKLIST.map((item) => (
+                  <label key={item} className="flex items-start gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={!!checklistItems[item]}
+                      onChange={(e) =>
+                        setChecklistItems((prev) => ({ ...prev, [item]: e.target.checked }))
+                      }
+                      className="mt-0.5 h-4 w-4 rounded border-surface-border accent-electric-blue cursor-pointer"
+                    />
+                    <span className="text-sm text-slate-300">{item}</span>
+                  </label>
+                ))}
+              </div>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  className="btn-secondary w-full justify-center"
+                  onClick={() => setChecklistAngle(null)}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* CTA */}
+        <div className="card">
+          <h3 className="text-base font-semibold text-white mb-2">Ready to continue?</h3>
+          <p className="text-sm text-slate-400 mb-4">
+            Payment is confirmed. Upload one complete throwing-arm side view. After upload, continue directly into Motion Lab for synchronized skeleton, measurements, phase frames, and staff review.
+          </p>
+          <div className="flex gap-3 mb-4">
+            {REQUIRED_ANGLES.map((a) => (
+              <div
+                key={a}
+                className={`flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium ${
+                  videos[a]?.submissionId
+                    ? 'bg-accent-green/10 text-accent-green'
+                    : 'bg-navy-800 text-slate-500'
+                }`}
+              >
+                {videos[a]?.submissionId ? <CheckCircle className="h-3.5 w-3.5" /> : <div className="h-3.5 w-3.5 rounded-full border border-slate-600" />}
+                {ANGLE_LABELS[a]}
+              </div>
+            ))}
+          </div>
+          <button
+            type="button"
+            disabled={!requiredUploaded || orderLoading}
+            onClick={finishSubmission}
+            className="btn-primary w-full justify-center py-3"
+          >
+            {orderLoading ? 'Opening Motion Lab…' : 'Continue to Motion Lab →'}
+          </button>
+        </div>
+
+        <div className="mt-6">
+          <SafetyDisclaimer compact />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default function UploadPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-navy-950 pt-24 flex items-center justify-center"><p className="text-slate-400">Loading upload...</p></div>}>
+      <UploadContent />
+    </Suspense>
+  )
+}

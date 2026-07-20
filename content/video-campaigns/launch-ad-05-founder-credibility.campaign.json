@@ -1,0 +1,138 @@
+{
+  "schemaVersion": "1.0.0",
+  "campaignId": "launch-ad-05-founder-credibility",
+  "campaignName": "Launch Ad 5 — Founder Credibility Hook",
+  "objective": "Stop skeptical, trust-sensitive parents/coaches mid-scroll with a founder direct-to-camera hook, then convert to a Pitch Nav analysis. Shares its scenes 2-7 content with the other launch ads (same mechanics example, same VO throughline) — only the hook (scene 1) and speaker change.",
+  "audience": "Parents and coaches who weigh credibility heavily before buying — warm audience or retargeting, less responsive to pure feature-first ads.",
+  "contentType": "paid-ad",
+  "scriptFormat": "G-paid-ad",
+  "hook": "I built this because most pitching feedback is too vague.",
+  "hookCategory": "founder-and-credibility",
+  "coreInsight": "A delivery can look clean at full speed while a specific mechanical pattern — the upper half rotating before the front side is stable — is exactly the kind of vague-feedback gap Pitch Nav was built to close.",
+  "openLoop": "The founder names a problem with typical pitching feedback — the viewer keeps watching to see the specific example that proves it.",
+  "payoff": "The freeze frame and overlay show precisely the kind of detail 'vague feedback' misses, and the report shows how Pitch Nav surfaces it.",
+  "callToAction": "Start your Pitch Nav analysis.",
+  "priceMention": "$25/month",
+  "totalDurationSeconds": 30,
+  "scenes": [
+    {
+      "id": "scene-1",
+      "timecode": "0:00-0:02",
+      "visualBeat": "Pattern-interrupt hook",
+      "cameraDirection": "Founder direct-to-camera, medium shot, real footage, speaking the hook line immediately — no logo, no intro.",
+      "onScreenText": ["\"MOST FEEDBACK IS TOO VAGUE\""],
+      "voiceOver": "I built this because most pitching feedback is too vague.",
+      "bRoll": [],
+      "soundDesign": "Single low tick on the cut in.",
+      "assetReferences": [
+        { "kind": "real-founder-footage", "description": "Direct-to-camera hook line", "status": "needed", "aiGenerated": false }
+      ]
+    },
+    {
+      "id": "scene-2",
+      "timecode": "0:02-0:05",
+      "visualBeat": "Immediate visual proof",
+      "cameraDirection": "Cut from founder to real pitch footage, full speed into slow motion at foot strike, founder VO continues.",
+      "onScreenText": ["HERE'S AN EXAMPLE"],
+      "voiceOver": "Here's an example. At full speed, everything here looks normal.",
+      "bRoll": [],
+      "soundDesign": "Speed-ramp whoosh into slow motion.",
+      "assetReferences": [
+        { "kind": "real-pitching-footage", "description": "Same rep, slow-motion capture", "status": "needed", "aiGenerated": false }
+      ]
+    },
+    {
+      "id": "scene-3",
+      "timecode": "0:05-0:10",
+      "visualBeat": "Reveal the problem",
+      "cameraDirection": "Freeze frame at foot strike; blue joint-marker overlay animates onto shoulders/hips.",
+      "onScreenText": ["UPPER HALF OPENS EARLY"],
+      "voiceOver": "Stop it right at foot strike, and the upper half is already rotating before the front side is stable.",
+      "bRoll": [],
+      "soundDesign": "Freeze-frame stop accent; overlay draw-on sound, subtle.",
+      "assetReferences": [
+        { "kind": "ai-generated-diagram", "description": "Blue joint-marker/angle overlay graphic", "status": "needed", "aiGenerated": true, "notes": "Motion-graphic overlay only — pitcher footage underneath is real." }
+      ]
+    },
+    {
+      "id": "scene-4",
+      "timecode": "0:10-0:15",
+      "visualBeat": "Curiosity loop / repeated pattern",
+      "cameraDirection": "Split screen: rep 1 freeze frame (left) and rep 2 freeze frame (right), same phase, same overlay.",
+      "onScreenText": ["SAME PATTERN AGAIN"],
+      "voiceOver": "Same pattern. Another pitch. That's the kind of detail a general 'good job' misses.",
+      "bRoll": [],
+      "soundDesign": "Split-screen wipe.",
+      "assetReferences": [
+        { "kind": "real-pitching-footage", "description": "Full-speed + slow-motion side-view pitch, subject A, rep 2", "status": "needed", "aiGenerated": false }
+      ]
+    },
+    {
+      "id": "scene-5",
+      "timecode": "0:15-0:21",
+      "visualBeat": "Coaching insight / solution",
+      "cameraDirection": "Cut to a single drill rep addressing front-side stability; caption states the priority.",
+      "onScreenText": ["ONE CLEAR PRIORITY", "PERSONALIZED DRILLS"],
+      "voiceOver": "One priority: stabilize the front side before the rotation starts. That's what the drill work targets.",
+      "bRoll": ["Drill demonstration, front-side stability drill, real footage"],
+      "soundDesign": "Music bed enters, low under VO.",
+      "assetReferences": [
+        { "kind": "real-pitching-footage", "description": "Drill demonstration footage", "status": "needed", "aiGenerated": false }
+      ]
+    },
+    {
+      "id": "scene-6",
+      "timecode": "0:21-0:26",
+      "visualBeat": "Pitch Nav product output",
+      "cameraDirection": "Screen recording: report view scrolling to priority + drills + progress calendar. Optional quick cutback to founder nodding/reviewing on a laptop.",
+      "onScreenText": ["TRACK YOUR PROGRESS"],
+      "voiceOver": "This is what I wanted every pitcher to have — a clear breakdown, one priority, personalized drills, and progress you can track.",
+      "bRoll": ["Optional: founder reviewing a report on a laptop, real footage"],
+      "soundDesign": "UI tap accents, sparing.",
+      "assetReferences": [
+        { "kind": "real-screen-recording", "description": "Report + drills + progress calendar walkthrough", "status": "needed", "aiGenerated": false }
+      ]
+    },
+    {
+      "id": "scene-7",
+      "timecode": "0:26-0:30",
+      "visualBeat": "One clear CTA",
+      "cameraDirection": "Static end card: wordmark small at top, CTA centered, price beneath.",
+      "onScreenText": ["START YOUR ANALYSIS", "$25/MONTH"],
+      "voiceOver": "Start your Pitch Nav analysis. $25 a month.",
+      "bRoll": [],
+      "soundDesign": "Music resolves; no additional SFX.",
+      "assetReferences": [
+        { "kind": "brand-asset", "description": "Pitch Nav wordmark/logo, small, bottom-safe", "path": "public/pitch-nav-logo-source.png", "status": "available", "aiGenerated": false }
+      ]
+    }
+  ],
+  "voiceOverScript": "I built this because most pitching feedback is too vague. Here's an example. At full speed, everything here looks normal. Stop it right at foot strike, and the upper half is already rotating before the front side is stable. Same pattern. Another pitch. That's the kind of detail a general 'good job' misses. One priority: stabilize the front side before the rotation starts. That's what the drill work targets. This is what I wanted every pitcher to have — a clear breakdown, one priority, personalized drills, and progress you can track. Start your Pitch Nav analysis. $25 a month.",
+  "onScreenText": [
+    "\"MOST FEEDBACK IS TOO VAGUE\"",
+    "HERE'S AN EXAMPLE",
+    "UPPER HALF OPENS EARLY",
+    "SAME PATTERN AGAIN",
+    "ONE CLEAR PRIORITY",
+    "PERSONALIZED DRILLS",
+    "TRACK YOUR PROGRESS",
+    "START YOUR ANALYSIS",
+    "$25/MONTH"
+  ],
+  "bRollInstructions": "Founder must be real, on camera, speaking naturally — no AI-generated presenter. Two pitch reps from the same athlete, matched phase-to-phase. Drill footage is real, one rep. Product screens are real, live UI.",
+  "editingNotes": "Frame changes every 1-3 seconds throughout, per content/video-templates/timelines/30s.md. Founder energy should be direct and calm, not salesy. Hold the freeze frame only as long as the overlay is animating. See content/editing-style-rules.md before final cut.",
+  "soundDesign": "Music bed under everything, ducked below voice-over. One whoosh on the speed ramp, one tick on the hook cut, one soft accent on the overlay draw-on. No glitch transitions.",
+  "assetReferences": [
+    { "kind": "real-founder-footage", "description": "Direct-to-camera hook + optional laptop review cutback", "status": "needed", "aiGenerated": false },
+    { "kind": "real-pitching-footage", "description": "Subject A, two reps, full-speed + slow-motion, side view", "status": "needed", "aiGenerated": false },
+    { "kind": "real-screen-recording", "description": "Report/dashboard walkthrough: priority, drills, progress calendar", "status": "needed", "aiGenerated": false },
+    { "kind": "ai-generated-diagram", "description": "Blue joint-marker overlay graphic", "status": "needed", "aiGenerated": true },
+    { "kind": "brand-asset", "description": "Logo for end card", "path": "public/pitch-nav-logo-source.png", "status": "available", "aiGenerated": false },
+    { "kind": "music", "description": "Low-key, tension-building sports-tech bed, no lyrics", "status": "needed", "aiGenerated": false }
+  ],
+  "platform": ["instagram-ads"],
+  "distribution": "paid",
+  "testVariation": "hook-variant-5-founder-credibility",
+  "status": "scripted",
+  "performanceResults": null
+}

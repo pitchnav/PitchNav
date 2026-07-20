@@ -1,0 +1,147 @@
+{
+  "schemaVersion": "1.0.0",
+  "campaignId": "launch-reel-02-camera-mistake",
+  "campaignName": "Launch Reel 2 — The Camera Mistake",
+  "objective": "Camera-and-analysis-education organic Reel that both attracts top-of-funnel viewers and reduces bad-upload support load by teaching the real camera-setup requirements.",
+  "audience": "Pitchers, parents, and coaches broadly interested in training technology and video analysis methods — top-of-funnel awareness.",
+  "contentType": "camera-setup-tutorial",
+  "scriptFormat": "C-camera-mistake",
+  "hook": "Most pitchers record from the wrong angle.",
+  "hookCategory": "camera-and-analysis-education",
+  "coreInsight": "A front-angle, too-close, normal-speed recording produces footage that's nearly unusable for mechanics analysis; a 15-foot side view at 240 FPS SLO-MO fixes it completely.",
+  "openLoop": "The hook names a common mistake — the viewer watches to confirm whether their own setup matches it.",
+  "payoff": "The corrected setup and the resulting clean slow-motion footage prove the fix works, then the exact numbers are given so the viewer can copy it.",
+  "callToAction": "Start your Pitch Nav analysis.",
+  "priceMention": null,
+  "totalDurationSeconds": 24,
+  "scenes": [
+    {
+      "id": "scene-1",
+      "timecode": "0:00-0:02",
+      "visualBeat": "Pattern-interrupt hook",
+      "cameraDirection": "Staged wrong setup: handheld phone, front-facing angle, too close, hard cut in.",
+      "onScreenText": ["WRONG ANGLE"],
+      "voiceOver": "",
+      "bRoll": [],
+      "soundDesign": "Single low tick on the cut in.",
+      "assetReferences": [
+        { "kind": "real-pitching-footage", "description": "Staged wrong-setup demo clip: handheld, front angle, too close", "status": "needed", "aiGenerated": false }
+      ]
+    },
+    {
+      "id": "scene-2",
+      "timecode": "0:02-0:05",
+      "visualBeat": "Consequence",
+      "cameraDirection": "Same staged clip continues at normal (non-slow-motion) speed — motion blur, cropped body, hard to read.",
+      "onScreenText": ["THIS TELLS US NOTHING"],
+      "voiceOver": "Too close, wrong angle, normal speed — this tells us almost nothing.",
+      "bRoll": [],
+      "soundDesign": "Slight distortion/muffled accent to sonically mark \"this doesn't work.\"",
+      "assetReferences": [
+        { "kind": "real-pitching-footage", "description": "Same staged wrong-setup clip, normal speed", "status": "needed", "aiGenerated": false }
+      ]
+    },
+    {
+      "id": "scene-3",
+      "timecode": "0:05-0:07",
+      "visualBeat": "Transition beat",
+      "cameraDirection": "Hard cut to black-to-navy wipe with caption only, no footage.",
+      "onScreenText": ["WRONG ANGLE. WRONG SPEED."],
+      "voiceOver": "",
+      "bRoll": [],
+      "soundDesign": "Whip-pan style transition sound.",
+      "assetReferences": []
+    },
+    {
+      "id": "scene-4",
+      "timecode": "0:07-0:10",
+      "visualBeat": "Corrected setup",
+      "cameraDirection": "Real footage of a tripod being placed at the correct side-view position.",
+      "onScreenText": ["HERE'S THE FIX"],
+      "voiceOver": "Here's the fix.",
+      "bRoll": [],
+      "soundDesign": "Clean cut, no accent.",
+      "assetReferences": [
+        { "kind": "real-founder-footage", "description": "Hands placing tripod at correct side-view position", "status": "needed", "aiGenerated": false }
+      ]
+    },
+    {
+      "id": "scene-5",
+      "timecode": "0:10-0:13",
+      "visualBeat": "Exact measurements",
+      "cameraDirection": "Close-up of a tape measure/marker confirming 15 feet, then tilt to phone height marker at 6 feet.",
+      "onScreenText": ["15 FEET. SIDE VIEW. 6 FEET HIGH."],
+      "voiceOver": "Fifteen feet away. Side view. Six feet high.",
+      "bRoll": [],
+      "soundDesign": "Two quick measurement-tick SFX.",
+      "assetReferences": [
+        { "kind": "real-founder-footage", "description": "Tape measure / height marker close-ups", "status": "needed", "aiGenerated": false }
+      ]
+    },
+    {
+      "id": "scene-6",
+      "timecode": "0:13-0:16",
+      "visualBeat": "Correct footage payoff",
+      "cameraDirection": "Same pitcher, correctly shot side-view slow-motion footage, freeze at foot strike — crisp, full body visible.",
+      "onScreenText": ["NOW YOU CAN SEE IT"],
+      "voiceOver": "Same pitcher. Now you can actually see the delivery.",
+      "bRoll": [],
+      "soundDesign": "Freeze-frame stop accent.",
+      "assetReferences": [
+        { "kind": "real-pitching-footage", "description": "Correctly-shot side-view slow-motion pitch, same subject", "status": "needed", "aiGenerated": false }
+      ]
+    },
+    {
+      "id": "scene-7",
+      "timecode": "0:16-0:19",
+      "visualBeat": "Recording mode requirement",
+      "cameraDirection": "Screen insert: iPhone Settings → Camera → Record Slo-mo → 240 FPS, using public/pitch-nav-slow-motion-guide.png as the reference graphic.",
+      "onScreenText": ["SLO-MO. 240 FPS PREFERRED."],
+      "voiceOver": "SLO-MO mode. Two hundred forty frames per second preferred, one twenty accepted.",
+      "bRoll": [],
+      "soundDesign": "UI tap accents.",
+      "assetReferences": [
+        { "kind": "brand-asset", "description": "iPhone camera settings guide graphic", "path": "public/pitch-nav-slow-motion-guide.png", "status": "available", "aiGenerated": false }
+      ]
+    },
+    {
+      "id": "scene-8",
+      "timecode": "0:19-0:24",
+      "visualBeat": "One clear CTA",
+      "cameraDirection": "Static end card: wordmark small at top, CTA centered, requirements recap listed small beneath.",
+      "onScreenText": ["START YOUR ANALYSIS"],
+      "voiceOver": "Get the setup right, then start your Pitch Nav analysis.",
+      "bRoll": [],
+      "soundDesign": "Music resolves.",
+      "assetReferences": [
+        { "kind": "brand-asset", "description": "Pitch Nav wordmark/logo, small, bottom-safe", "path": "public/pitch-nav-logo-source.png", "status": "available", "aiGenerated": false }
+      ]
+    }
+  ],
+  "voiceOverScript": "Too close, wrong angle, normal speed — this tells us almost nothing. Here's the fix. Fifteen feet away. Side view. Six feet high. Same pitcher. Now you can actually see the delivery. SLO-MO mode. Two hundred forty frames per second preferred, one twenty accepted. Get the setup right, then start your Pitch Nav analysis.",
+  "onScreenText": [
+    "WRONG ANGLE",
+    "THIS TELLS US NOTHING",
+    "WRONG ANGLE. WRONG SPEED.",
+    "HERE'S THE FIX",
+    "15 FEET. SIDE VIEW. 6 FEET HIGH.",
+    "NOW YOU CAN SEE IT",
+    "SLO-MO. 240 FPS PREFERRED.",
+    "START YOUR ANALYSIS"
+  ],
+  "bRollInstructions": "The 'wrong setup' clip can be staged (clearly a setup demonstration, not a real pitcher's analysis). The 'correct setup' clip must be the same pitcher, matched as closely as possible to the wrong-setup clip's pitch, to make the before/after honest.",
+  "editingNotes": "Roughly matches content/video-templates/timelines/20s.md stretched to 24s to fit the extra measurement beat — still changes visually every 1-3 seconds. No product screen recording in this Reel; it's pre-purchase education, not a feature demo, so the CTA end card carries the product connection alone.",
+  "soundDesign": "Brisk, slightly playful staccato bed — educational energy, not tense. Muffled/distorted accent on the 'wrong' footage, clean accents on the 'right' footage, to sonically reinforce the contrast.",
+  "assetReferences": [
+    { "kind": "real-pitching-footage", "description": "Staged wrong-setup clip + correctly-shot same-subject clip", "status": "needed", "aiGenerated": false },
+    { "kind": "real-founder-footage", "description": "Tripod placement + measurement close-ups", "status": "needed", "aiGenerated": false },
+    { "kind": "brand-asset", "description": "Slow-motion camera settings guide graphic", "path": "public/pitch-nav-slow-motion-guide.png", "status": "available", "aiGenerated": false },
+    { "kind": "brand-asset", "description": "Logo for end card", "path": "public/pitch-nav-logo-source.png", "status": "available", "aiGenerated": false },
+    { "kind": "music", "description": "Brisk, slightly playful staccato bed — educational energy", "status": "needed", "aiGenerated": false }
+  ],
+  "platform": ["instagram-reels"],
+  "distribution": "organic",
+  "testVariation": "launch-reel-2-camera-mistake",
+  "status": "scripted",
+  "performanceResults": null
+}

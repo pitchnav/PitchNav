@@ -1,0 +1,66 @@
+{
+  "schemaVersion": "1.0.0",
+  "presets": [
+    {
+      "id": "instagram-reels-organic",
+      "label": "Instagram Reels (organic)",
+      "resolution": "1080x1920",
+      "aspectRatio": "9:16",
+      "codec": "H.264",
+      "container": "MP4",
+      "bitrateTarget": "high (10-16 Mbps for 1080p30, 16-24 Mbps for 1080p60)",
+      "frameRate": "30fps or 60fps timeline, matched to the highest-motion source clip in the edit",
+      "audio": "AAC, 48kHz, -14 LUFS integrated loudness, music ducked at least 8dB under voice-over",
+      "captions": "Burned in, per content/captions/caption-style-guide.md",
+      "safeZoneCompliant": true,
+      "notes": "Export with the safe-zone guide track hidden. Confirm no red-zone overlap on final render."
+    },
+    {
+      "id": "instagram-ads-paid",
+      "label": "Paid Instagram Reel ads",
+      "resolution": "1080x1920",
+      "aspectRatio": "9:16",
+      "codec": "H.264",
+      "container": "MP4",
+      "bitrateTarget": "high (10-16 Mbps for 1080p30, 16-24 Mbps for 1080p60)",
+      "frameRate": "30fps or 60fps timeline, matched to source",
+      "audio": "AAC, 48kHz, -14 LUFS integrated loudness, music ducked at least 8dB under voice-over",
+      "captions": "Burned in",
+      "safeZoneCompliant": true,
+      "paidAdRules": {
+        "primaryMessageWithinSeconds": 2,
+        "brandVisibleEarlyButNotBeforeHook": true,
+        "productShownBeforeHalfwayPoint": true,
+        "ctaClearlyVisibleAtEnd": true
+      },
+      "notes": "Same technical spec as organic Reels — the differentiators are timing/structure rules above, not resolution or codec."
+    },
+    {
+      "id": "website-video",
+      "label": "Website video",
+      "variants": [
+        {
+          "id": "website-video-mp4",
+          "resolution": "1080x1920 or 16:9 crop for hero placements, per page context",
+          "codec": "H.264",
+          "container": "MP4",
+          "bitrateTarget": "compressed, target file size under 6MB for a 30s clip",
+          "audio": "muted track, autoplay-friendly (no audio track required, or silent AAC track)",
+          "captionsOptional": true,
+          "loopable": true
+        },
+        {
+          "id": "website-video-webm",
+          "resolution": "matches MP4 companion",
+          "codec": "VP9",
+          "container": "WebM",
+          "bitrateTarget": "compressed, target file size under 4MB for a 30s clip",
+          "audio": "muted track, autoplay-friendly",
+          "captionsOptional": true,
+          "loopable": true
+        }
+      ],
+      "notes": "Provide both MP4 and WebM for browser compatibility. Ending frame should be visually calm (e.g. the CTA end card) so a loop restart isn't jarring."
+    }
+  ]
+}
