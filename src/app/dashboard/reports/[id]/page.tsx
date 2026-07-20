@@ -118,8 +118,8 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
           )}
         </div>
         <p className="text-xs text-slate-600 mt-4">
-          Velocity is athlete-provided and not independently verified. The Delivery Score is an internal
-          coaching tool for tracking development in the same athlete over time — not a medical score.
+          Velocity comes from what you reported and hasn&apos;t been independently verified. The Delivery
+          Score tracks your own progress over time — it is not a medical score.
         </p>
       </div>
 
@@ -131,7 +131,7 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
           </h2>
           <AnnotatedVideoPlayer src={voiceoverUrl} title="Reviewer voice-over analysis" />
           <p className="text-xs text-slate-600 mt-2">
-            If captions or a transcript are available, they can be accessed via the video controls.
+            Captions and a transcript, if available, are in the video controls.
           </p>
         </div>
       )}
@@ -141,7 +141,7 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
         <div className="card mb-8">
           <h2 className="text-lg font-bold text-white mb-2">Mechanics Scorecard</h2>
           <p className="text-xs text-slate-500 mb-6">
-            Internal coaching tool. Not a medical score or laboratory biomechanics measurement.
+            A coaching tool, not a medical or laboratory measurement.
           </p>
           <div className="space-y-5">
             {scorecard.map((cat) => (
@@ -204,7 +204,7 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
                   {pos.coaching_cue && (
                     <div className="rounded-lg bg-surface-hover p-3">
                       <p className="text-xs font-semibold text-slate-400 mb-1">Coaching Cue</p>
-                      <p className="text-xs text-white italic">"{pos.coaching_cue}"</p>
+                      <p className="text-xs text-white italic">&quot;{pos.coaching_cue}&quot;</p>
                     </div>
                   )}
                   {pos.estimated_angle && (
@@ -338,8 +338,8 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
           <h2 className="text-base font-semibold text-white mb-3">Velocity Notes</h2>
           <p className="text-sm text-slate-400">{report.reviewer_velocity_notes}</p>
           <p className="text-xs text-slate-600 mt-3">
-            Velocity information in this report is based on athlete-provided readings unless otherwise noted.
-            Pitch Nav does not verify velocity from standard phone video without calibration data.
+            Velocity in this report comes from what you reported, unless noted otherwise. Pitch Nav
+            can&apos;t calculate velocity from a standard phone video without calibration data.
           </p>
         </div>
       )}

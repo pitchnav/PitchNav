@@ -34,7 +34,7 @@ function SuccessContent() {
           </div>
         </div>
 
-        <h1 className="text-4xl font-black text-white mb-4">You're in the Queue!</h1>
+        <h1 className="text-4xl font-black text-white mb-4">You&apos;re All Set!</h1>
 
         <p className="text-lg text-slate-400 mb-6 leading-relaxed">
           Payment confirmed. Your membership is active. Continue to upload your pitching videos; files cannot be saved before payment is verified.
@@ -52,7 +52,7 @@ function SuccessContent() {
             </div>
             <div className="flex items-center gap-3 text-accent-green">
               <CheckCircle className="h-4 w-4 flex-shrink-0" />
-              <span>Upload both required pitching views next</span>
+              <span>Upload your pitching video next</span>
             </div>
             <div className="flex items-center gap-3 text-electric-blue-light">
               <div className="h-4 w-4 rounded-full border-2 border-electric-blue flex-shrink-0" />

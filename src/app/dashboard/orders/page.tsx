@@ -23,7 +23,7 @@ export default async function OrdersPage() {
 
       {!orders?.length ? (
         <div className="card text-center py-16">
-          <p className="text-slate-400 mb-4">You haven't placed any orders yet.</p>
+          <p className="text-slate-400 mb-4">You haven&apos;t placed any orders yet.</p>
           <Link href="/start-analysis" className="btn-primary">Start My First Analysis</Link>
         </div>
       ) : (

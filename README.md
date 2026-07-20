@@ -219,6 +219,10 @@ Open http://localhost:3000
 
 The site will hot-reload as you make changes.
 
+### Automated testing status
+
+`npm test` and `npm run test:e2e` are wired to Jest and Playwright, but **no automated tests exist in this codebase yet** — `npm test` exits successfully with zero tests run rather than failing, so it is safe to run in CI, but it does not verify anything. Correctness is currently checked via `npm run type-check`, `npm run lint`, `npm run build`, and the manual "Testing Checklist" below. Treat any future feature or bug fix as a candidate for adding a first real test alongside it.
+
 ---
 
 ## Step 7 — Stripe Webhook (Required for Payments)

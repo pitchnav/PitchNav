@@ -61,7 +61,7 @@ export default async function DashboardPage() {
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-accent-green">Staff-reviewed delivery</p>
               <h2 className="mt-1 text-lg font-bold text-white">Your Feedback & Training Plan</h2>
-              <p className="mt-1 text-sm text-slate-400">Submissions are analyzed first, then released after the Pitch Nav staff reviews the video, scores, velocity assumptions, and plan.</p>
+              <p className="mt-1 text-sm text-slate-400">A Pitch Nav coach reviews your video, scores, velocity, and plan before your feedback is released.</p>
             </div>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
@@ -70,7 +70,7 @@ export default async function DashboardPage() {
               return (
                 <div
                   key={analysis.id}
-                  className="card animate-slide-up transition-all duration-200 [animation-fill-mode:backwards] hover:-translate-y-1 hover:border-electric-blue/30"
+                  className="card-interactive animate-slide-up [animation-fill-mode:backwards]"
                   style={{ animationDelay: `${i * 70}ms` }}
                 >
                   <div className="flex items-start justify-between gap-3">
@@ -130,7 +130,7 @@ export default async function DashboardPage() {
               return (
                 <div
                   key={order.id}
-                  className="card animate-slide-up flex flex-col gap-4 transition-all duration-200 [animation-fill-mode:backwards] hover:-translate-y-1 hover:border-electric-blue/30 sm:flex-row sm:items-center sm:justify-between"
+                  className="card-interactive animate-slide-up flex flex-col gap-4 [animation-fill-mode:backwards] sm:flex-row sm:items-center sm:justify-between"
                   style={{ animationDelay: `${i * 70}ms` }}
                 >
                   <div>
@@ -140,7 +140,7 @@ export default async function DashboardPage() {
                     </div>
                     <p className="text-xs text-slate-500">
                       Submitted {formatDateShort(order.created_at)} ·{' '}
-                      Automated Motion Lab feedback is available immediately after video analysis
+                      Motion Lab feedback is ready as soon as your video is analyzed
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-2">
@@ -170,7 +170,7 @@ export default async function DashboardPage() {
               return (
                 <div
                   key={order.id}
-                  className="card animate-slide-up flex flex-col gap-4 transition-all duration-200 [animation-fill-mode:backwards] hover:-translate-y-1 hover:border-accent-green/30 sm:flex-row sm:items-center sm:justify-between"
+                  className="card-interactive-accent animate-slide-up flex flex-col gap-4 [animation-fill-mode:backwards] sm:flex-row sm:items-center sm:justify-between"
                   style={{ animationDelay: `${i * 70}ms` }}
                 >
                   <div className="flex items-center gap-3">

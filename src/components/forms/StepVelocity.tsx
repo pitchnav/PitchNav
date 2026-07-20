@@ -86,7 +86,7 @@ export function StepVelocity({ initialData, athleteProfileId, onComplete, onBack
       <div className="rounded-lg border border-electric-blue/20 bg-electric-blue/5 p-4">
         <p className="text-xs text-electric-blue-glow leading-relaxed">
           ℹ️ <strong>Athlete-Provided Velocity:</strong> All velocity information you enter here will
-          be labeled "athlete-provided" in your report. Pitch Nav does not calculate velocity from
+          be labeled &quot;athlete-provided&quot; in your report. Pitch Nav does not calculate velocity from
           phone video without additional calibration data.
         </p>
       </div>

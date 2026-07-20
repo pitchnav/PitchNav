@@ -50,7 +50,7 @@ export default function ContactPage() {
         <div className="text-center mb-16">
           <h1 className="text-4xl font-black tracking-tight text-white sm:text-5xl">Contact Us</h1>
           <p className="mt-4 text-lg text-slate-400 max-w-xl mx-auto">
-            Have a question about your order, billing, or the analysis process? We're here to help.
+            Have a question about your order, billing, or the analysis process? We&apos;re here to help.
           </p>
         </div>
 
@@ -110,7 +110,7 @@ export default function ContactPage() {
                 <div className="text-5xl mb-4">✓</div>
                 <h2 className="text-2xl font-bold text-white mb-3">Message Sent</h2>
                 <p className="text-slate-400">
-                  Thanks for reaching out. We'll get back to you within 1–2 business days.
+                  Thanks for reaching out. We&apos;ll get back to you within 1–2 business days.
                 </p>
               </div>
             ) : (

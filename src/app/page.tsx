@@ -31,7 +31,7 @@ function Hero() {
 
         {/* Subtext */}
         <p className="mt-6 max-w-md text-base text-slate-400 leading-relaxed">
-          Data-driven biomechanics analysis that shows you what's working, what's not, and how to throw better.
+          Data-driven biomechanics analysis that shows you what&apos;s working, what&apos;s not, and how to throw better.
         </p>
 
         {/* CTAs */}
@@ -257,8 +257,8 @@ function WhatIsIncluded() {
             </div>
 
             <p className="text-xs text-slate-600 mt-4 leading-relaxed">
-              ★ Scores are internal coaching tools for tracking development in the same athlete
-              over time. Not a medical or laboratory biomechanics score.
+              ★ Scores are a coaching tool for tracking your own progress over time — not a
+              medical or laboratory score.
             </p>
           </div>
         </div>
@@ -463,7 +463,7 @@ function Testimonials() {
                   <Star key={s} className="h-4 w-4 text-yellow-400 fill-yellow-400" />
                 ))}
               </div>
-              <p className="text-sm text-slate-500 italic leading-relaxed mb-6">"{t.quote}"</p>
+              <p className="text-sm text-slate-500 italic leading-relaxed mb-6">&quot;{t.quote}&quot;</p>
               <div>
                 <p className="text-sm font-semibold text-slate-500">{t.name}</p>
                 <p className="text-xs text-slate-600">{t.detail}</p>

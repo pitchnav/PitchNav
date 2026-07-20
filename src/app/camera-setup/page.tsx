@@ -2,9 +2,10 @@
 
 import { Suspense, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { CheckCircle, AlertCircle, Camera, Eye, ChevronRight } from 'lucide-react'
+import { CheckCircle, AlertCircle, Eye, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { CameraAlignmentStudio } from '@/components/camera/CameraAlignmentStudio'
+import { CameraPositionDiagram } from '@/components/camera/CameraPositionDiagram'
 
 type Angle = 'open_side'
 
@@ -106,7 +107,7 @@ function CameraSetupContent() {
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.2em] text-electric-blue-light">Required for an automatic velocity estimate</p>
               <h2 className="mt-2 text-2xl font-black text-white">Print and place the 8-inch calibration marker</h2>
-              <p className="mt-3 text-sm leading-relaxed text-slate-400">The video worker finds this marker automatically, measures its known size, and uses it to convert ball movement from pixels into an estimated speed range. You do not click calibration points.</p>
+              <p className="mt-3 text-sm leading-relaxed text-slate-400">Pitch Nav finds this marker automatically and uses its known size to turn ball movement into an estimated speed range. You never click calibration points yourself.</p>
               <ol className="mt-5 space-y-2 text-sm text-slate-300">
                 <li><strong className="text-white">1.</strong> Print at <strong className="text-white">Actual Size / 100%</strong>—never “Fit to Page.”</li>
                 <li><strong className="text-white">2.</strong> Confirm the black square measures exactly <strong className="text-white">8 × 8 inches</strong>.</li>
@@ -138,12 +139,15 @@ function CameraSetupContent() {
           ))}
         </div>
 
-        {/* Camera diagram placeholder */}
-        <div className="card mb-8 flex flex-col items-center justify-center py-16 border-dashed border-electric-blue/20">
-          <Camera className="h-16 w-16 text-electric-blue/30 mb-4" />
-          <p className="text-slate-600 text-sm">
-            [Camera position diagram for {ANGLES.find(a => a.key === activeAngle)?.label} — replace with actual SVG diagram before launch]
+        {/* Camera position diagram */}
+        <div className="card mb-8">
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-electric-blue-light mb-1">
+            {ANGLES.find((a) => a.key === activeAngle)?.label}
           </p>
+          <h2 className="text-lg font-bold text-white mb-4">Camera Position, Top-Down</h2>
+          <div className="mx-auto max-w-sm">
+            <CameraPositionDiagram />
+          </div>
         </div>
 
         {/* Guide content */}
@@ -184,7 +188,7 @@ function CameraSetupContent() {
             </div>
             <div>
               <h3 className="text-sm font-semibold text-red-400 mb-3 flex items-center gap-2">
-                <AlertCircle className="h-4 w-4" /> Don't
+                <AlertCircle className="h-4 w-4" /> Don&apos;t
               </h3>
               <ul className="space-y-2">
                 {guide.donts.map((item) => (
@@ -204,7 +208,7 @@ function CameraSetupContent() {
             <h2 className="text-lg font-bold text-white">Video Quality Checklist</h2>
           </div>
           <p className="text-sm text-slate-400 mb-6">
-            Confirm each item before submitting your video. You'll complete this checklist
+            Confirm each item before submitting your video. You&apos;ll complete this checklist
             again in the upload step.
           </p>
 

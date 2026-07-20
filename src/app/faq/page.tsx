@@ -63,7 +63,7 @@ const FAQ_SECTIONS = [
       },
       {
         q: 'What is the Delivery Score?',
-        a: 'The Delivery Score (out of 30) is an internal coaching tool calculated from six categories, each scored 1–5. It is designed to track development in the same athlete over time. It is not a medical score, a laboratory biomechanics measurement, or a prediction of injury risk or future performance.',
+        a: 'The Delivery Score (out of 30) comes from six categories, each scored 1–5. It tracks your own progress over time. It is not a medical score, a laboratory measurement, or a prediction of injury risk or future performance.',
       },
       {
         q: 'Can Pitch Nav tell me my velocity?',
@@ -101,7 +101,7 @@ const FAQ_SECTIONS = [
     questions: [
       {
         q: 'Who can access my videos?',
-        a: 'Only you and your assigned reviewer can access your uploaded videos. Pitch Nav uses private, access-controlled storage with row-level security. No other user can see your files.',
+        a: 'Only you and your assigned reviewer can access your uploaded videos. Your files are stored privately — no other user can see them.',
       },
       {
         q: 'How long are my videos retained?',
@@ -172,7 +172,7 @@ export default function FAQPage() {
             Frequently Asked Questions
           </h1>
           <p className="mt-4 text-lg text-slate-400 max-w-xl mx-auto">
-            Can't find what you're looking for?{' '}
+            Can&apos;t find what you&apos;re looking for?{' '}
             <Link href="/contact" className="text-electric-blue-light hover:underline">
               Contact us
             </Link>.

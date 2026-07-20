@@ -120,7 +120,7 @@ export default function ProfilePage() {
           <div className="rounded-lg bg-accent-green/10 border border-accent-green/20 p-4">
             <p className="text-sm text-accent-green font-semibold">Deletion request received.</p>
             <p className="text-xs text-slate-400 mt-1">
-              You'll receive a confirmation email. Our team will process your request within 30 days.
+              You&apos;ll receive a confirmation email. Our team will process your request within 30 days.
             </p>
           </div>
         ) : (

@@ -111,7 +111,7 @@ export default function SampleReportPage() {
               </div>
               <div>
                 <p className="text-sm font-semibold text-white">Delivery Score</p>
-                <p className="text-xs text-slate-500">Internal coaching benchmark</p>
+                <p className="text-xs text-slate-500">Your personal coaching benchmark</p>
               </div>
             </div>
           </div>
@@ -147,9 +147,8 @@ export default function SampleReportPage() {
         <div className="card mb-8">
           <h2 className="text-xl font-bold text-white mb-2">Mechanics Scorecard</h2>
           <p className="text-sm text-slate-500 mb-6">
-            The Delivery Score is an internal coaching tool for tracking development in the same
-            athlete over time. It is not a medical score, laboratory biomechanics score, or
-            prediction of injury.
+            The Delivery Score tracks your own progress over time. It is not a medical score, a
+            laboratory score, or a prediction of injury.
           </p>
           <div className="space-y-5">
             {SCORECARD.map(({ category, score, notes }) => (
@@ -274,7 +273,7 @@ export default function SampleReportPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                   <div>
                     <p className="text-slate-500 mb-1 font-semibold">Coaching Cue</p>
-                    <p className="text-slate-300 italic">"{drill.cue}"</p>
+                    <p className="text-slate-300 italic">&quot;{drill.cue}&quot;</p>
                   </div>
                   <div>
                     <p className="text-slate-500 mb-1 font-semibold">Common Mistake</p>

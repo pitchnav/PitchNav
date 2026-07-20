@@ -317,7 +317,7 @@ export function InteractiveFeedbackTools({
       )}
 
       <section className="card">
-        <h2 className="text-2xl font-black text-white">Interactive six-phase viewer</h2>
+        <h2 className="text-2xl font-black text-white">Your six key positions</h2>
         <div className="mt-5 flex gap-2 overflow-x-auto pb-2">
           {phases.map((item) => (
             <button key={item.key} onClick={() => setActivePhase(item.key)} className={`whitespace-nowrap rounded-lg px-3 py-2 text-xs font-bold ${item.key === activePhase ? 'bg-electric-blue text-white' : 'bg-navy-950 text-slate-400'}`}>
@@ -372,7 +372,7 @@ export function InteractiveFeedbackTools({
               <p className="text-xs font-bold uppercase tracking-[0.2em] text-electric-blue-light">Rolling plan</p>
               <h2 className="mt-1 text-2xl font-black text-white">Your next two weeks</h2>
               <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-400">
-                Only today and the next 13 days are shown. This window moves forward every day, so a new day automatically appears at the end instead of exposing the full plan at once.
+                You&apos;ll always see today plus the next 13 days. A new day is added each morning.
               </p>
             </div>
           </div>
@@ -433,7 +433,7 @@ export function InteractiveFeedbackTools({
                   <div className="rounded-lg bg-navy-900 p-3"><p className="text-[11px] uppercase tracking-wider text-slate-500">Primary coaching cue</p><p className="mt-1 text-sm font-semibold text-white">{selectedDay.throwingWeek?.coaching_cue ?? 'Reset between repetitions and prioritize movement quality.'}</p></div>
                 </div>
                 <p className="rounded-lg bg-yellow-400/10 p-3 text-xs leading-relaxed text-yellow-200"><b>Common mistake:</b> {throwingMistake(selectedDay.throwing?.focus)}</p>
-                {biggest && <p className="rounded-lg bg-electric-blue/10 p-3 text-xs leading-relaxed text-electric-blue-light"><b>Why this is assigned:</b> Supports the current {biggest.category.toLowerCase()} priority identified in your reviewed delivery.</p>}
+                {biggest && <p className="rounded-lg bg-electric-blue/10 p-3 text-xs leading-relaxed text-electric-blue-light"><b>Why this drill:</b> it builds on the {biggest.category.toLowerCase()} priority from your report.</p>}
               </RoutineCard>
 
               {tier === 'performance' && selectedDay.performance ? (
@@ -460,7 +460,7 @@ export function InteractiveFeedbackTools({
 
             {selectedDay.performanceWeek?.tailored_focus && (
               <div className="mt-5 rounded-xl border border-accent-green/20 bg-accent-green/5 p-4">
-                <p className="text-xs font-bold uppercase tracking-wider text-accent-green">This week’s assessment-based emphasis</p>
+                <p className="text-xs font-bold uppercase tracking-wider text-accent-green">This week’s focus</p>
                 <p className="mt-2 text-sm leading-relaxed text-slate-300">{selectedDay.performanceWeek.tailored_focus}</p>
               </div>
             )}
@@ -473,7 +473,7 @@ export function InteractiveFeedbackTools({
         <div className="card">
           <MessageCircle className="h-6 w-6 text-electric-blue-light" />
           <h2 className="mt-3 text-xl font-bold text-white">Ask your analyst</h2>
-          <p className="mt-1 text-sm text-slate-400">Ask up to two concise follow-up questions about this analysis.</p>
+          <p className="mt-1 text-sm text-slate-400">Ask up to two quick questions about your report.</p>
           <textarea value={question} onChange={(event) => setQuestion(event.target.value)} maxLength={600} className="input mt-4 min-h-28" placeholder="What should I focus on first?" />
           <button onClick={askAnalyst} className="btn-primary mt-3">Send question</button>
           {message && <p className="mt-2 text-xs text-slate-400">{message}</p>}
@@ -481,7 +481,7 @@ export function InteractiveFeedbackTools({
         <div className="card">
           <Download className="h-6 w-6 text-accent-green" />
           <h2 className="mt-3 text-xl font-bold text-white">Shareable progress card</h2>
-          <p className="mt-1 text-sm text-slate-400">Creates a branded image with your score and current focus. Private report details remain hidden.</p>
+          <p className="mt-1 text-sm text-slate-400">Share your score and current focus. The rest of your report stays private.</p>
           <button onClick={downloadShareCard} className="btn-accent mt-4">Download progress card</button>
           <canvas ref={canvasRef} className="hidden" />
         </div>

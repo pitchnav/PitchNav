@@ -31,7 +31,7 @@ export default function PrivacyPage() {
           <section className="card">
             <h2 className="text-xl font-bold text-white mb-4">1. Who We Are</h2>
             <p className="text-slate-400 leading-relaxed">
-              Pitch Nav ("we," "our," or "us") is a baseball pitching mechanics analysis
+              Pitch Nav (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;) is a baseball pitching mechanics analysis
               service operated by [PLACEHOLDER — legal entity name and address must be inserted
               before launch]. We provide remote pitching analysis services to athletes and their
               families.
@@ -120,7 +120,7 @@ export default function PrivacyPage() {
               Videos you submit are stored in a private Supabase storage bucket using access
               controls that prevent any user other than you and your assigned reviewer from
               accessing your files. After your analysis is complete, raw videos are retained for
-              [PLACEHOLDER — configurable retention period, e.g., "one year"] to support potential
+              [PLACEHOLDER — configurable retention period, e.g., &quot;one year&quot;] to support potential
               follow-up analyses. After this period, videos may be deleted automatically or upon
               your request.
             </p>
@@ -152,7 +152,7 @@ export default function PrivacyPage() {
             </p>
             <ul className="space-y-1 text-sm text-slate-400 mt-3 list-disc pl-4">
               <li>Use of anonymous clips for educational or instructional content</li>
-              <li>Use of the athlete's name in promotional materials</li>
+              <li>Use of the athlete&apos;s name in promotional materials</li>
               <li>Use of a testimonial</li>
               <li>Use of before-and-after comparison clips</li>
             </ul>
@@ -183,7 +183,7 @@ export default function PrivacyPage() {
           </section>
 
           <section className="card">
-            <h2 className="text-xl font-bold text-white mb-4">8. Children's Privacy</h2>
+            <h2 className="text-xl font-bold text-white mb-4">8. Children&apos;s Privacy</h2>
             <p className="text-sm text-slate-400 leading-relaxed">
               Pitch Nav does not accept registrations from athletes under 13. For athletes
               between 13 and 17, we require a parent or guardian to complete the consent process

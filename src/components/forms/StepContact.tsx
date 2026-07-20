@@ -173,7 +173,7 @@ export function StepContact({ initialData, userId, existingProfileId, onComplete
               <Link href="/terms" className="text-electric-blue-light hover:underline" target="_blank">Terms of Service</Link>
               {' '}and{' '}
               <Link href="/privacy" className="text-electric-blue-light hover:underline" target="_blank">Privacy Policy</Link>
-              {' '}and I consent to the submission of this athlete's pitching videos and personal information for analysis. I confirm that this athlete is at least 13 years old.
+              {' '}and I consent to the submission of this athlete&apos;s pitching videos and personal information for analysis. I confirm that this athlete is at least 13 years old.
             </span>
           </label>
         </div>

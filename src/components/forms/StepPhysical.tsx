@@ -71,7 +71,7 @@ export function StepPhysical({ initialData, athleteProfileId, onComplete, onBack
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6" noValidate>
       <div>
         <h2 className="text-xl font-bold text-white mb-1">Step 2: Physical Profile</h2>
-        <p className="text-sm text-slate-400">Tell us about the athlete's physical attributes and playing level.</p>
+        <p className="text-sm text-slate-400">Tell us about the athlete&apos;s physical attributes and playing level.</p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">

@@ -19,7 +19,7 @@
   body {
     background-color: #05080f;
     color: #f1f5f9;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -49,19 +49,29 @@
 
 @layer components {
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-electric-blue px-6 py-3 text-sm font-semibold text-white transition-all duration-200 hover:bg-electric-blue-light hover:shadow-glow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electric-blue focus-visible:ring-offset-2 focus-visible:ring-offset-navy-950 disabled:pointer-events-none disabled:opacity-50;
+    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-electric-blue px-6 py-3 text-sm font-semibold text-white transition-all duration-200 hover:bg-electric-blue-light hover:shadow-glow active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electric-blue focus-visible:ring-offset-2 focus-visible:ring-offset-navy-950 disabled:pointer-events-none disabled:opacity-50 disabled:active:scale-100;
   }
 
   .btn-secondary {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg border border-surface-border bg-surface-card px-6 py-3 text-sm font-semibold text-white transition-all duration-200 hover:bg-surface-hover hover:border-electric-blue focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electric-blue focus-visible:ring-offset-2 focus-visible:ring-offset-navy-950 disabled:pointer-events-none disabled:opacity-50;
+    @apply inline-flex items-center justify-center gap-2 rounded-lg border border-surface-border bg-surface-card px-6 py-3 text-sm font-semibold text-white transition-all duration-200 hover:bg-surface-hover hover:border-electric-blue active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electric-blue focus-visible:ring-offset-2 focus-visible:ring-offset-navy-950 disabled:pointer-events-none disabled:opacity-50 disabled:active:scale-100;
   }
 
   .btn-accent {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-accent-green px-6 py-3 text-sm font-semibold text-navy-950 transition-all duration-200 hover:bg-accent-green-dim hover:shadow-glow-green focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-green focus-visible:ring-offset-2 focus-visible:ring-offset-navy-950 disabled:pointer-events-none disabled:opacity-50;
+    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-accent-green px-6 py-3 text-sm font-semibold text-navy-950 transition-all duration-200 hover:bg-accent-green-dim hover:shadow-glow-green active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-green focus-visible:ring-offset-2 focus-visible:ring-offset-navy-950 disabled:pointer-events-none disabled:opacity-50 disabled:active:scale-100;
   }
 
   .card {
     @apply rounded-xl border border-surface-border bg-surface-card p-6 shadow-card transition-shadow duration-200 hover:shadow-card-hover;
+  }
+
+  /* For cards that are themselves a link/button — adds a lift + border glow
+     so hover feedback matches the affordance. Do not apply to static/display-only cards. */
+  .card-interactive {
+    @apply card cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:border-electric-blue/30 hover:shadow-card-hover;
+  }
+
+  .card-interactive-accent {
+    @apply card cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:border-accent-green/30 hover:shadow-card-hover;
   }
 
   .input {
@@ -105,13 +115,35 @@
   .animation-delay-400 {
     animation-delay: 400ms;
   }
+
+  /* Loading placeholder — pairs with a fixed-size wrapper to avoid layout shift */
+  .skeleton {
+    @apply animate-pulse rounded-lg bg-surface-hover;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
+  /* Entrance/decorative motion is removed entirely. Loading indicators
+     (animate-pulse, animate-pulse-slow, animate-spin) keep running —
+     they communicate active status, not decoration. */
   .animate-fade-in,
   .animate-slide-up {
     animation: none !important;
     opacity: 1 !important;
+    transform: none !important;
+  }
+
+  .card-interactive,
+  .btn-primary,
+  .btn-secondary,
+  .btn-accent {
+    transition: none !important;
+  }
+
+  .card-interactive:hover,
+  .btn-primary:active,
+  .btn-secondary:active,
+  .btn-accent:active {
     transform: none !important;
   }
 }

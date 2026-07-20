@@ -28,7 +28,7 @@ export default function ForgotPasswordPage() {
     setServerError('')
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(data.email, {
-        redirectTo: `${window.location.origin}/auth/reset-password`,
+        redirectTo: `${window.location.origin}/auth/callback?next=/auth/reset-password`,
       })
       if (error) throw error
       setSubmitted(true)
@@ -60,8 +60,8 @@ export default function ForgotPasswordPage() {
             <div className="text-5xl mb-4">✉️</div>
             <h2 className="text-xl font-bold text-white mb-3">Reset Email Sent</h2>
             <p className="text-sm text-slate-400 mb-6">
-              If an account exists for that email, you'll receive a password reset link shortly.
-              Check your spam folder if you don't see it.
+              If an account exists for that email, you&apos;ll receive a password reset link shortly.
+              Check your spam folder if you don&apos;t see it.
             </p>
             <Link href="/login" className="btn-secondary w-full justify-center">
               Back to Sign In
