@@ -6,6 +6,7 @@ import {
 } from 'lucide-react'
 import { SafetyDisclaimer } from '@/components/ui/SafetyDisclaimer'
 import { createClient } from '@/lib/supabase/server'
+import { calculateDeliveryScore } from '@/lib/utils'
 
 // ── Hero ──────────────────────────────────────────────────────
 
@@ -31,7 +32,7 @@ function Hero() {
 
         {/* Subtext */}
         <p className="mt-6 max-w-md text-base text-slate-400 leading-relaxed">
-          Data-driven biomechanics analysis that shows you what&apos;s working, what&apos;s not, and how to throw better.
+          Expert-reviewed video feedback that shows what&apos;s working, what to improve, and what to work on next.
         </p>
 
         {/* CTAs */}
@@ -48,7 +49,7 @@ function Hero() {
         <div className="mt-14 flex flex-wrap gap-6">
           {[
             { icon: <TrendingUp className="h-4 w-4" />, label: 'DATA-DRIVEN', sub: 'Objective insights' },
-            { icon: <Target className="h-4 w-4" />, label: 'BIOMECHANICS', sub: 'Deeper understanding' },
+            { icon: <Target className="h-4 w-4" />, label: 'MECHANICS', sub: 'Deeper understanding' },
             { icon: <Zap className="h-4 w-4" />, label: 'PERFORMANCE', sub: 'Better results' },
           ].map(({ icon, label, sub }) => (
             <div key={label} className="flex items-center gap-2.5">
@@ -124,7 +125,7 @@ function HowItWorks() {
       step: '04',
       icon: <FileBarChart2 className="h-6 w-6" />,
       title: 'Receive Your Report',
-      description: 'Your expert reviewer analyzes your delivery frame-by-frame and delivers a full report, voice-over video, drills, and a eight-week focus plan.',
+      description: 'Your expert reviewer analyzes your delivery frame-by-frame and delivers a full report, voice-over video, drills, and an eight-week focus plan.',
     },
   ]
 
@@ -531,6 +532,7 @@ type HomeCategory = { category: string; score: number; strength?: string }
 
 function AuthenticatedHome({ firstName, latest, activeOrders }: { firstName: string; latest: any; activeOrders: number }) {
   const categories = (latest?.category_scores ?? []) as HomeCategory[]
+  const deliveryScore = calculateDeliveryScore(categories, latest?.delivery_score)
   const plan = Array.isArray(latest?.training_plans) ? latest.training_plans[0] : latest?.training_plans
   const weekOne = plan?.weeks?.[0]
   return (
@@ -539,12 +541,12 @@ function AuthenticatedHome({ firstName, latest, activeOrders }: { firstName: str
         <div className="overflow-hidden rounded-3xl border border-electric-blue/20 bg-gradient-to-br from-navy-800 via-navy-900 to-navy-950 p-6 shadow-card sm:p-10">
           <div className="flex flex-col justify-between gap-8 lg:flex-row lg:items-end">
             <div><p className="text-xs font-bold uppercase tracking-[0.22em] text-electric-blue-light">Your Pitch Nav home</p><h1 className="mt-3 text-4xl font-black text-white sm:text-6xl">Welcome back, {firstName}.</h1><p className="mt-3 max-w-2xl text-slate-400">Your latest scores, video feedback, velocity estimates, and weekly plan are collected here.</p></div>
-            <div className="flex flex-wrap gap-3"><Link href="/dashboard" className="btn-primary"><LayoutDashboard className="h-4 w-4" /> Full Dashboard</Link><Link href="/dashboard/motion-lab" className="btn-secondary"><Activity className="h-4 w-4" /> Motion Lab</Link></div>
+            <div className="flex flex-wrap gap-3"><Link href="/dashboard" className="btn-primary"><LayoutDashboard className="h-4 w-4" /> Full Dashboard</Link><Link href="/dashboard/motion-lab" className="btn-secondary"><Activity className="h-4 w-4" /> Video Review</Link></div>
           </div>
         </div>
 
         <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="card"><p className="text-xs uppercase tracking-widest text-slate-500">Overall score</p><p className="mt-2 text-4xl font-black text-white">{latest?.delivery_score ?? '—'}<span className="text-lg text-electric-blue-light">/30</span></p></div>
+          <div className="card"><p className="text-xs uppercase tracking-widest text-slate-500">Overall score</p><p className="mt-2 text-4xl font-black text-white">{deliveryScore ?? '—'}<span className="text-lg text-electric-blue-light">/30</span></p></div>
           <div className="card"><p className="text-xs uppercase tracking-widest text-slate-500">Velocity estimate</p><p className="mt-2 text-3xl font-black text-white">{latest?.velocity_estimate_low != null ? `${Math.round(latest.velocity_estimate_low)}–${Math.round(latest.velocity_estimate_high)} mph` : '—'}</p><p className="mt-1 text-xs text-slate-500">Video-estimated; radar remains verified</p></div>
           <div className="card"><p className="text-xs uppercase tracking-widest text-slate-500">Current plan</p><p className="mt-2 text-3xl font-black text-white">{plan?.duration_weeks ? `${plan.duration_weeks} weeks` : '—'}</p><p className="mt-1 text-xs text-slate-500">Monday–Sunday calendar</p></div>
           <div className="card"><p className="text-xs uppercase tracking-widest text-slate-500">Active submissions</p><p className="mt-2 text-4xl font-black text-white">{activeOrders}</p><p className="mt-1 text-xs text-slate-500">Securely saved</p></div>
@@ -557,7 +559,7 @@ function AuthenticatedHome({ firstName, latest, activeOrders }: { firstName: str
             <Link href={`/dashboard/feedback/${latest.id}`} className="btn-accent mt-6">View Full Feedback <ArrowRight className="h-4 w-4" /></Link>
           </section>
           <section className="card"><CalendarDays className="h-7 w-7 text-accent-green" /><p className="mt-4 text-xs font-bold uppercase tracking-widest text-accent-green">This week</p><h2 className="mt-1 text-xl font-black text-white">{weekOne?.priority ?? 'Plan ready after analysis'}</h2><div className="mt-5 space-y-3">{weekOne?.days?.slice(0, 3).map((day: any) => <div key={day.day} className="rounded-lg bg-navy-950 p-3"><p className="text-xs font-bold text-white">{day.day} · {day.focus}</p><p className="mt-1 line-clamp-2 text-xs text-slate-500">{day.work}</p></div>)}</div><Link href={`/dashboard/feedback/${latest.id}`} className="mt-5 inline-flex text-sm font-semibold text-electric-blue-light">Open full calendar <ArrowRight className="ml-1 h-4 w-4" /></Link></section>
-        </div> : <section className="card mt-8 py-12 text-center"><Activity className="mx-auto h-10 w-10 text-electric-blue-light" /><h2 className="mt-4 text-2xl font-black text-white">Run your first Motion Lab analysis</h2><p className="mx-auto mt-2 max-w-lg text-slate-400">Analyze a submitted pitching video to create your score breakdown, phase screenshots, velocity estimate, and Monday–Sunday plan.</p><Link href="/dashboard/motion-lab" className="btn-primary mt-6">Open Motion Lab <ArrowRight className="h-4 w-4" /></Link></section>}
+        </div> : <section className="card mt-8 py-12 text-center"><Activity className="mx-auto h-10 w-10 text-electric-blue-light" /><h2 className="mt-4 text-2xl font-black text-white">Start your first pitching analysis</h2><p className="mx-auto mt-2 max-w-lg text-slate-400">Submit a side-view pitching video to receive your score breakdown, key positions, feedback, and weekly plan.</p><Link href="/start-analysis" className="btn-primary mt-6">Start Analysis <ArrowRight className="h-4 w-4" /></Link></section>}
       </section>
     </main>
   )

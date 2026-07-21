@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { resend } from '@/lib/resend'
+import { isResendConfigured, resend } from '@/lib/resend'
 
 export async function POST(req: NextRequest) {
   const body = await req.json()
@@ -22,6 +22,10 @@ export async function POST(req: NextRequest) {
 
   if (message.length > 5000) {
     return NextResponse.json({ error: 'Message too long.' }, { status: 400 })
+  }
+
+  if (!isResendConfigured) {
+    return NextResponse.json({ error: 'Email service is temporarily unavailable.' }, { status: 503 })
   }
 
   try {

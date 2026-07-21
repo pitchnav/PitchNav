@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/server'
-import { resend } from '@/lib/resend'
+import { isResendConfigured, resend } from '@/lib/resend'
 
 export async function POST(req: NextRequest) {
+  if (!isResendConfigured) {
+    return NextResponse.json({ error: 'Email service is not configured.' }, { status: 503 })
+  }
+
   // Verify caller is an admin
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()

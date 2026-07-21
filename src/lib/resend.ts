@@ -1,7 +1,10 @@
 import { Resend } from 'resend'
 
-// Server-side only — never import on the client
-export const resend = new Resend(process.env.RESEND_API_KEY)
+// Server-side only — never import on the client. A placeholder prevents builds
+// from failing before deployment variables are available; sends remain blocked.
+const resendApiKey = process.env.RESEND_API_KEY?.trim()
+export const isResendConfigured = Boolean(resendApiKey)
+export const resend = new Resend(resendApiKey || 're_missing_configuration')
 
 const FROM = process.env.RESEND_FROM_EMAIL ?? 'Pitch Nav <noreply@pitchnav.com>'
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://pitchnav.com'
@@ -15,6 +18,11 @@ interface SendEmailOptions {
 }
 
 async function sendEmail({ to, subject, html, orderId, userId }: SendEmailOptions) {
+  if (!isResendConfigured) {
+    console.error('[Resend] RESEND_API_KEY is not configured.')
+    return { success: false, error: 'Email service is not configured.', resendId: null }
+  }
+
   try {
     const { data, error } = await resend.emails.send({
       from: FROM,

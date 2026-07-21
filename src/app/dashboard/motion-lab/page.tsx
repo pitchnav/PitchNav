@@ -4,7 +4,7 @@ import { MotionAnalysisStudio } from '@/components/analysis/MotionAnalysisStudio
 import { createClient } from '@/lib/supabase/server'
 
 export const metadata: Metadata = {
-  title: 'Motion Lab',
+  title: 'Video Review',
   description: 'Create an estimated skeleton overlay and coaching-oriented joint-angle visualization from pitching video.',
 }
 

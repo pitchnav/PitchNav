@@ -85,52 +85,81 @@ function buildCategoryFeedback(frames: FrameMetrics[], summary: ClipSummary): Ca
     if (valid.length < 2) return 0
     return Math.max(...valid) - Math.min(...valid)
   }
-  const quality = summary.averageConfidence >= 0.8 ? 'High' : summary.averageConfidence >= 0.6 ? 'Moderate' : 'Low'
+  const quality: CategoryFeedback['confidence'] =
+    summary.averageConfidence >= 0.8 ? 'High' : summary.averageConfidence >= 0.6 ? 'Moderate' : 'Low'
   const peak = summary.peakLegLiftTime
   const stride = summary.widestStrideTime
   const sequenceGap = peak !== null && stride !== null ? stride - peak : null
   const trunkSpread = spread(frames.map((frame) => frame.trunkTilt))
   const kneeSpread = spread(frames.filter((frame) => stride === null || frame.time >= stride).map((frame) => frame.leadKnee))
   const elbowSpread = spread(frames.map((frame) => frame.throwingElbow))
-  const separationSpread = spread(frames.map((frame) => frame.hipShoulderSeparation))
-  const score = (value: number, good: number, fair: number) => value <= good ? 5 : value <= fair ? 4 : value <= fair * 1.5 ? 3 : value <= fair * 2 ? 2 : 1
+  const score = (value: number, good: number, fair: number) =>
+    value <= good ? 5 : value <= fair ? 4 : value <= fair * 1.5 ? 3 : value <= fair * 2 ? 2 : 1
 
   return [
     {
-      category: 'Direction', score: 3, confidence: 'Low',
-      strength: 'The full stride remained visible for a directional checkpoint.',
-      development: 'Treat direction as limited-confidence from a single side view and have staff confirm visible drift before changing mechanics.',
-      evidence: 'A single side-view 2D clip cannot reliably determine plate-line direction; this neutral score requires staff confirmation.',
+      category: 'Direction',
+      score: 3,
+      confidence: 'Low',
+      strength: 'The full stride stayed visible from leg lift through finish.',
+      development: 'Use this as a starting point. A coach should confirm any drift before changing direction work.',
+      evidence: 'This side view gives a limited look at movement toward the target.',
     },
     {
-      category: 'Lower-Half Sequencing', score: sequenceGap !== null && sequenceGap > 0 ? 4 : 2, confidence: quality,
-      strength: sequenceGap !== null && sequenceGap > 0 ? 'Peak leg lift was detected before the widest-stride candidate.' : 'The lower half remained visible through the delivery.',
-      development: sequenceGap !== null && sequenceGap > 0 ? 'Preserve this order as throwing intent increases.' : 'Capture a clearer full-body clip so leg-lift and stride timing can be separated.',
-      evidence: sequenceGap === null ? 'Candidate event timing was incomplete.' : `Detected candidate timing gap: ${sequenceGap.toFixed(2)} seconds.`,
+      category: 'Lower-Half Sequencing',
+      score: sequenceGap !== null && sequenceGap > 0 ? 4 : 2,
+      confidence: quality,
+      strength: sequenceGap !== null && sequenceGap > 0
+        ? 'Peak leg lift happened before the stride reached its widest point.'
+        : 'The lower half stayed visible through the delivery.',
+      development: sequenceGap !== null && sequenceGap > 0
+        ? 'Keep this sequence as intensity increases.'
+        : 'Record a clear full-body pitch so leg lift and stride timing can be compared.',
+      evidence: sequenceGap === null
+        ? 'The key timing points were not clear enough in this clip.'
+        : `Time from peak leg lift to widest stride: ${sequenceGap.toFixed(2)} seconds.`,
     },
     {
-      category: 'Upper-Half Timing', score: score(elbowSpread, 35, 65), confidence: quality,
-      strength: 'The throwing shoulder, elbow, and wrist were visible enough to track elbow-angle change.',
-      development: elbowSpread > 65 ? 'Review whether arm action is arriving consistently around lead-foot contact.' : 'Maintain smooth arm timing without forcing a fixed elbow angle.',
-      evidence: `Observed projected throwing-elbow range: ${Math.round(elbowSpread)}°.`,
+      category: 'Upper-Half Timing',
+      score: score(elbowSpread, 35, 65),
+      confidence: quality,
+      strength: 'The throwing shoulder, elbow, and wrist stayed visible through the arm action.',
+      development: elbowSpread > 65
+        ? 'Review whether the arm arrives consistently near lead-foot contact.'
+        : 'Keep the arm action smooth without forcing a fixed elbow position.',
+      evidence: `Estimated throwing-elbow range: ${Math.round(elbowSpread)}°.`,
     },
     {
-      category: 'Front-Side Stability', score: score(kneeSpread, 18, 35), confidence: quality,
-      strength: kneeSpread <= 35 ? 'Lead-knee motion was comparatively stable after the widest-stride candidate.' : 'The lead leg stayed visible through the post-stride portion.',
-      development: kneeSpread > 35 ? 'Review lead-leg control from contact through finish; avoid forcing a locked knee.' : 'Keep the lead leg stable while allowing a natural, pain-free finish.',
-      evidence: `Post-stride projected lead-knee range: ${Math.round(kneeSpread)}°.`,
+      category: 'Front-Side Stability',
+      score: score(kneeSpread, 18, 35),
+      confidence: quality,
+      strength: kneeSpread <= 35
+        ? 'Lead-knee movement stayed controlled after the stride opened.'
+        : 'The lead leg stayed visible through the finish.',
+      development: kneeSpread > 35
+        ? 'Review lead-leg control from foot contact through finish.'
+        : 'Keep the lead leg stable while allowing a natural, pain-free finish.',
+      evidence: `Estimated lead-knee range after stride: ${Math.round(kneeSpread)}°.`,
     },
     {
-      category: 'Posture', score: score(trunkSpread, 12, 25), confidence: quality,
-      strength: trunkSpread <= 25 ? 'Trunk-tilt change remained controlled in this clip.' : 'The torso stayed detectable through the delivery.',
-      development: trunkSpread > 25 ? 'Review when trunk tilt increases and whether the head leaves the body’s center line.' : 'Repeat the same posture pattern at game intent.',
-      evidence: `Observed projected trunk-tilt range: ${Math.round(trunkSpread)}°.`,
+      category: 'Posture',
+      score: score(trunkSpread, 12, 25),
+      confidence: quality,
+      strength: trunkSpread <= 25
+        ? 'Trunk tilt stayed controlled in this clip.'
+        : 'The torso stayed visible throughout the delivery.',
+      development: trunkSpread > 25
+        ? 'Review when trunk tilt increases and whether the head stays centered.'
+        : 'Repeat the same posture pattern at game intent.',
+      evidence: `Estimated trunk-tilt range: ${Math.round(trunkSpread)}°.`,
     },
     {
-      category: 'Release Consistency', score: 3, confidence: 'Low',
-      strength: 'The throwing hand remained trackable near the release portion of this pitch.',
-      development: 'Compare multiple pitches or a radar-backed clip before making release-consistency claims.',
-      evidence: `Single-pitch body-pose review; separation variation was ${Math.round(separationSpread)}°. The baseball itself is not reliably tracked.`,
+      category: 'Release Consistency',
+      score: 3,
+      confidence: 'Low',
+      strength: 'The throwing hand stayed visible near release.',
+      development: 'Use several pitches to judge whether the release repeats consistently.',
+      evidence: 'Only one pitch was reviewed. A coach should confirm release consistency across multiple pitches.',
     },
   ]
 }
@@ -144,26 +173,13 @@ function formatTime(value: number | null) {
   return `${value.toFixed(2)}s`
 }
 
-// Supabase's query/storage clients normally throw Error subclasses
-// (PostgrestError, StorageError), but older client versions — and any
-// code that rethrows a raw `{ message, code, details, hint }` object —
-// do not satisfy `instanceof Error`. Collapsing that case to a generic
-// string previously hid the real RLS/permission error from staff trying
-// to diagnose "Could not save this analysis."
+function qualityLabel(value: number) {
+  return value >= 0.8 ? 'High' : value >= 0.6 ? 'Moderate' : 'Limited'
+}
+
 function describeSupabaseError(reason: unknown): string {
-  if (reason && typeof reason === 'object') {
-    const candidate = reason as { message?: unknown; code?: unknown; details?: unknown; hint?: unknown }
-    const message = typeof candidate.message === 'string' && candidate.message ? candidate.message : null
-    if (message) {
-      const parts = [message]
-      if (typeof candidate.code === 'string' && candidate.code) parts.push(`(code ${candidate.code})`)
-      if (typeof candidate.details === 'string' && candidate.details) parts.push(`— ${candidate.details}`)
-      if (typeof candidate.hint === 'string' && candidate.hint) parts.push(`Hint: ${candidate.hint}`)
-      return parts.join(' ')
-    }
-  }
-  if (typeof reason === 'string' && reason) return reason
-  return 'Could not save this analysis. Contact support and share this timestamp so staff can check server logs.'
+  console.error('Motion review save failed', reason)
+  return 'Could not save your review. Please try again.'
 }
 
 function calculateMetrics(
@@ -233,9 +249,9 @@ function drawAnatomicalSkeleton(
   const hips = [point(23), point(24)]
   const shoulderMid = midpoint(shoulders[0], shoulders[1])
   const hipMid = midpoint(hips[0], hips[1])
-  const scale = Math.max(2.2, width / 420)
+  const scale = Math.max(0.75, Math.min(1.35, Math.min(width, height) / 650))
 
-  const bone = (startIndex: number, endIndex: number, thickness = 1.8) => {
+  const bone = (startIndex: number, endIndex: number, thickness = 1) => {
     const start = point(startIndex)
     const end = point(endIndex)
     if (Math.min(start.visibility, end.visibility) < 0.45) return
@@ -244,22 +260,14 @@ function drawAnatomicalSkeleton(
     const length = Math.max(1, Math.hypot(end.x - start.x, end.y - start.y))
     const normalX = -(end.y - start.y) / length
     const normalY = (end.x - start.x) / length
-    const separation = Math.min(scale * thickness * 0.62, length * 0.045)
-    context.shadowBlur = 1.5
-    context.shadowColor = 'rgba(125, 211, 252, 0.28)'
-    context.strokeStyle = '#eef2f7'
-    context.lineWidth = Math.max(1, scale * 0.4)
+    const separation = Math.min(scale * thickness * 0.75, length * 0.022)
+    context.strokeStyle = 'rgba(226, 232, 240, 0.94)'
+    context.lineWidth = Math.max(0.75, scale * 0.72)
     for (const side of [-1, 1]) {
       context.beginPath()
       context.moveTo(start.x + normalX * separation * side, start.y + normalY * separation * side)
       context.lineTo(end.x + normalX * separation * side, end.y + normalY * separation * side)
       context.stroke()
-    }
-    context.fillStyle = '#f8fafc'
-    for (const endpoint of [start, end]) {
-      context.beginPath()
-      context.ellipse(endpoint.x, endpoint.y, scale * 0.48, scale * 0.34, Math.atan2(end.y - start.y, end.x - start.x), 0, Math.PI * 2)
-      context.fill()
     }
     context.restore()
   }
@@ -268,13 +276,11 @@ function drawAnatomicalSkeleton(
     const p = point(index)
     if (p.visibility < 0.45) return
     context.save()
-    context.shadowBlur = 3
-    context.shadowColor = 'rgba(56,189,248,.45)'
-    context.fillStyle = '#f8fafc'
-    context.strokeStyle = '#7dd3fc'
-    context.lineWidth = Math.max(0.7, scale * 0.18)
+    context.fillStyle = 'rgba(8, 15, 27, 0.9)'
+    context.strokeStyle = 'rgba(125, 211, 252, 0.9)'
+    context.lineWidth = Math.max(0.7, scale * 0.8)
     context.beginPath()
-    context.arc(p.x, p.y, scale * radius, 0, Math.PI * 2)
+    context.arc(p.x, p.y, Math.max(1.4, scale * radius * 1.35), 0, Math.PI * 2)
     context.fill()
     context.stroke()
     context.restore()
@@ -294,14 +300,10 @@ function drawAnatomicalSkeleton(
     context.save()
     context.translate(headCenter.x, headCenter.y)
     context.rotate(Math.atan2(earRight.y - earLeft.y, earRight.x - earLeft.x))
-    context.shadowBlur = 14
-    context.shadowColor = '#38bdf8'
-    context.fillStyle = 'rgba(226, 232, 240, 0.18)'
-    context.strokeStyle = '#f8fafc'
-    context.lineWidth = scale * 0.7
+    context.strokeStyle = 'rgba(226, 232, 240, 0.95)'
+    context.lineWidth = Math.max(0.9, scale * 0.95)
     context.beginPath()
     context.ellipse(0, 0, headWidth / 2, headHeight / 2, 0, 0, Math.PI * 2)
-    context.fill()
     context.stroke()
     context.beginPath()
     context.moveTo(-headWidth * 0.32, headHeight * 0.22)
@@ -315,11 +317,9 @@ function drawAnatomicalSkeleton(
     const neckBottom = shoulderMid
     const neckTop = { x: headCenter.x, y: headCenter.y + distance(shoulderMid, hipMid) * 0.1, visibility: headCenter.visibility }
     context.save()
-    context.strokeStyle = '#f8fafc'
+    context.strokeStyle = 'rgba(226, 232, 240, 0.92)'
     context.lineCap = 'round'
-    context.lineWidth = scale * 1.5
-    context.shadowBlur = 12
-    context.shadowColor = '#38bdf8'
+    context.lineWidth = Math.max(0.85, scale * 0.9)
     context.beginPath()
     context.moveTo(neckTop.x, neckTop.y)
     context.lineTo(neckBottom.x, neckBottom.y)
@@ -334,12 +334,10 @@ function drawAnatomicalSkeleton(
     context.save()
     context.translate((shoulderMid.x + hipMid.x) / 2, (shoulderMid.y + hipMid.y) / 2)
     context.rotate(torsoAngle)
-    context.strokeStyle = 'rgba(248, 250, 252, 0.92)'
-    context.lineWidth = scale * 0.5
-    context.shadowBlur = 8
-    context.shadowColor = '#38bdf8'
-    for (let rib = 0; rib < 5; rib += 1) {
-      const y = -torsoLength * 0.28 + rib * torsoLength * 0.12
+    context.strokeStyle = 'rgba(203, 213, 225, 0.78)'
+    context.lineWidth = Math.max(0.65, scale * 0.58)
+    for (let rib = 0; rib < 4; rib += 1) {
+      const y = -torsoLength * 0.25 + rib * torsoLength * 0.13
       const taper = 1 - Math.abs(rib - 2) * 0.09
       context.beginPath()
       context.ellipse(0, y, shoulderWidth * 0.42 * taper, torsoLength * 0.1, 0, 0, Math.PI * 2)
@@ -349,18 +347,14 @@ function drawAnatomicalSkeleton(
 
     // Pelvis bowl.
     context.save()
-    context.fillStyle = 'rgba(226, 232, 240, 0.18)'
-    context.strokeStyle = '#f8fafc'
-    context.lineWidth = scale * 0.55
-    context.shadowBlur = 10
-    context.shadowColor = '#38bdf8'
+    context.strokeStyle = 'rgba(226, 232, 240, 0.9)'
+    context.lineWidth = Math.max(0.75, scale * 0.72)
     const pelvisHalfWidth = Math.max(distance(hips[0], hips[1]) / 2, torsoLength * 0.13)
     context.beginPath()
     context.moveTo(hipMid.x - pelvisHalfWidth, hipMid.y - torsoLength * 0.025)
     context.quadraticCurveTo(hipMid.x, hipMid.y + torsoLength * 0.18, hipMid.x + pelvisHalfWidth, hipMid.y - torsoLength * 0.025)
     context.lineTo(hipMid.x, hipMid.y + torsoLength * 0.08)
     context.closePath()
-    context.fill()
     context.stroke()
     context.restore()
   }
@@ -373,11 +367,11 @@ function drawAnatomicalSkeleton(
 
   // Hands and fingers.
   ;[[15, 17], [15, 19], [15, 21], [17, 19], [16, 18], [16, 20], [16, 22], [18, 20]].forEach(
-    ([start, end]) => bone(start, end, 0.85)
+    ([start, end]) => bone(start, end, 0.55)
   )
   // Feet, heels and toes.
   ;[[27, 29], [29, 31], [27, 31], [28, 30], [30, 32], [28, 32]].forEach(
-    ([start, end]) => bone(start, end, 1.05)
+    ([start, end]) => bone(start, end, 0.65)
   )
 }
 
@@ -388,7 +382,7 @@ function drawScientificMound(
 ) {
   // The export pose is normalized to this fixed stage. Anchoring the floor to
   // noisy foot landmarks made the mound jump and the athlete appear to float.
-  const footX = width * 0.56
+  const footX = width * 0.50
   const footY = height * 0.80
 
   context.save()
@@ -399,16 +393,18 @@ function drawScientificMound(
   context.fillStyle = ground
   context.fillRect(0, footY - height * 0.03, width, height - footY + height * 0.03)
 
-  // Fixed perspective measurement grid for a repeatable scientific view.
+  // Orthographic side-view measurement grid. Keeping the lines parallel avoids
+  // the forced-perspective look that made the athlete appear to float.
   context.strokeStyle = 'rgba(56, 189, 248, 0.16)'
   context.lineWidth = Math.max(0.7, width / 1500)
-  for (let row = 0; row <= 7; row += 1) {
-    const t = row / 7
-    const y = footY + Math.pow(t, 1.55) * (height - footY)
+  for (let row = 0; row <= 6; row += 1) {
+    const t = row / 6
+    const y = footY + t * (height - footY)
     context.beginPath(); context.moveTo(0, y); context.lineTo(width, y); context.stroke()
   }
-  for (let column = -9; column <= 9; column += 1) {
-    context.beginPath(); context.moveTo(footX, footY); context.lineTo(footX + column * width * 0.12, height); context.stroke()
+  for (let column = 0; column <= 16; column += 1) {
+    const x = (column / 16) * width
+    context.beginPath(); context.moveTo(x, footY); context.lineTo(x, height); context.stroke()
   }
 
   // Side-view mound profile. The plateau and downslope run left-to-right to
@@ -468,7 +464,7 @@ function createExportFrameTransform(landmarks: NormalizedLandmark[]): ExportFram
 }
 
 function framePoseForExport(landmarks: NormalizedLandmark[], transform: ExportFrameTransform): NormalizedLandmark[] {
-  const targetCenterX = 0.56
+  const targetCenterX = 0.50
   const targetFootY = 0.79
   return landmarks.map((point) => ({
     ...point,
@@ -749,7 +745,7 @@ export function MotionAnalysisStudio({
         context.save()
         context.fillStyle = 'rgba(148,163,184,.82)'
         context.font = `500 ${Math.max(10, width / 92)}px sans-serif`
-        context.fillText('Scientific 2D pose reconstruction · not a 3D or laboratory model', width * 0.035, height * 0.135)
+        context.fillText('Side-view motion overlay · video-based coaching view', width * 0.035, height * 0.135)
         context.restore()
         if (watermarkRef.current) {
           const logoWidth = width * 0.24
@@ -1198,8 +1194,8 @@ export function MotionAnalysisStudio({
         ...phase,
         storage_path: path,
         confidence_note: phase.key === 'peak_leg_lift' || phase.key === 'finish'
-          ? 'Video-based candidate selected from visible pose geometry.'
-          : 'Estimated phase frame; a coach must confirm the exact event.',
+          ? 'Clear frame selected for coach review.'
+          : 'Frame selected for coach review.',
       })
     }
     video.currentTime = originalTime
@@ -1258,12 +1254,12 @@ export function MotionAnalysisStudio({
       const categoryFeedback = buildCategoryFeedback(samplesRef.current, summary)
       const overallScore = categoryFeedback.reduce((total, category) => total + category.score, 0)
       const immediateStrengths = [
-        summary.averageConfidence >= 0.7 ? 'Consistent full-body landmark visibility supports repeatable frame review.' : 'A complete delivery was captured for frame-by-frame review.',
-        summary.peakLegLiftTime !== null ? 'Peak leg lift was identified as a repeatable comparison checkpoint.' : 'The delivery can be reviewed through the visible movement sequence.',
+        summary.averageConfidence >= 0.7 ? 'Your full delivery stays visible through the pitch.' : 'Your full delivery is visible for review.',
+        summary.peakLegLiftTime !== null ? 'Your leg lift gives you a clear checkpoint to repeat.' : 'Your delivery shows a clear start-to-finish sequence.',
       ]
       const immediatePriorities = [
-        summary.averageConfidence < 0.7 ? 'Improve lighting and full-body framing to raise measurement confidence.' : 'Compare posture and direction at lead-foot contact across future clips.',
-        'Use the same camera angle and intensity during the follow-up recording.',
+        summary.averageConfidence < 0.7 ? 'Use brighter lighting and keep your full body centered next time.' : 'Build a stable direction into landing and finish.',
+        'Use the same camera angle and throwing effort for your follow-up video.',
       ]
 
       let analysis: { id: string }
@@ -1422,19 +1418,19 @@ export function MotionAnalysisStudio({
   ], [metrics])
 
   return (
-    <div className="mx-auto max-w-6xl space-y-8">
+    <div className="mx-auto w-full max-w-6xl min-w-0 space-y-6 overflow-x-hidden px-3 sm:space-y-8 sm:px-4 animate-fade-in">
       {autoProcess && (
         <section className="rounded-2xl border border-electric-blue/35 bg-electric-blue/10 p-6" aria-live="polite">
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-electric-blue-light">Automatic six-phase processing</p>
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-electric-blue-light">Preparing your review</p>
           <h1 className="mt-2 text-2xl font-black text-white">
-            {automaticStage === 'loading' && 'Loading your secure video…'}
-            {automaticStage === 'analyzing' && 'Analyzing the trimmed delivery…'}
-            {automaticStage === 'saving' && 'Saving all six phase frames…'}
-            {automaticStage === 'complete' && 'Analysis submitted for staff review'}
-            {automaticStage === 'error' && 'Let’s give that another try'}
+            {automaticStage === 'loading' && 'Loading your video…'}
+            {automaticStage === 'analyzing' && 'Reviewing your selected pitch…'}
+            {automaticStage === 'saving' && 'Preparing your report…'}
+            {automaticStage === 'complete' && 'Your pitch was sent for review'}
+            {automaticStage === 'error' && 'Please try that again'}
           </h1>
           <p className="mt-2 max-w-3xl text-sm leading-relaxed text-slate-300">
-            Keep this page open while Pitch Nav prepares your six phase screenshots, scores, and plan. You won&apos;t need to run this video through Motion Lab again — a coach will verify everything before it&apos;s released to you.
+            Keep this page open while Pitch Nav prepares your feedback. A coach will check it before it is released.
           </p>
           {automaticStage === 'error' && (
             <button
@@ -1448,17 +1444,16 @@ export function MotionAnalysisStudio({
                 if (summary) setSummary(null)
               }}
             >
-              Retry automatic processing
+              Try again
             </button>
           )}
         </section>
       )}
       <div>
-        <p className="text-xs font-bold uppercase tracking-[0.2em] text-electric-blue-light">Pitch Nav Motion Lab</p>
-        <h1 className="mt-2 text-3xl font-black text-white sm:text-4xl">Skeleton Video Analysis</h1>
+        <p className="text-xs font-bold uppercase tracking-[0.2em] text-electric-blue-light">Pitch Nav Video Review</p>
+        <h1 className="mt-2 text-3xl font-black text-white sm:text-4xl">Side-View Motion Review</h1>
         <p className="mt-3 max-w-3xl text-slate-400">
-          Generate a private, on-device skeleton overlay and coaching-oriented 2D joint-angle estimates.
-          The video stays in your browser during this preview analysis.
+          Review your pitch with a clean motion overlay and easy-to-read movement estimates.
         </p>
       </div>
 
@@ -1466,8 +1461,7 @@ export function MotionAnalysisStudio({
         <div className="flex items-start gap-3">
           <AlertTriangle className="mt-0.5 h-5 w-5 flex-none text-yellow-400" />
           <p>
-            <strong>Estimated—not laboratory or medical measurements.</strong> A single camera cannot directly measure
-            muscle activation, joint loading, depth, or clinical injury risk. Yellow joints indicate reduced landmark visibility.
+            <strong>Video-based coaching estimates only.</strong> These results are not medical measurements. A Pitch Nav coach reviews them before release.
           </p>
         </div>
       </div>
@@ -1476,18 +1470,18 @@ export function MotionAnalysisStudio({
         <div className="flex items-start gap-3">
           <Video className="mt-1 h-6 w-6 flex-none text-electric-blue-light" />
           <div>
-            <h2 className="text-xl font-bold text-white">Calibrated side-view setup</h2>
-            <p className="mt-1 text-sm text-slate-400">These details help staff decide whether automatic, video-based velocity processing is eligible. Customers do not select calibration or baseball points.</p>
+            <h2 className="text-xl font-bold text-white">Side-view recording setup</h2>
+            <p className="mt-1 text-sm text-slate-400">Use these steps for the clearest review.</p>
           </div>
         </div>
         <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {[
-            'Place the camera exactly 15 ft from the marked reference point.',
-            'Set the center of the phone lens exactly 6 ft above the ground.',
-            'Aim perpendicular to the target line; keep the phone level and stationary.',
-            'Use landscape orientation, no digital zoom, and strong lighting.',
-            'Record at 240 FPS when supported; 120 FPS is the minimum.',
-            'Place the 8-inch Pitch Nav calibration marker in the same image plane as the visible baseball path.',
+            'Place the camera about 15 feet from the pitcher.',
+            'Set the phone lens about 6 feet high.',
+            'Film from the throwing-arm side and keep the phone still.',
+            'Use landscape mode, no zoom, and good lighting.',
+            'Record at 240 FPS slow motion when possible. 120 FPS is accepted.',
+            'Keep the full body, throwing hand, and landing foot visible.',
           ].map((instruction, index) => (
             <div key={instruction} className="rounded-xl border border-surface-border bg-navy-900 p-4 text-sm text-slate-300">
               <span className="mr-2 font-black text-electric-blue-light">{index + 1}.</span>{instruction}
@@ -1496,16 +1490,16 @@ export function MotionAnalysisStudio({
         </div>
         <label className="mt-5 flex cursor-pointer items-start gap-3 rounded-xl border border-surface-border bg-navy-950 p-4">
           <input type="checkbox" checked={setupConfirmed} onChange={(event) => setSetupConfirmed(event.target.checked)} className="mt-1 h-5 w-5 accent-electric-blue" />
-          <span className="text-sm text-slate-300">I confirm this clip follows the 15-ft distance, 6-ft lens-height, perpendicular alignment, no-zoom, frame-rate, and in-plane marker requirements. Staff will verify eligibility before any video-estimated range is released.</span>
+          <span className="text-sm text-slate-300">I confirm this video follows the setup and shows the full delivery.</span>
         </label>
       </section>
 
       {!fileUrl ? (
         <label className="flex min-h-80 cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-surface-border bg-surface-card p-8 text-center transition hover:border-electric-blue hover:bg-surface-hover">
           <Upload className="h-12 w-12 text-electric-blue-light" />
-          <span className="mt-4 text-lg font-bold text-white">{loadingInitialVideo ? 'Loading the submitted private video…' : 'Choose a pitching video'}</span>
+          <span className="mt-4 text-lg font-bold text-white">{loadingInitialVideo ? 'Loading your video…' : 'Choose a pitching video'}</span>
           <span className="mt-2 max-w-md text-sm text-slate-400">
-            {loadingInitialVideo ? 'Keep this page open. Larger slow-motion videos can take a moment to load securely.' : 'Use a stationary, full-body open-side video. Slow motion at 120 or 240 FPS produces better frame selection.'}
+            {loadingInitialVideo ? 'Keep this page open while your video loads.' : 'Use a stationary, full-body side-view video. Record at 240 FPS slow motion when possible.'}
           </span>
           <span className="mt-4 text-xs text-slate-500">MP4, MOV or WebM · maximum 500 MB</span>
           {!loadingInitialVideo && <input
@@ -1549,7 +1543,7 @@ export function MotionAnalysisStudio({
               />
               {modelStatus === 'loading' && (
                 <div className="absolute inset-0 flex items-center justify-center bg-navy-950/80 text-sm text-white">
-                  Loading pose model…
+                  Preparing video review…
                 </div>
               )}
             </div>
@@ -1581,12 +1575,12 @@ export function MotionAnalysisStudio({
               <div className="flex flex-wrap items-center gap-3">
                 <button type="button" onClick={togglePlayback} className="btn-primary px-4 py-2">
                   {playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-                  {playing ? 'Pause' : 'Play slow motion'}
+                  {playing ? 'Pause' : 'Play'}
                 </button>
                 <button type="button" onClick={() => stepFrame(-1)} className="btn-secondary px-3 py-2" aria-label="Previous frame">← Previous frame</button>
                 <button type="button" onClick={() => stepFrame(1)} className="btn-secondary px-3 py-2" aria-label="Next frame">Next frame →</button>
                 <button type="button" onClick={analyzeFullClip} disabled={analyzing || exporting} className="btn-accent px-4 py-2">
-                  <Activity className="h-4 w-4" /> {analyzing ? 'Analyzing…' : 'Analyze full clip'}
+                  <Activity className="h-4 w-4" /> {analyzing ? 'Reviewing…' : 'Review selected clip'}
                 </button>
                 <label className="btn-secondary cursor-pointer px-4 py-2">
                   <RotateCcw className="h-4 w-4" /> Replace
@@ -1627,13 +1621,13 @@ export function MotionAnalysisStudio({
                 <div key={metric.label} className="rounded-xl border border-surface-border bg-surface-card p-4">
                   <p className="text-xs uppercase tracking-wider text-slate-500">{metric.label}</p>
                   <p className="mt-1 text-2xl font-black text-white">{metric.value}</p>
-                  <p className="mt-1 text-[11px] text-slate-600">2D projected estimate</p>
+                  <p className="mt-1 text-[11px] text-slate-600">Video-based estimate</p>
                 </div>
               ))}
             </div>
             <div className="rounded-xl border border-surface-border bg-navy-900 p-4">
-              <p className="text-xs uppercase tracking-wider text-slate-500">Landmark confidence</p>
-              <p className="mt-1 text-2xl font-black text-white">{metrics ? `${Math.round(metrics.confidence * 100)}%` : '—'}</p>
+              <p className="text-xs uppercase tracking-wider text-slate-500">Video quality</p>
+              <p className="mt-1 text-2xl font-black text-white">{metrics ? qualityLabel(metrics.confidence) : '—'}</p>
             </div>
           </aside>
         </div>
@@ -1646,15 +1640,12 @@ export function MotionAnalysisStudio({
           <div className="flex items-start gap-3">
             <Activity className="mt-1 h-6 w-6 flex-none text-electric-blue-light" />
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-electric-blue-light">Velocity check</p>
-              <h2 className="mt-1 text-xl font-bold text-white">Nothing else for you to do</h2>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-electric-blue-light">Optional velocity check</p>
+              <h2 className="mt-1 text-xl font-bold text-white">Pitch Nav handles this for you</h2>
               <p className="mt-2 max-w-3xl text-sm leading-relaxed text-slate-400">
-                You don&apos;t click any calibration points. Once your video is uploaded, Pitch Nav checks the frame
-                rate, the calibration marker, and the ball tracking, and a coach reviews the result before you see it.
-                If your video doesn&apos;t qualify, no velocity estimate is shown. Radar readings are always labeled
-                separately as verified.
+                If you chose the optional velocity check, Pitch Nav reviews your recording setup and shares a range only when the video is usable.
               </p>
-              <p className="mt-3 text-xs text-slate-500">240 FPS is recommended. 120 FPS is accepted with reduced confidence. 60 FPS is mechanics-only.</p>
+              <p className="mt-3 text-xs text-slate-500">No extra steps are needed on this page.</p>
             </div>
           </div>
         </section>
@@ -1664,9 +1655,9 @@ export function MotionAnalysisStudio({
         <section className="card">
           <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
             <div>
-              <h2 className="text-xl font-bold text-white">Clip summary</h2>
-              <p className="mt-1 text-sm text-slate-400">{summary.frames} accepted samples · {Math.round(summary.averageConfidence * 100)}% average landmark confidence</p>
-              <p className="mt-2 text-xs text-electric-blue-light">Saving the detailed report creates six phase screenshots, category feedback, and every day of your plan. Keep this page open while it finishes; longer clips may take several minutes.</p>
+              <h2 className="text-xl font-bold text-white">Pitch summary</h2>
+              <p className="mt-1 text-sm text-slate-400">{summary.frames} frames reviewed · {qualityLabel(summary.averageConfidence)} video quality</p>
+              <p className="mt-2 text-xs text-electric-blue-light">Keep this page open while your report is prepared.</p>
             </div>
             <button type="button" onClick={exportOverlay} disabled={exporting} className="btn-primary">
               <Download className="h-4 w-4" /> {exporting ? `Rendering at ${playbackSpeed}×…` : `Download skeleton video (${playbackSpeed}×)`}
@@ -1676,25 +1667,25 @@ export function MotionAnalysisStudio({
             <SummaryCard label="Elbow range" value={summary.elbowRange ? `${Math.round(summary.elbowRange[0])}–${Math.round(summary.elbowRange[1])}°` : '—'} />
             <SummaryCard label="Lead-knee range" value={summary.kneeRange ? `${Math.round(summary.kneeRange[0])}–${Math.round(summary.kneeRange[1])}°` : '—'} />
             <SummaryCard label="Trunk-tilt range" value={summary.trunkTiltRange ? `${Math.round(summary.trunkTiltRange[0])}–${Math.round(summary.trunkTiltRange[1])}°` : '—'} />
-            <SummaryCard label="Peak leg-lift candidate" value={formatTime(summary.peakLegLiftTime)} />
-            <SummaryCard label="Widest-stride candidate" value={formatTime(summary.widestStrideTime)} />
+            <SummaryCard label="Peak leg-lift moment" value={formatTime(summary.peakLegLiftTime)} />
+            <SummaryCard label="Widest-stride moment" value={formatTime(summary.widestStrideTime)} />
           </div>
           <p className="mt-5 text-xs leading-relaxed text-slate-500">
-            Candidate events are selected from pose geometry and must be confirmed by a human reviewer. Ball release and maximum external rotation are not automatically asserted because a standard body-pose model does not reliably track the baseball or humeral rotation.
+            A coach checks the key moments and movement estimates before your report is released.
           </p>
           <p className="mt-2 text-xs leading-relaxed text-slate-500">
-            The downloaded visualization uses a dark motion-capture stage and a 2D pose skeleton without the original video background. Keep this tab visible while the full clip renders in real time.
+            The downloaded video shows your motion on a clean side-view stage.
           </p>
           <div className="mt-6 rounded-xl border border-surface-border bg-navy-950 p-4">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
               <label>
-                <span className="label">Development-plan length</span>
+                <span className="label">Training plan</span>
                 <select className="input min-w-52" value={planWeeks} onChange={(event) => setPlanWeeks(Number(event.target.value) as 4 | 8)}>
                   <option value={8}>8-week pitching + strength plan</option>
                 </select>
               </label>
               <button type="button" onClick={saveAnalysisToDashboard} disabled={savingAnalysis} className="btn-accent">
-                {savingAnalysis ? 'Saving securely…' : 'Submit for staff review'}
+                {savingAnalysis ? 'Sending securely…' : 'Send to your coach'}
               </button>
             </div>
             {saveMessage && <p role="status" className="mt-3 text-sm text-slate-300">{saveMessage}</p>}
@@ -1703,9 +1694,9 @@ export function MotionAnalysisStudio({
       )}
 
       <section className="grid gap-4 md:grid-cols-3">
-        <InfoCard icon={<Video className="h-5 w-5" />} title="Private preview" text="Processing runs in this browser. This preview does not upload the selected local file." />
-        <InfoCard icon={<Activity className="h-5 w-5" />} title="Coaching estimates" text="Angles are projected from visible landmarks and include confidence—not clinical certainty." />
-        <InfoCard icon={<AlertTriangle className="h-5 w-5" />} title="Human approval required" text="An analyst should approve event frames, measurements, cues, and any customer-facing report." />
+        <InfoCard icon={<Video className="h-5 w-5" />} title="Private video" text="Your video is protected and available only to you and authorized Pitch Nav staff." />
+        <InfoCard icon={<Activity className="h-5 w-5" />} title="Clear coaching" text="Your report highlights what works and the next priority to improve." />
+        <InfoCard icon={<AlertTriangle className="h-5 w-5" />} title="Coach reviewed" text="A Pitch Nav coach checks the report before it is released." />
       </section>
     </div>
   )

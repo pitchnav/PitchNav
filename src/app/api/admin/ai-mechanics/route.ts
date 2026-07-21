@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient, createClient } from '@/lib/supabase/server'
 import { buildBaseballPerformancePlan, type CategoryAssessment } from '@/lib/performance-plan'
+import { calculateDeliveryScore } from '@/lib/utils'
 
 export const runtime = 'nodejs'
 export const maxDuration = 300
@@ -73,8 +74,12 @@ Deterministic candidates (supporting data only): ${JSON.stringify(analysis.categ
     const output = getOutputText(payload)
     if (!output) return NextResponse.json({ error: 'The AI response did not contain a report.' }, { status: 502 })
     const draft = JSON.parse(output) as { overall_assessment: string; delivery_score: number; strengths: string[]; development_priorities: string[]; biggest_opportunity: Record<string, string>; categories: unknown[]; phase_notes: Array<Record<string, string>> }
+    const deliveryScore = calculateDeliveryScore(
+      draft.categories as Array<{ score?: number | null }>,
+      draft.delivery_score,
+    )
     const notes = new Map(draft.phase_notes.map((phase) => [phase.key, phase]))
-    const { error } = await admin.from('motion_analyses').update({ delivery_score: draft.delivery_score, strengths: draft.strengths, development_priorities: draft.development_priorities, coach_feedback: draft.overall_assessment, category_scores: draft.categories, phase_snapshots: snapshots.map((shot) => ({ ...shot, ...(notes.get(shot.key) ?? {}) })), biggest_opportunity: draft.biggest_opportunity, ai_draft_status: 'ready_for_staff_review', ai_generated_at: new Date().toISOString(), ai_model: model }).eq('id', analysisId)
+    const { error } = await admin.from('motion_analyses').update({ delivery_score: deliveryScore, strengths: draft.strengths, development_priorities: draft.development_priorities, coach_feedback: draft.overall_assessment, category_scores: draft.categories, phase_snapshots: snapshots.map((shot) => ({ ...shot, ...(notes.get(shot.key) ?? {}) })), biggest_opportunity: draft.biggest_opportunity, ai_draft_status: 'ready_for_staff_review', ai_generated_at: new Date().toISOString(), ai_model: model }).eq('id', analysisId)
     if (error) throw error
 
     // Performance members already have a non-empty strength/mobility plan.

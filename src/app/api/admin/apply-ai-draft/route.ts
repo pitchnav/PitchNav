@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient, createClient } from '@/lib/supabase/server'
+import { calculateDeliveryScore } from '@/lib/utils'
 
 export const runtime = 'nodejs'
 export const maxDuration = 60
@@ -42,6 +43,10 @@ export async function POST(request: Request) {
     }
 
     const categories = Array.isArray(analysis.category_scores) ? analysis.category_scores as Array<Record<string, unknown>> : []
+    const deliveryScore = calculateDeliveryScore(
+      categories as Array<{ score?: number | null }>,
+      analysis.delivery_score,
+    )
     const phases = Array.isArray(analysis.phase_snapshots) ? analysis.phase_snapshots as Array<Record<string, unknown>> : []
     const strengths = Array.isArray(analysis.strengths) ? analysis.strengths.slice(0, 3) : []
     const priorities = Array.isArray(analysis.development_priorities) ? analysis.development_priorities.slice(0, 3) : []
@@ -61,10 +66,10 @@ export async function POST(request: Request) {
     const { data: report, error: reportError } = await admin.from('analysis_reports').upsert({
       order_id: orderId,
       analyst_id: user.id,
-      delivery_score: analysis.delivery_score,
+      delivery_score: deliveryScore,
       three_strengths: strengths,
       three_priorities: priorities,
-      main_focus: opportunityText || analysis.coach_feedback || 'AI-assisted draft prepared for staff verification.',
+      main_focus: opportunityText || analysis.coach_feedback || 'Your primary focus will be confirmed in the completed report.',
       secondary_focuses: priorities.slice(1),
       reviewer_velocity_notes: velocityRange,
     }, { onConflict: 'order_id' }).select('id').single()
@@ -103,8 +108,8 @@ export async function POST(request: Request) {
         position,
         storage_path: storagePath,
         reviewer_notes: Number.isFinite(time)
-          ? `AI phase candidate at ${time.toFixed(2)} seconds. Staff visually verified before release.`
-          : 'AI phase candidate. Staff visually verified before release.',
+          ? `Key frame from your delivery at ${time.toFixed(2)} seconds.`
+          : 'Key frame from your delivery.',
         strengths: typeof phase.strength === 'string' ? phase.strength : null,
         development_opportunity: typeof phase.opportunity === 'string' ? phase.opportunity : null,
         coaching_cue: typeof phase.coaching_cue === 'string' ? phase.coaching_cue : null,
@@ -115,6 +120,7 @@ export async function POST(request: Request) {
     }
 
     const { error: analysisUpdateError } = await admin.from('motion_analyses').update({
+      delivery_score: deliveryScore,
       ai_draft_status: 'staff_verified',
       reviewed_by: user.id,
       reviewed_at: new Date().toISOString(),

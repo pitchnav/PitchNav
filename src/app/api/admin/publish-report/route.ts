@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient, createClient } from '@/lib/supabase/server'
 import { sendMotionAnalysisReadyEmail } from '@/lib/resend'
+import { calculateDeliveryScore } from '@/lib/utils'
 
 export const runtime = 'nodejs'
 export const maxDuration = 60
@@ -19,13 +20,17 @@ export async function POST(request: Request) {
 
     const admin = createAdminClient()
     const { data: analysis, error: analysisError } = await admin.from('motion_analyses')
-      .select('id,user_id,status,ai_draft_status,delivery_score,coach_feedback')
+      .select('id,user_id,status,ai_draft_status,delivery_score,category_scores,coach_feedback')
       .eq('id', analysisId)
       .single()
     if (analysisError || !analysis) {
       return NextResponse.json({ error: `Could not load the analysis: ${analysisError?.message ?? 'not found'}` }, { status: 500 })
     }
-    if (!analysis.delivery_score || !analysis.coach_feedback) {
+    const categories = Array.isArray(analysis.category_scores)
+      ? analysis.category_scores as Array<{ score?: number | null }>
+      : []
+    const deliveryScore = calculateDeliveryScore(categories, analysis.delivery_score)
+    if (categories.length < 6 || deliveryScore === null || !analysis.coach_feedback) {
       return NextResponse.json({ error: 'Apply and verify the AI draft before publishing.' }, { status: 409 })
     }
 
@@ -45,13 +50,14 @@ export async function POST(request: Request) {
       reviewed_by: user.id,
       reviewed_at: now,
       published_at: now,
+      delivery_score: deliveryScore,
     }).eq('id', analysisId)
     if (publishAnalysisError) return NextResponse.json({ error: `Could not publish feedback: ${publishAnalysisError.message}` }, { status: 500 })
 
     const { error: planError } = await admin.from('training_plans').update({ published_at: now }).eq('motion_analysis_id', analysisId)
     if (planError) return NextResponse.json({ error: `Feedback was published, but the plan failed: ${planError.message}` }, { status: 500 })
 
-    const { error: reportPublishError } = await admin.from('analysis_reports').update({ published_at: now }).eq('id', report.id)
+    const { error: reportPublishError } = await admin.from('analysis_reports').update({ published_at: now, delivery_score: deliveryScore }).eq('id', report.id)
     if (reportPublishError) return NextResponse.json({ error: `Feedback was published, but the order report failed: ${reportPublishError.message}` }, { status: 500 })
 
     const { error: orderError } = await admin.from('orders').update({ status: 'complete', completed_at: now }).eq('id', orderId)
@@ -74,4 +80,3 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: error instanceof Error ? error.message : 'Could not publish and send the report.' }, { status: 500 })
   }
 }
-

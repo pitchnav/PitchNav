@@ -4,7 +4,7 @@ import { ArrowRight, Plus, CheckCircle, Activity, Clock, Video } from 'lucide-re
 import { createClient } from '@/lib/supabase/server'
 import { OrderStatusBadge } from '@/components/ui/Badge'
 import { AnimatedStat } from '@/components/dashboard/AnimatedStat'
-import { formatDateShort } from '@/lib/utils'
+import { calculateDeliveryScore, formatDateShort } from '@/lib/utils'
 import type { Order, AthleteProfile } from '@/types/database'
 
 export default async function DashboardPage() {
@@ -29,7 +29,7 @@ export default async function DashboardPage() {
   const completedOrders = orders?.filter((o) => o.status === 'complete') ?? []
   const { data: motionAnalyses } = await supabase
     .from('motion_analyses')
-    .select('id,title,status,delivery_score,velocity_estimate_low,velocity_estimate_high,velocity_confidence,strengths,development_priorities,coach_feedback,created_at,training_plans(duration_weeks,follow_up_date,weeks,title)')
+    .select('id,title,status,delivery_score,category_scores,velocity_estimate_low,velocity_estimate_high,velocity_confidence,strengths,development_priorities,coach_feedback,created_at,training_plans(duration_weeks,follow_up_date,weeks,title)')
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })
     .limit(8)
@@ -67,6 +67,10 @@ export default async function DashboardPage() {
           <div className="grid gap-4 sm:grid-cols-2">
             {motionAnalyses.map((analysis, i) => {
               const plan = Array.isArray(analysis.training_plans) ? analysis.training_plans[0] : analysis.training_plans
+              const deliveryScore = calculateDeliveryScore(
+                analysis.category_scores as Array<{ score?: number | null }> | null,
+                analysis.delivery_score,
+              )
               return (
                 <div
                   key={analysis.id}
@@ -78,7 +82,7 @@ export default async function DashboardPage() {
                       <p className="font-bold text-white">{analysis.title}</p>
                       <p className="mt-1 text-xs capitalize text-slate-500">{analysis.status.replaceAll('_', ' ')}</p>
                     </div>
-                    {analysis.status === 'published' && analysis.delivery_score !== null && <span className="rounded-lg bg-electric-blue/10 px-3 py-1 text-sm font-black text-electric-blue-light">{analysis.delivery_score}/30</span>}
+                    {analysis.status === 'published' && deliveryScore !== null && <span className="rounded-lg bg-electric-blue/10 px-3 py-1 text-sm font-black text-electric-blue-light">{deliveryScore}/30</span>}
                   </div>
                   <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
                     <div className="rounded-lg bg-navy-950 p-3"><p className="text-xs text-slate-500">Velocity estimate</p><p className="mt-1 font-bold text-white">{analysis.status === 'published' && analysis.velocity_estimate_low !== null ? `${Math.round(analysis.velocity_estimate_low)}–${Math.round(analysis.velocity_estimate_high)} mph` : '—'}</p></div>
@@ -108,7 +112,7 @@ export default async function DashboardPage() {
                       </span>
                     )}
                     <Link href="/dashboard/motion-lab" className="group inline-flex items-center text-sm font-semibold text-electric-blue-light hover:text-white">
-                      Open Motion Lab <ArrowRight className="ml-1 h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
+                      Open Video Review <ArrowRight className="ml-1 h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
                     </Link>
                   </div>
                 </div>
@@ -140,7 +144,7 @@ export default async function DashboardPage() {
                     </div>
                     <p className="text-xs text-slate-500">
                       Submitted {formatDateShort(order.created_at)} ·{' '}
-                      Motion Lab feedback is ready as soon as your video is analyzed
+                      Your feedback is ready as soon as your video review is complete
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-2">

@@ -52,6 +52,47 @@ export function formatHeight(feet: number | null, inches: number | null): string
   return `${feet}'${inches ?? 0}"`
 }
 
+/**
+ * The published category scores are the source of truth for the Delivery Score.
+ * Falling back keeps older reports readable while preventing a stale stored total
+ * from disagreeing with the six visible scorecard categories.
+ */
+export function calculateDeliveryScore(categories: unknown, fallback?: number | null): number | null {
+  let source: unknown = categories
+
+  if (typeof source === 'string') {
+    try {
+      source = JSON.parse(source)
+    } catch {
+      source = []
+    }
+  }
+
+  if (source && typeof source === 'object' && !Array.isArray(source)) {
+    const record = source as Record<string, unknown>
+    source = record.categories ?? record.scores ?? record.category_scores ?? Object.values(record)
+  }
+
+  if (!Array.isArray(source)) return fallback ?? null
+
+  const scores = source.flatMap((entry) => {
+    const raw = entry && typeof entry === 'object'
+      ? ((entry as Record<string, unknown>).score
+        ?? (entry as Record<string, unknown>).score_value
+        ?? (entry as Record<string, unknown>).value
+        ?? (entry as Record<string, unknown>).rating)
+      : entry
+
+    if (raw === null || raw === undefined || raw === '') return []
+    const value = Number(raw)
+    return Number.isFinite(value) ? [Math.max(0, Math.min(5, value))] : []
+  })
+
+  return scores.length
+    ? Math.min(30, scores.reduce((sum, score) => sum + score, 0))
+    : fallback ?? null
+}
+
 export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
   intake_started: 'Intake Started',
   awaiting_videos: 'Awaiting Videos',

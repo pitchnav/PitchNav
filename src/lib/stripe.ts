@@ -1,8 +1,10 @@
 import Stripe from 'stripe'
 
-// Singleton server-side Stripe client
-// Only import from Server Components or Route Handlers
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+// Singleton server-side Stripe client. The placeholder allows a production
+// build without local secrets; payment calls remain blocked until configured.
+const stripeSecretKey = process.env.STRIPE_SECRET_KEY?.trim()
+export const isStripeConfigured = Boolean(stripeSecretKey)
+export const stripe = new Stripe(stripeSecretKey || 'sk_test_missing_configuration', {
   apiVersion: '2025-02-24.acacia',
   typescript: true,
 })
@@ -43,6 +45,10 @@ export async function createCheckoutSession({
   successUrl: string
   cancelUrl: string
 }) {
+  if (!isStripeConfigured) {
+    throw new Error('STRIPE_SECRET_KEY is not configured')
+  }
+
   const membership = MEMBERSHIPS[membershipTier]
   if (!membership.priceId) {
     throw new Error(
@@ -88,6 +94,10 @@ export function constructWebhookEvent(
   payload: string | Buffer,
   signature: string
 ): Stripe.Event {
+  if (!isStripeConfigured || !STRIPE_WEBHOOK_SECRET) {
+    throw new Error('Stripe webhook configuration is missing')
+  }
+
   return stripe.webhooks.constructEvent(
     payload,
     signature,

@@ -4,6 +4,10 @@
 
 @layer base {
   :root {
+    --font-inter: Inter, "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  }
+
+  :root {
     --background: 222 47% 5%;
     --foreground: 210 40% 95%;
   }

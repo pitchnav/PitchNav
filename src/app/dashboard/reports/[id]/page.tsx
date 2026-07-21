@@ -8,6 +8,7 @@ import { SafetyDisclaimer } from '@/components/ui/SafetyDisclaimer'
 import {
   PITCH_POSITION_LABELS,
   PLAYING_LEVEL_LABELS,
+  calculateDeliveryScore,
   formatHeight,
   formatDate,
 } from '@/lib/utils'
@@ -51,6 +52,7 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
   ])
 
   const scorecard = scorecardRes.data as ScorecardCategory[] ?? []
+  const deliveryScore = calculateDeliveryScore(scorecard, report.delivery_score)
   const positions = positionsRes.data as PositionScreenshot[] ?? []
   const assignedDrills = assignedDrillsRes.data as (AssignedDrill & { drill: Drill })[] ?? []
 
@@ -72,7 +74,7 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
   }
 
   return (
-    <div className="max-w-5xl mx-auto">
+    <div className="mx-auto w-full max-w-5xl min-w-0 space-y-6 overflow-x-hidden px-3 sm:space-y-8 sm:px-4 animate-fade-in">
       {/* Header */}
       <div className="mb-8">
         <Link href="/dashboard" className="text-sm text-slate-500 hover:text-white transition-colors mb-2 block">
@@ -80,7 +82,7 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
         </Link>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-black text-white">Pitching Analysis Report</h1>
+            <h1 className="text-3xl font-black text-white">Pitching Feedback Report</h1>
             <p className="text-slate-400 mt-1">{report.published_at ? formatDate(report.published_at) : ''}</p>
           </div>
           {pdfUrl && (
@@ -109,17 +111,17 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
               </div>
             ))}
           </div>
-          {report.delivery_score !== null && (
+          {deliveryScore !== null && (
             <div className="flex-shrink-0 text-center rounded-xl bg-electric-blue/10 border border-electric-blue/20 px-6 py-4">
-              <p className="text-4xl font-black text-white">{report.delivery_score}</p>
+              <p className="text-4xl font-black text-white">{deliveryScore}</p>
               <p className="text-xs text-slate-500 mt-1">out of 30</p>
               <p className="text-xs text-electric-blue-light font-semibold mt-1">Delivery Score</p>
             </div>
           )}
         </div>
         <p className="text-xs text-slate-600 mt-4">
-          Velocity comes from what you reported and hasn&apos;t been independently verified. The Delivery
-          Score tracks your own progress over time — it is not a medical score.
+          Velocity comes from the source listed in your profile. Use the Delivery Score to track your
+          progress over time. It is not a medical score.
         </p>
       </div>
 
@@ -127,9 +129,9 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
       {voiceoverUrl && (
         <div className="card mb-8">
           <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-            <Play className="h-5 w-5 text-electric-blue-light" /> Voice-Over Analysis
+            <Play className="h-5 w-5 text-electric-blue-light" /> Coach Video Review
           </h2>
-          <AnnotatedVideoPlayer src={voiceoverUrl} title="Reviewer voice-over analysis" />
+          <AnnotatedVideoPlayer src={voiceoverUrl} title="Coach video review" />
           <p className="text-xs text-slate-600 mt-2">
             Captions and a transcript, if available, are in the video controls.
           </p>
@@ -141,7 +143,7 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
         <div className="card mb-8">
           <h2 className="text-lg font-bold text-white mb-2">Mechanics Scorecard</h2>
           <p className="text-xs text-slate-500 mb-6">
-            A coaching tool, not a medical or laboratory measurement.
+            Use these scores to track what is working and what to improve.
           </p>
           <div className="space-y-5">
             {scorecard.map((cat) => (
@@ -157,10 +159,10 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
               </div>
             ))}
           </div>
-          {report.delivery_score !== null && (
+          {deliveryScore !== null && (
             <div className="mt-6 pt-4 border-t border-surface-border flex justify-between items-center">
               <span className="text-base font-semibold text-white">Total Delivery Score</span>
-              <span className="text-2xl font-black text-accent-green">{report.delivery_score}/30</span>
+              <span className="text-2xl font-black text-accent-green">{deliveryScore}/30</span>
             </div>
           )}
         </div>
@@ -169,15 +171,15 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
       {/* Position breakdown */}
       {positions.length > 0 && (
         <div className="mb-8">
-          <h2 className="text-xl font-bold text-white mb-6">Six-Position Breakdown</h2>
+          <h2 className="text-xl font-bold text-white mb-6">Six Key Positions</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {positions.map((pos) => (
-              <div key={pos.id} className="card">
+              <div key={pos.id} className="card min-w-0 transition-transform duration-200 hover:-translate-y-0.5">
                 {pos.image_url ? (
                   <img
                     src={pos.image_url}
                     alt={`Annotated screenshot — ${PITCH_POSITION_LABELS[pos.position as PitchPosition]}`}
-                    className="w-full h-48 object-cover rounded-lg mb-4"
+                    className="mb-4 aspect-video w-full rounded-lg bg-navy-950 object-contain"
                   />
                 ) : (
                   <div className="h-40 rounded-lg bg-navy-800 border border-surface-border flex items-center justify-center mb-4">
@@ -197,7 +199,7 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
                   )}
                   {pos.development_opportunity && (
                     <div className="rounded-lg bg-electric-blue/5 border border-electric-blue/20 p-3">
-                      <p className="text-xs font-semibold text-electric-blue-light mb-1">Development Opportunity</p>
+                      <p className="text-xs font-semibold text-electric-blue-light mb-1">Next Focus</p>
                       <p className="text-xs text-slate-300">{pos.development_opportunity}</p>
                     </div>
                   )}
@@ -208,7 +210,7 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
                     </div>
                   )}
                   {pos.estimated_angle && (
-                    <p className="text-xs text-slate-600">Estimated angle: {pos.estimated_angle} (video-based estimate)</p>
+                    <p className="text-xs text-slate-600">Video-based angle estimate: {pos.estimated_angle}</p>
                   )}
                   {pos.quality_note && (
                     <p className="text-xs text-yellow-400/70 italic">{pos.quality_note}</p>
@@ -238,7 +240,7 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
           )}
           {report.three_priorities && (
             <div className="card">
-              <h2 className="text-lg font-bold text-white mb-4">Three Development Priorities</h2>
+              <h2 className="text-lg font-bold text-white mb-4">Three Next Priorities</h2>
               <ul className="space-y-3">
                 {report.three_priorities.map((p, i) => (
                   <li key={i} className="flex items-start gap-3">

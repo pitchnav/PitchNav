@@ -6,7 +6,7 @@ import { Activity, LayoutDashboard, Settings, ClipboardList, Dumbbell, TrendingU
 const DASHBOARD_NAV = [
   { href: '/dashboard', label: 'Overview', icon: LayoutDashboard },
   { href: '/dashboard/orders', label: 'My Orders', icon: ClipboardList },
-  { href: '/dashboard/motion-lab', label: 'Motion Lab', icon: Activity },
+  { href: '/dashboard/motion-lab', label: 'Video Review', icon: Activity },
   { href: '/dashboard#feedback-plan', label: 'Feedback & Plan', icon: Dumbbell },
   { href: '/dashboard/compare', label: 'Compare Progress', icon: TrendingUp },
   { href: '/dashboard/profile', label: 'Profile Settings', icon: Settings },
@@ -32,7 +32,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
                 <Link
                   key={href}
                   href={href}
-                  className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-400 hover:bg-surface-card hover:text-white transition-colors"
+                  className="flex min-h-11 items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-400 hover:bg-surface-card hover:text-white transition-colors"
                 >
                   <Icon className="h-4 w-4" />
                   {label}
@@ -53,19 +53,19 @@ export default async function DashboardLayout({ children }: { children: React.Re
         {/* Main content */}
         <main className="flex-1 lg:ml-64 min-h-screen">
           {/* Mobile nav */}
-          <div className="lg:hidden border-b border-surface-border bg-navy-900 px-4 py-3 flex gap-4 overflow-x-auto">
+          <div className="sticky top-16 z-20 flex gap-3 overflow-x-auto border-b border-surface-border bg-navy-900/95 px-4 py-3 backdrop-blur lg:hidden">
             {DASHBOARD_NAV.map(({ href, label, icon: Icon }) => (
               <Link
                 key={href}
                 href={href}
-                className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-slate-400 hover:text-white whitespace-nowrap transition-colors"
+                className="flex min-h-11 items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-slate-400 hover:text-white whitespace-nowrap transition-colors"
               >
                 <Icon className="h-4 w-4" />
                 {label}
               </Link>
             ))}
           </div>
-          <div className="p-6 lg:p-8">{children}</div>
+          <div className="p-4 sm:p-6 lg:p-8">{children}</div>
         </main>
       </div>
     </div>
