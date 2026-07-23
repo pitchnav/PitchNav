@@ -5,6 +5,7 @@ import { Activity, AlertTriangle, Download, Pause, Play, RotateCcw, Upload, Vide
 import type { NormalizedLandmark, PoseLandmarker } from '@mediapipe/tasks-vision'
 import { createClient } from '@/lib/supabase/client'
 import { buildBaseballPerformancePlan } from '@/lib/performance-plan'
+import { buildEightWeekThrowingPlan } from '@/lib/throwing-plan'
 
 type Handedness = 'right' | 'left'
 type SelectionMode = 'calibrationA' | 'calibrationB' | 'ballStart' | 'ballEnd' | null
@@ -101,65 +102,65 @@ function buildCategoryFeedback(frames: FrameMetrics[], summary: ClipSummary): Ca
       category: 'Direction',
       score: 3,
       confidence: 'Low',
-      strength: 'The full stride stayed visible from leg lift through finish.',
-      development: 'Use this as a starting point. A coach should confirm any drift before changing direction work.',
-      evidence: 'This side view gives a limited look at movement toward the target.',
+      strength: 'Your full body stayed in the frame from leg lift through the finish. That gives us a clean look at the length and timing of your move down the mound.',
+      development: 'This side view does not clearly show if your front foot drifts left or right of the target line. Do not force your stride to change from this score alone. At the two-week check, use a visible tape line from the rubber toward the target so your landing direction is easier to compare.',
+      evidence: 'The lead foot is visible when it lands, but the target line is not marked in the video. That means we can see the stride happen without pretending we know the exact amount of side-to-side drift.',
     },
     {
       category: 'Lower-Half Sequencing',
       score: sequenceGap !== null && sequenceGap > 0 ? 4 : 2,
       confidence: quality,
       strength: sequenceGap !== null && sequenceGap > 0
-        ? 'Peak leg lift happened before the stride reached its widest point.'
-        : 'The lower half stayed visible through the delivery.',
+        ? 'Your leg lift reached its highest point before your stride opened all the way. That order gives your lower body time to start moving before the rest of the pitch speeds up.'
+        : 'Your hips, knees, and feet stayed visible through most of the delivery. That makes it possible to find the timing problem once the key moments are clearer.',
       development: sequenceGap !== null && sequenceGap > 0
-        ? 'Keep this sequence as intensity increases.'
-        : 'Record a clear full-body pitch so leg lift and stride timing can be compared.',
+        ? 'The order is good, but you still need to prove that it stays the same at higher effort. On the next check, compare the time from peak leg lift to foot contact on several pitches. If that time changes a lot, slow the drill down and make the move repeatable before adding intent.'
+        : 'The video did not give us two clear timing points, so we cannot tell whether your lower half starts in the right order. Record your full body in brighter light and keep both feet in the frame. We need to see peak leg lift and front-foot landing in the same pitch before changing your sequence.',
       evidence: sequenceGap === null
-        ? 'The key timing points were not clear enough in this clip.'
-        : `Time from peak leg lift to widest stride: ${sequenceGap.toFixed(2)} seconds.`,
+        ? 'Peak leg lift or the widest part of the stride could not be found clearly. Without both moments, the timing gap cannot be measured honestly.'
+        : `The video shows ${sequenceGap.toFixed(2)} seconds from peak leg lift to the widest part of the stride. Use the same camera angle and effort at each two-week check so that number can be compared fairly.`,
     },
     {
       category: 'Upper-Half Timing',
       score: score(elbowSpread, 35, 65),
       confidence: quality,
-      strength: 'The throwing shoulder, elbow, and wrist stayed visible through the arm action.',
+      strength: 'Your throwing shoulder, elbow, and wrist stayed visible through the arm action. That lets us follow the arm from hand break into the forward throw instead of guessing through a blocked frame.',
       development: elbowSpread > 65
-        ? 'Review whether the arm arrives consistently near lead-foot contact.'
-        : 'Keep the arm action smooth without forcing a fixed elbow position.',
-      evidence: `Estimated throwing-elbow range: ${Math.round(elbowSpread)}°.`,
+        ? 'Your elbow position changes a lot during this pitch, which can make the arm arrive late or early when the front foot lands. Work on a smooth hand break and let the arm move with the lower body instead of yanking it into place. Check the arm position again at front-foot landing in two weeks.'
+        : 'Your arm path looks controlled in this clip, but one pitch does not prove the timing repeats. Keep the hand break smooth and avoid forcing a certain elbow height. Use the two-week video check to see if the arm arrives in the same place when the front foot lands.',
+      evidence: `The estimated throwing-elbow range in this clip is ${Math.round(elbowSpread)} degrees. This is a video estimate used to compare your own follow-ups, not a perfect joint measurement.`,
     },
     {
       category: 'Front-Side Stability',
       score: score(kneeSpread, 18, 35),
       confidence: quality,
       strength: kneeSpread <= 35
-        ? 'Lead-knee movement stayed controlled after the stride opened.'
-        : 'The lead leg stayed visible through the finish.',
+        ? 'Your front knee stayed fairly controlled after the stride opened. That gives your body a steadier base as the chest and throwing arm move forward.'
+        : 'Your front leg stayed visible from landing through the finish. We can see where the leg starts to give way instead of losing it outside the frame.',
       development: kneeSpread > 35
-        ? 'Review lead-leg control from foot contact through finish.'
-        : 'Keep the lead leg stable while allowing a natural, pain-free finish.',
-      evidence: `Estimated lead-knee range after stride: ${Math.round(kneeSpread)}°.`,
+        ? 'Your front knee keeps changing after landing instead of giving you a steady base. That can make your chest move around the front leg instead of over it. Use controlled lead-leg holds and stop before the knee locks hard or causes pain.'
+        : 'Your front leg holds up well in this pitch, but it still needs to repeat when effort goes up. Keep a firm base without snapping the knee straight. Compare the knee from landing through release at the next two-week check.',
+      evidence: `The estimated front-knee change after the stride is ${Math.round(kneeSpread)} degrees. The important part is whether this range gets smaller and more repeatable in the same camera setup.`,
     },
     {
       category: 'Posture',
       score: score(trunkSpread, 12, 25),
       confidence: quality,
       strength: trunkSpread <= 25
-        ? 'Trunk tilt stayed controlled in this clip.'
-        : 'The torso stayed visible throughout the delivery.',
+        ? 'Your head and chest stayed fairly controlled during this pitch. You did not make a large early lean just to create a lower arm slot.'
+        : 'Your head, shoulders, and hips stayed in the frame through the finish. That lets us see when the upper body begins to tip instead of guessing from one freeze-frame.',
       development: trunkSpread > 25
-        ? 'Review when trunk tilt increases and whether the head stays centered.'
-        : 'Repeat the same posture pattern at game intent.',
-      evidence: `Estimated trunk-tilt range: ${Math.round(trunkSpread)}°.`,
+        ? 'Your upper body changes angle too much during the pitch, and the biggest lean needs to happen later and under control. Keep your head moving with your hips instead of falling away early. Use the wall posture drill at low speed, then test the same move in a bullpen.'
+        : 'Your posture is controlled in this clip, but the next job is keeping it at game speed. Do not try to stay stiff and upright. Let the chest move forward after the front foot lands while the head stays balanced over the base.',
+      evidence: `The estimated trunk-angle change in this clip is ${Math.round(trunkSpread)} degrees. Compare that range only against videos recorded from the same angle and at a similar effort.`,
     },
     {
       category: 'Release Consistency',
       score: 3,
       confidence: 'Low',
-      strength: 'The throwing hand stayed visible near release.',
-      development: 'Use several pitches to judge whether the release repeats consistently.',
-      evidence: 'Only one pitch was reviewed. A coach should confirm release consistency across multiple pitches.',
+      strength: 'Your throwing hand stays visible as the ball reaches the release area. That gives us one clear release window to use as the starting point for future comparisons.',
+      development: 'One pitch cannot show whether your release is consistent, so this part is not proven yet. At the two-week check, record at least three pitches without moving the camera. We want the hand and ball to pass through nearly the same window without you steering the ball.',
+      evidence: 'This review contains one usable release, not a group of repeated pitches. Consistency means the same pattern shows up several times, so the next video must give us more than one example.',
     },
   ]
 }
@@ -269,14 +270,22 @@ function drawAnatomicalSkeleton(
     const normalX = -(end.y - start.y) / length
     const normalY = (end.x - start.x) / length
     const separation = Math.min(scale * thickness * 0.75, length * 0.022)
-    context.strokeStyle = 'rgba(226, 232, 240, 0.94)'
-    context.lineWidth = Math.max(0.75, scale * 0.72)
+    context.strokeStyle = 'rgba(226, 232, 240, 0.96)'
+    context.lineWidth = Math.max(0.72, scale * 0.68)
     for (const side of [-1, 1]) {
       context.beginPath()
       context.moveTo(start.x + normalX * separation * side, start.y + normalY * separation * side)
       context.lineTo(end.x + normalX * separation * side, end.y + normalY * separation * side)
       context.stroke()
     }
+    // A faint medullary line gives each tracked segment the appearance of a
+    // measured long bone rather than a heavy animated stick.
+    context.strokeStyle = 'rgba(125, 211, 252, 0.34)'
+    context.lineWidth = Math.max(0.42, scale * 0.38)
+    context.beginPath()
+    context.moveTo(start.x, start.y)
+    context.lineTo(end.x, end.y)
+    context.stroke()
     context.restore()
   }
 
@@ -284,12 +293,21 @@ function drawAnatomicalSkeleton(
     const p = point(index)
     if (p.visibility < 0.45) return
     context.save()
-    context.fillStyle = 'rgba(8, 15, 27, 0.9)'
-    context.strokeStyle = 'rgba(125, 211, 252, 0.9)'
-    context.lineWidth = Math.max(0.7, scale * 0.8)
+    const jointRadius = Math.max(1.35, scale * radius * 1.25)
+    context.fillStyle = 'rgba(8, 15, 27, 0.92)'
+    context.strokeStyle = 'rgba(125, 211, 252, 0.88)'
+    context.lineWidth = Math.max(0.62, scale * 0.66)
     context.beginPath()
-    context.arc(p.x, p.y, Math.max(1.4, scale * radius * 1.35), 0, Math.PI * 2)
+    context.arc(p.x, p.y, jointRadius, 0, Math.PI * 2)
     context.fill()
+    context.stroke()
+    context.strokeStyle = 'rgba(226, 232, 240, 0.62)'
+    context.lineWidth = Math.max(0.38, scale * 0.34)
+    context.beginPath()
+    context.moveTo(p.x - jointRadius * 1.55, p.y)
+    context.lineTo(p.x + jointRadius * 1.55, p.y)
+    context.moveTo(p.x, p.y - jointRadius * 1.55)
+    context.lineTo(p.x, p.y + jointRadius * 1.55)
     context.stroke()
     context.restore()
   }
@@ -311,11 +329,16 @@ function drawAnatomicalSkeleton(
     context.strokeStyle = 'rgba(226, 232, 240, 0.95)'
     context.lineWidth = Math.max(0.9, scale * 0.95)
     context.beginPath()
-    context.ellipse(0, 0, headWidth / 2, headHeight / 2, 0, 0, Math.PI * 2)
+    context.ellipse(0, -headHeight * 0.04, headWidth / 2, headHeight * 0.47, 0, 0, Math.PI * 2)
     context.stroke()
+    // Mandible and a short facial plane make the head read as a side-view
+    // anatomical reference without inventing facial detail.
+    const faceDirection = nose.x >= headCenter.x ? 1 : -1
     context.beginPath()
-    context.moveTo(-headWidth * 0.32, headHeight * 0.22)
-    context.quadraticCurveTo(0, headHeight * 0.52, headWidth * 0.32, headHeight * 0.22)
+    context.moveTo(faceDirection * headWidth * 0.46, -headHeight * 0.08)
+    context.lineTo(faceDirection * headWidth * 0.56, headHeight * 0.05)
+    context.lineTo(faceDirection * headWidth * 0.36, headHeight * 0.26)
+    context.quadraticCurveTo(0, headHeight * 0.47, -faceDirection * headWidth * 0.24, headHeight * 0.25)
     context.stroke()
     context.restore()
   }
@@ -335,20 +358,29 @@ function drawAnatomicalSkeleton(
     context.stroke()
     context.restore()
 
-    // Rib cage follows the torso's translation and rotation.
+    // Shoulder girdle, sternum and rib cage follow the torso's translation
+    // and rotation, so the visualization reads like a measured anatomy model.
     const torsoLength = distance(shoulderMid, hipMid)
     const shoulderWidth = Math.max(distance(shoulders[0], shoulders[1]), torsoLength * 0.34)
     const torsoAngle = Math.atan2(hipMid.y - shoulderMid.y, hipMid.x - shoulderMid.x) - Math.PI / 2
     context.save()
     context.translate((shoulderMid.x + hipMid.x) / 2, (shoulderMid.y + hipMid.y) / 2)
     context.rotate(torsoAngle)
+    context.strokeStyle = 'rgba(226, 232, 240, 0.88)'
+    context.lineWidth = Math.max(0.72, scale * 0.7)
+    context.beginPath()
+    context.moveTo(-shoulderWidth * 0.5, -torsoLength * 0.43)
+    context.quadraticCurveTo(0, -torsoLength * 0.34, shoulderWidth * 0.5, -torsoLength * 0.43)
+    context.moveTo(0, -torsoLength * 0.39)
+    context.lineTo(0, torsoLength * 0.14)
+    context.stroke()
     context.strokeStyle = 'rgba(203, 213, 225, 0.78)'
     context.lineWidth = Math.max(0.65, scale * 0.58)
-    for (let rib = 0; rib < 4; rib += 1) {
-      const y = -torsoLength * 0.25 + rib * torsoLength * 0.13
-      const taper = 1 - Math.abs(rib - 2) * 0.09
+    for (let rib = 0; rib < 5; rib += 1) {
+      const y = -torsoLength * 0.27 + rib * torsoLength * 0.105
+      const taper = 1 - Math.abs(rib - 2) * 0.1
       context.beginPath()
-      context.ellipse(0, y, shoulderWidth * 0.42 * taper, torsoLength * 0.1, 0, 0, Math.PI * 2)
+      context.ellipse(0, y, shoulderWidth * 0.41 * taper, torsoLength * 0.075, 0, 0, Math.PI * 2)
       context.stroke()
     }
     context.restore()
@@ -359,10 +391,11 @@ function drawAnatomicalSkeleton(
     context.lineWidth = Math.max(0.75, scale * 0.72)
     const pelvisHalfWidth = Math.max(distance(hips[0], hips[1]) / 2, torsoLength * 0.13)
     context.beginPath()
-    context.moveTo(hipMid.x - pelvisHalfWidth, hipMid.y - torsoLength * 0.025)
-    context.quadraticCurveTo(hipMid.x, hipMid.y + torsoLength * 0.18, hipMid.x + pelvisHalfWidth, hipMid.y - torsoLength * 0.025)
-    context.lineTo(hipMid.x, hipMid.y + torsoLength * 0.08)
-    context.closePath()
+    context.ellipse(hipMid.x, hipMid.y + torsoLength * 0.045, pelvisHalfWidth, torsoLength * 0.12, 0, Math.PI * 0.06, Math.PI * 0.94)
+    context.moveTo(hipMid.x - pelvisHalfWidth, hipMid.y)
+    context.quadraticCurveTo(hipMid.x, hipMid.y + torsoLength * 0.19, hipMid.x + pelvisHalfWidth, hipMid.y)
+    context.moveTo(hipMid.x, hipMid.y - torsoLength * 0.02)
+    context.lineTo(hipMid.x, hipMid.y + torsoLength * 0.11)
     context.stroke()
     context.restore()
   }
@@ -401,8 +434,8 @@ function drawScientificMound(
   context.fillStyle = ground
   context.fillRect(0, footY - height * 0.03, width, height - footY + height * 0.03)
 
-  // Orthographic side-view measurement grid. Keeping the lines parallel avoids
-  // the forced-perspective look that made the athlete appear to float.
+  // Orthographic side-view measurement grid and baseline. Parallel reference
+  // lines keep this a sports-science stage rather than a decorative 3D scene.
   context.strokeStyle = 'rgba(56, 189, 248, 0.16)'
   context.lineWidth = Math.max(0.7, width / 1500)
   for (let row = 0; row <= 6; row += 1) {
@@ -414,11 +447,14 @@ function drawScientificMound(
     const x = (column / 16) * width
     context.beginPath(); context.moveTo(x, footY); context.lineTo(x, height); context.stroke()
   }
+  context.strokeStyle = 'rgba(186, 230, 253, 0.42)'
+  context.lineWidth = Math.max(0.9, width / 1100)
+  context.beginPath(); context.moveTo(0, footY); context.lineTo(width, footY); context.stroke()
 
   // Side-view mound profile. The plateau and downslope run left-to-right to
   // match the required open-side camera instead of facing the viewer.
   const moundWidth = width * 0.74
-  const moundHeight = height * 0.064
+  const moundHeight = height * 0.058
   const moundLeft = footX - moundWidth * 0.44
   const moundRight = footX + moundWidth * 0.56
   const moundTopY = footY - moundHeight * 0.22
@@ -430,9 +466,13 @@ function drawScientificMound(
   context.fillStyle = moundGradient
   context.beginPath()
   context.moveTo(moundLeft, moundBaseY)
-  context.quadraticCurveTo(moundLeft + moundWidth * 0.12, moundTopY + moundHeight * 0.22, footX - moundWidth * 0.09, moundTopY)
-  context.lineTo(footX + moundWidth * 0.06, moundTopY)
-  context.quadraticCurveTo(footX + moundWidth * 0.30, moundTopY + moundHeight * 0.12, moundRight, moundBaseY)
+  context.quadraticCurveTo(moundLeft + moundWidth * 0.12, moundTopY + moundHeight * 0.16, footX - moundWidth * 0.1, moundTopY)
+  context.lineTo(footX + moundWidth * 0.055, moundTopY)
+  context.bezierCurveTo(
+    footX + moundWidth * 0.16, moundTopY + moundHeight * 0.04,
+    footX + moundWidth * 0.34, moundTopY + moundHeight * 0.72,
+    moundRight, moundBaseY
+  )
   context.closePath(); context.fill()
   context.strokeStyle = 'rgba(180, 135, 91, 0.35)'
   context.lineWidth = Math.max(1, width / 1100)
@@ -440,10 +480,21 @@ function drawScientificMound(
   context.moveTo(moundLeft + moundWidth * 0.08, moundTopY + moundHeight * 0.32)
   context.quadraticCurveTo(footX + moundWidth * 0.20, moundTopY + moundHeight * 0.38, moundRight - moundWidth * 0.08, moundBaseY - moundHeight * 0.16)
   context.stroke()
-  context.fillStyle = 'rgba(0,0,0,0.34)'
-  context.beginPath(); context.ellipse(footX, footY + height * 0.008, width * 0.075, height * 0.011, 0, 0, Math.PI * 2); context.fill()
+  // Compact contact shadows sit directly beneath the normalized feet. They
+  // visually lock the tracked athlete to the mound without moving the stage.
+  context.fillStyle = 'rgba(0,0,0,0.48)'
+  context.beginPath(); context.ellipse(footX, footY + height * 0.003, width * 0.065, height * 0.006, 0, 0, Math.PI * 2); context.fill()
   context.fillStyle = '#d7d8d5'
   context.fillRect(footX - width * 0.042, moundTopY - height * 0.006, width * 0.084, Math.max(3, height * 0.008))
+  context.strokeStyle = 'rgba(125, 211, 252, 0.56)'
+  context.lineWidth = Math.max(0.7, width / 1450)
+  for (let tick = -4; tick <= 4; tick += 1) {
+    const x = footX + tick * width * 0.04
+    context.beginPath()
+    context.moveTo(x, moundBaseY + height * 0.006)
+    context.lineTo(x, moundBaseY + height * (tick % 2 === 0 ? 0.018 : 0.013))
+    context.stroke()
+  }
   context.restore()
 }
 
@@ -621,7 +672,7 @@ export function MotionAnalysisStudio({
   const [detectedPlaybackFps, setDetectedPlaybackFps] = useState<number | null>(null)
   const [detectingFps, setDetectingFps] = useState(false)
   const [setupConfirmed, setSetupConfirmed] = useState(false)
-  const [planWeeks, setPlanWeeks] = useState<4 | 8>(8)
+  const planWeeks = 8 as const
   const [savingAnalysis, setSavingAnalysis] = useState(false)
   const [saveMessage, setSaveMessage] = useState('')
   const supabase = useMemo(() => createClient(), [])
@@ -1305,12 +1356,18 @@ export function MotionAnalysisStudio({
       const categoryFeedback = buildCategoryFeedback(samplesRef.current, summary)
       const overallScore = categoryFeedback.reduce((total, category) => total + category.score, 0)
       const immediateStrengths = [
-        summary.averageConfidence >= 0.7 ? 'Your full delivery stays visible through the pitch.' : 'Your full delivery is visible for review.',
-        summary.peakLegLiftTime !== null ? 'Your leg lift gives you a clear checkpoint to repeat.' : 'Your delivery shows a clear start-to-finish sequence.',
+        summary.averageConfidence >= 0.7
+          ? 'Your full delivery stays visible through the pitch. That gives the coach enough clear video to compare each key position.'
+          : 'Your full delivery is visible for review, but a few positions are hard to track. Better lighting at the next check will make the comparison more useful.',
+        summary.peakLegLiftTime !== null
+          ? 'Your leg lift gives you a clear checkpoint to repeat. We can use that same moment to measure change every two weeks.'
+          : 'Your delivery shows a clear start and finish. The next video needs a sharper view of peak leg lift so the middle of the motion can be timed.',
       ]
       const immediatePriorities = [
-        summary.averageConfidence < 0.7 ? 'Use brighter lighting and keep your full body centered next time.' : 'Build a stable direction into landing and finish.',
-        'Use the same camera angle and throwing effort for your follow-up video.',
+        summary.averageConfidence < 0.7
+          ? 'The video loses some body detail during the pitch. Use brighter lighting and keep your full body centered so the coach can see the exact position that needs to change.'
+          : 'Your first job is making the move into landing and the finish look the same on each rep. Use controlled reps before raising the throwing effort.',
+        'Your follow-up must use the same camera angle and a similar throwing effort. That is how the coach can tell whether the plan changed your movement instead of just changing the video.',
       ]
 
       let analysis: { id: string }
@@ -1368,22 +1425,7 @@ export function MotionAnalysisStudio({
         if (orderError) console.error('Could not advance order status to in_analysis', orderError)
       }
 
-      const weeks = Array.from({ length: planWeeks }, (_, index) => ({
-        week: index + 1,
-        priority: index < 2 ? 'Movement quality and repeatability' : index < 4 ? 'Progressive intent and constraint drills' : 'Transfer, command, and retest preparation',
-        coaching_cue: index < 2 ? 'Move smoothly, finish under control, and keep each repetition repeatable.' : 'Preserve the same movement pattern as intent increases.',
-        prescription: index < 2 ? '2 sessions; 3 sets of 5 controlled repetitions' : '2 bullpen or throwing sessions with video checkpoints',
-        days: [
-          { day: 'Monday', focus: 'Movement quality', work: `Warm-up, mobility, then 3 x 5 controlled delivery reps. Focus: ${immediatePriorities[0]}` },
-          { day: 'Tuesday', focus: 'Throwing development', work: 'Complete your normal medically appropriate throwing program; film one controlled checkpoint pitch.' },
-          { day: 'Wednesday', focus: 'Recovery and review', work: 'Light mobility and recovery. Review Monday/Tuesday video without high-intent throwing.' },
-          { day: 'Thursday', focus: 'Constraint drill day', work: 'Warm-up, then 3 x 5 repeatability reps using the week’s primary coaching cue.' },
-          { day: 'Friday', focus: 'Bullpen or intent progression', work: index < 2 ? 'Moderate-intent throwing only; preserve movement quality.' : 'Progress intent only if pain-free and consistent with your existing throwing program.' },
-          { day: 'Saturday', focus: 'Strength and mobility', work: 'Follow your existing strength program; add mobility only within your normal pain-free range.' },
-          { day: 'Sunday', focus: 'Rest and check-in', work: 'Rest from pitching. Record soreness, confidence, and completion notes for the week.' },
-        ],
-        completed: false,
-      }))
+      const weeks = buildEightWeekThrowingPlan(categoryFeedback, immediatePriorities)
       // The $25 Throwing Development plan intentionally excludes lifting and
       // mobility programming. Only paid $40 Complete Performance orders receive it.
       const strengthMobilityWeeks = (initialVideo?.amountPaidCents ?? 0) >= 4000
@@ -1729,12 +1771,11 @@ export function MotionAnalysisStudio({
           </p>
           <div className="mt-6 rounded-xl border border-surface-border bg-navy-950 p-4">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-              <label>
+              <div>
                 <span className="label">Training plan</span>
-                <select className="input min-w-52" value={planWeeks} onChange={(event) => setPlanWeeks(Number(event.target.value) as 4 | 8)}>
-                  <option value={8}>8-week pitching + strength plan</option>
-                </select>
-              </label>
+                <p className="mt-1 font-bold text-white">8 weeks · video reassessment every 2 weeks</p>
+                <p className="mt-1 max-w-xl text-xs leading-relaxed text-slate-400">After week 8, this plan ends and your coach builds the next program around your in-season, preseason, or offseason schedule.</p>
+              </div>
               <button type="button" onClick={saveAnalysisToDashboard} disabled={savingAnalysis} className="btn-accent">
                 {savingAnalysis ? 'Sending securely…' : 'Send to your coach'}
               </button>

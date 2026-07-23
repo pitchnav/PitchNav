@@ -24,19 +24,33 @@ function PitcherAlignmentGuide() {
       className="absolute inset-0 h-full w-full"
       aria-hidden="true"
     >
-      {/* Ground line and mound slope */}
+      <defs>
+        <linearGradient id="alignment-mound" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#72543b" stopOpacity="0.72" />
+          <stop offset="1" stopColor="#211913" stopOpacity="0.9" />
+        </linearGradient>
+      </defs>
+
+      {/* Side-view ground plane, measurement ticks and left-to-right mound. */}
+      <g fill="none" stroke="rgba(56,189,248,0.18)" strokeWidth={0.35}>
+        <path d="M 0 84 H 160" />
+        <path d="M 0 87 H 160" />
+        {Array.from({ length: 17 }, (_, index) => (
+          <path key={index} d={`M ${index * 10} 83.6 V 89`} />
+        ))}
+      </g>
       <path
-        d="M 0 83 L 70 83 Q 88 83 100 80.5 Q 110 79 160 82"
-        fill="none"
-        stroke="rgba(56,189,248,0.4)"
-        strokeWidth={0.7}
+        d="M 47 84 C 62 83.5 74 80.7 88 79.4 H 100 C 111 80 124 82.2 143 84 Z"
+        fill="url(#alignment-mound)"
+        stroke="rgba(180,135,91,0.58)"
+        strokeWidth={0.55}
       />
-      {/* Pitching rubber, flat on the ground */}
-      <rect x={90} y={79.4} width={15} height={1.8} rx={0.4} fill="rgba(248,250,252,0.85)" />
+      {/* Pitching rubber, flat on the mound plateau. */}
+      <rect x={88} y={78.8} width={13} height={1.5} rx={0.25} fill="rgba(248,250,252,0.9)" />
       {/* Projected landing zone for the lead foot */}
       <ellipse
         cx={126}
-        cy={82.5}
+        cy={83.2}
         rx={9}
         ry={2.4}
         fill="none"
@@ -45,38 +59,63 @@ function PitcherAlignmentGuide() {
         strokeWidth={0.7}
       />
       {/* Contact shadow under the pivot foot */}
-      <ellipse cx={99} cy={82.5} rx={6} ry={1.4} fill="rgba(0,0,0,0.4)" />
+      <ellipse cx={96.5} cy={81.9} rx={5.2} ry={0.9} fill="rgba(0,0,0,0.5)" />
 
-      {/* Skeleton: pivot leg, torso, lead leg, arms */}
-      <g fill="none" stroke="rgba(248,250,252,0.85)" strokeWidth={1.1} strokeLinecap="round">
-        {/* Pivot (back) leg */}
-        <path d="M 99 81 L 96 63 L 92.5 45.5" />
-        {/* Spine */}
-        <path d="M 92.5 45.5 L 85.5 27" />
-        {/* Lead (raised) leg */}
-        <path d="M 92.5 45.5 L 104 40 L 111 58" />
-        {/* Throwing-side arm, bent to the balance-point hand position */}
-        <path d="M 85.5 27 L 75 34 L 80 45" />
-        {/* Glove-side arm */}
-        <path d="M 85.5 27 L 91 35 L 81.5 45.5" />
+      {/* Anatomical side-view reference: paired long-bone shafts, spine,
+          shoulder girdle, rib cage and pelvis. */}
+      <g fill="none" stroke="rgba(248,250,252,0.88)" strokeLinecap="round" strokeLinejoin="round">
+        {/* Skull, mandible and neck */}
+        <path d="M 75.2 13.8 C 77.1 9.6 83.8 9.1 86.7 12.8 C 89 15.8 88.4 21.1 85.2 23.5 L 82.5 25.3 L 78.2 23.7 C 74.5 21.2 73.6 17.1 75.2 13.8 Z" strokeWidth={0.85} />
+        <path d="M 86.4 16.3 L 89.2 18.1 L 86.2 21.2 L 83.1 23.8" strokeWidth={0.65} />
+        <path d="M 79.5 24 L 80.8 28.2 M 84.2 24.2 L 84.7 28.2" strokeWidth={0.65} />
+
+        {/* Clavicles, sternum, spine and rib cage */}
+        <path d="M 72.8 29.4 Q 81.8 26.7 91.8 29.8 M 82.1 28.2 L 85.2 45.3" strokeWidth={0.8} />
+        <path d="M 82.1 28.6 L 82.8 44.8" strokeWidth={0.55} />
+        <ellipse cx={82.5} cy={33.2} rx={8.2} ry={2.8} strokeWidth={0.55} />
+        <ellipse cx={83} cy={36.6} rx={7.8} ry={2.7} strokeWidth={0.55} />
+        <ellipse cx={83.5} cy={40} rx={6.8} ry={2.4} strokeWidth={0.55} />
+        <path d="M 76.7 44.6 Q 83.7 50.5 91.8 44.8 Q 84.2 42.6 76.7 44.6 Z" strokeWidth={0.75} />
+
+        {/* Pivot leg: paired femur and tibia shafts, foot on the rubber */}
+        <path d="M 85.5 47 L 92.8 63 M 87.2 46.3 L 94.3 62.4" strokeWidth={0.72} />
+        <path d="M 93 64.2 L 95.1 79.8 M 94.7 63.8 L 96.8 79.6" strokeWidth={0.68} />
+        <path d="M 95.4 80 L 101.5 81.1 L 95.3 82" strokeWidth={0.72} />
+
+        {/* Raised lead leg */}
+        <path d="M 81 47 L 101.8 40.3 M 82.2 48.2 L 102.4 42" strokeWidth={0.72} />
+        <path d="M 102.7 41 L 109.3 57.7 M 104.3 40.6 L 111 57" strokeWidth={0.68} />
+        <path d="M 109.7 58.2 L 116.5 58.6 L 111 60.1" strokeWidth={0.72} />
+
+        {/* Throwing and glove arms */}
+        <path d="M 74 29.5 L 67.1 35.4 M 75 30.7 L 68.4 36.5" strokeWidth={0.65} />
+        <path d="M 67.6 36 L 76.8 44.6 M 69 35.2 L 78.1 43.8" strokeWidth={0.62} />
+        <path d="M 91 29.7 L 96 35.1 M 90 30.8 L 94.8 36.2" strokeWidth={0.65} />
+        <path d="M 95.4 35.6 L 84.8 44.6 M 96.4 36.7 L 85.8 45.5" strokeWidth={0.62} />
+        {/* Compact hand outlines */}
+        <path d="M 76.8 44.5 L 79.8 46 L 77.8 47.1 L 75.4 45.8 Z M 84.8 44.7 L 82.1 46.3 L 84 47.3 L 86.3 45.8 Z" strokeWidth={0.5} />
       </g>
 
-      {/* Head */}
-      <circle cx={80.5} cy={18} r={6.2} fill="none" stroke="rgba(248,250,252,0.85)" strokeWidth={1.1} />
-
       {/* Joint markers — subtle tracking points, not decoration */}
-      <g fill="#f8fafc" stroke="#7dd3fc" strokeWidth={0.5}>
+      <g fill="rgba(8,15,27,0.94)" stroke="#7dd3fc" strokeWidth={0.55}>
         {[
-          [85.5, 27], // shoulder
-          [92.5, 45.5], // hip
-          [96, 63], // pivot knee
-          [99, 81], // pivot ankle
-          [104, 40], // lead knee
-          [111, 58], // lead ankle (lifted)
-          [80, 45], // throwing hand
-          [81.5, 45.5], // glove hand
+          [73.6, 29.8], // throwing shoulder
+          [91.3, 30], // glove shoulder
+          [81.6, 46.5], // lead hip
+          [86.3, 46.4], // pivot hip
+          [93.8, 63.2], // pivot knee
+          [96, 80.3], // pivot ankle
+          [103.1, 41.2], // lead knee
+          [110.2, 58.2], // lead ankle
+          [68.2, 35.8], // throwing elbow
+          [77.2, 45.5], // throwing hand
+          [95.5, 35.7], // glove elbow
+          [85.1, 45.4], // glove hand
         ].map(([cx, cy], i) => (
-          <circle key={i} cx={cx} cy={cy} r={1.3} />
+          <g key={i}>
+            <circle cx={cx} cy={cy} r={1.05} />
+            <path d={`M ${cx - 1.7} ${cy} H ${cx + 1.7} M ${cx} ${cy - 1.7} V ${cy + 1.7}`} stroke="rgba(248,250,252,0.55)" strokeWidth={0.28} />
+          </g>
         ))}
       </g>
     </svg>

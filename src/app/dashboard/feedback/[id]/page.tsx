@@ -8,9 +8,9 @@ import { InteractiveFeedbackTools } from '@/components/reports/InteractiveFeedba
 import { calculateDeliveryScore } from '@/lib/utils'
 
 type Category = { category: string; score: number; confidence: string; strength: string; development: string; evidence: string }
-type Phase = { key: string; label: string; time: number; storage_path: string; confidence_note: string; signedUrl?: string }
+type Phase = { key: string; label: string; time: number; storage_path: string; confidence_note: string; strength?: string; opportunity?: string; coaching_cue?: string; signedUrl?: string }
 type PlanDay = { day: string; focus: string; work: string }
-type PlanWeek = { week: number; priority: string; coaching_cue?: string; prescription?: string; days?: PlanDay[] }
+type PlanWeek = { week: number; priority: string; coaching_cue?: string; prescription?: string; reassessment?: boolean; days?: PlanDay[] }
 type PerformanceCorrelation = { assessment_category: string; score: number; observed_deficiency: string; lift_emphasis: string; mobility_emphasis: string; rationale: string }
 type StrengthDay = { day: string; focus: string; work: string; cues?: string[]; common_mistake?: string; correlation?: string }
 type StrengthWeek = { week: number; phase: string; tailored_focus: string; correlations?: PerformanceCorrelation[]; days: StrengthDay[] }
@@ -106,6 +106,28 @@ export default async function FeedbackReportPage({ params }: { params: Promise<{
         <div className="mt-6 flex items-start gap-3 rounded-xl border border-yellow-400/25 bg-yellow-400/10 p-4 text-sm text-yellow-100"><AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" /><p>This is a video-based coaching report, not medical advice. A Pitch Nav coach reviewed it before release.</p></div>
       </section>
 
+      {(analysis.coach_feedback || strengths.length > 0 || priorities.length > 0) && (
+        <section className="card">
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-electric-blue-light">Your coach&apos;s read</p>
+          <h2 className="mt-1 text-2xl font-black text-white">What the video says—and what to do next</h2>
+          {analysis.coach_feedback && <p className="mt-4 max-w-4xl whitespace-pre-line text-base leading-7 text-slate-300">{analysis.coach_feedback}</p>}
+          <div className="mt-6 grid gap-4 md:grid-cols-2">
+            <div className="rounded-xl border border-accent-green/20 bg-accent-green/5 p-5">
+              <h3 className="font-bold text-accent-green">What you already do well</h3>
+              <ul className="mt-3 space-y-3 text-sm leading-6 text-slate-300">
+                {strengths.map((strength) => <li key={strength}>• {strength}</li>)}
+              </ul>
+            </div>
+            <div className="rounded-xl border border-yellow-400/20 bg-yellow-400/5 p-5">
+              <h3 className="font-bold text-yellow-300">What must improve next</h3>
+              <ol className="mt-3 space-y-3 text-sm leading-6 text-slate-300">
+                {priorities.map((priority, index) => <li key={priority}><span className="font-bold text-yellow-200">{index + 1}.</span> {priority}</li>)}
+              </ol>
+            </div>
+          </div>
+        </section>
+      )}
+
       <section className="card">
         <h2 className="text-2xl font-black text-white">Mechanics scorecard</h2>
         <p className="mt-1 text-sm text-slate-400">See what is working, what to improve, and the cue to use next.</p>
@@ -114,9 +136,11 @@ export default async function FeedbackReportPage({ params }: { params: Promise<{
             <div className="flex items-center justify-between"><h3 className="font-bold text-white">{item.category}</h3><span className="text-xl font-black text-electric-blue-light">{item.score}/5</span></div>
             <ProgressBar value={item.score} max={5} className="mt-3" />
             <p className="mt-3 text-xs font-semibold uppercase tracking-wider text-slate-500">Video quality: {item.confidence}</p>
-            <p className="mt-3 text-sm text-slate-300"><span className="font-semibold text-accent-green">Working well:</span> {item.strength}</p>
-            <p className="mt-2 text-sm text-slate-300"><span className="font-semibold text-yellow-300">Next focus:</span> {item.development}</p>
-            <p className="mt-3 border-t border-surface-border pt-3 text-xs text-slate-500">What we saw: {item.evidence}</p>
+            <div className="mt-4 space-y-4 text-sm leading-6">
+              <div><p className="font-semibold text-accent-green">What you did well</p><p className="mt-1 text-slate-300">{item.strength}</p></div>
+              <div><p className="font-semibold text-yellow-300">What needs to improve</p><p className="mt-1 text-slate-300">{item.development}</p></div>
+              <div className="border-t border-surface-border pt-3"><p className="font-semibold text-slate-400">How we know</p><p className="mt-1 text-slate-500">{item.evidence}</p></div>
+            </div>
           </div>)}
         </div>
         <p className="mt-5 text-xs text-slate-500">Use this score to track your own progress over time. It is not a medical or injury-risk score.</p>

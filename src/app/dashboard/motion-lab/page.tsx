@@ -28,32 +28,33 @@ export default async function MotionLabPage({ searchParams }: { searchParams: Pr
     amountPaidCents: number | null
   } | null = null
 
-  if (videoId) {
-    const { data: submission } = await supabase
-      .from('video_submissions')
-      .select('id,order_id,storage_path,file_name,mime_type,frame_rate,trim_start_secs,trim_end_secs,orders!inner(user_id,athlete_profile_id,amount_paid_cents,athlete_profiles(throwing_hand))')
-      .eq('id', videoId)
-      .eq('orders.user_id', user.id)
-      .single()
+  const submissionSelect = 'id,order_id,storage_path,file_name,mime_type,frame_rate,trim_start_secs,trim_end_secs,orders!inner(user_id,athlete_profile_id,amount_paid_cents,athlete_profiles(throwing_hand))'
+  const submissionQuery = supabase
+    .from('video_submissions')
+    .select(submissionSelect)
+    .eq('orders.user_id', user.id)
 
-    if (submission) {
-      const { data: signed } = await supabase.storage.from('pitch-videos').createSignedUrl(submission.storage_path, 3600)
-      const order = Array.isArray(submission.orders) ? submission.orders[0] : submission.orders
-      const athlete = Array.isArray(order?.athlete_profiles) ? order.athlete_profiles[0] : order?.athlete_profiles
-      if (signed?.signedUrl) {
-        initialVideo = {
-          signedUrl: signed.signedUrl,
-          fileName: submission.file_name,
-          mimeType: submission.mime_type || 'video/mp4',
-          storagePath: submission.storage_path,
-          orderId: submission.order_id,
-          athleteProfileId: order?.athlete_profile_id ?? null,
-          handedness: athlete?.throwing_hand === 'left' ? 'left' : 'right',
-          trimStartSecs: submission.trim_start_secs ?? null,
-          trimEndSecs: submission.trim_end_secs ?? null,
-          captureFps: [60, 120, 240].includes(Number(submission.frame_rate)) ? Number(submission.frame_rate) : null,
-          amountPaidCents: order?.amount_paid_cents ?? null,
-        }
+  const { data: submission } = videoId
+    ? await submissionQuery.eq('id', videoId).single()
+    : await submissionQuery.eq('angle', 'open_side').order('created_at', { ascending: false }).limit(1).maybeSingle()
+
+  if (submission) {
+    const { data: signed } = await supabase.storage.from('pitch-videos').createSignedUrl(submission.storage_path, 3600)
+    const order = Array.isArray(submission.orders) ? submission.orders[0] : submission.orders
+    const athlete = Array.isArray(order?.athlete_profiles) ? order.athlete_profiles[0] : order?.athlete_profiles
+    if (signed?.signedUrl) {
+      initialVideo = {
+        signedUrl: signed.signedUrl,
+        fileName: submission.file_name,
+        mimeType: submission.mime_type || 'video/mp4',
+        storagePath: submission.storage_path,
+        orderId: submission.order_id,
+        athleteProfileId: order?.athlete_profile_id ?? null,
+        handedness: athlete?.throwing_hand === 'left' ? 'left' : 'right',
+        trimStartSecs: submission.trim_start_secs ?? null,
+        trimEndSecs: submission.trim_end_secs ?? null,
+        captureFps: [60, 120, 240].includes(Number(submission.frame_rate)) ? Number(submission.frame_rate) : null,
+        amountPaidCents: order?.amount_paid_cents ?? null,
       }
     }
   }

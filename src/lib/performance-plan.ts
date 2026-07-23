@@ -127,7 +127,7 @@ export function buildBaseballPerformancePlan(
     {
       assessment_category: primaryCategory.category,
       score: primaryCategory.score,
-      observed_deficiency: primaryCategory.development || priorities[0] || 'Staff should confirm the primary visible development area.',
+      observed_deficiency: primaryCategory.development || priorities[0] || 'The first video does not show this movement clearly enough yet. Use the next same-angle video to identify the exact position that needs work.',
       lift_emphasis: `${primary.primaryLift}; ${primary.secondaryLift}; ${primary.power}`,
       mobility_emphasis: primary.mobility,
       rationale: primary.rationale,
@@ -135,7 +135,7 @@ export function buildBaseballPerformancePlan(
     {
       assessment_category: secondaryCategory.category,
       score: secondaryCategory.score,
-      observed_deficiency: secondaryCategory.development || priorities[1] || 'Staff should confirm the supporting visible development area.',
+      observed_deficiency: secondaryCategory.development || priorities[1] || 'The supporting movement needs a clearer same-angle comparison. The next video check should show whether it stays steady when throwing effort increases.',
       lift_emphasis: `${secondary.primaryLift}; ${secondary.secondaryLift}; ${secondary.power}`,
       mobility_emphasis: secondary.mobility,
       rationale: secondary.rationale,
@@ -144,7 +144,7 @@ export function buildBaseballPerformancePlan(
 
   return Array.from({ length: 8 }, (_, index) => {
     const week = index + 1
-    const phase = week <= 2 ? 'Movement foundation' : week <= 4 ? 'Baseball strength' : week <= 6 ? 'Strength-to-power transfer' : week === 7 ? 'Deload' : 'Retest preparation'
+    const phase = week === 8 ? 'Final reassessment + season reprogramming' : week % 2 === 0 ? 'Two-week reassessment' : week <= 2 ? 'Movement foundation' : week <= 4 ? 'Baseball strength' : week <= 6 ? 'Strength-to-power transfer' : 'Deload'
     const strengthPrescription = week === 7 ? '2 × 6 at RPE 4–5' : week <= 2 ? '3 × 8 at RPE 5–6' : week <= 4 ? '3 × 6 at RPE 6–7' : '4 × 4 at RPE 6–7'
     const accessoryPrescription = week === 7 ? '2 × 8 each side' : '3 × 6–8 each side'
     const powerPrescription = week <= 2 ? '3 × 3 at low-to-moderate intent' : week === 7 ? '2 × 3, crisp and easy' : '4 × 3 with full rest'
@@ -152,7 +152,7 @@ export function buildBaseballPerformancePlan(
     return {
       week,
       phase,
-      tailored_focus: `Primary: ${primaryCategory.category} (${primaryCategory.score}/5). Supporting: ${secondaryCategory.category} (${secondaryCategory.score}/5). Exercises are capacity work tied to those review findings—not a promise that lifting alone will change mechanics.`,
+      tailored_focus: `Primary: ${primaryCategory.category} (${primaryCategory.score}/5). Supporting: ${secondaryCategory.category} (${secondaryCategory.score}/5). ${week % 2 === 0 ? `Use the week-${week} video and workload check to adjust the next two weeks.` : 'Build the physical capacity that supports the current video priorities.'} ${week === 8 ? 'After this review, replace the program with in-season, preseason, or offseason work instead of repeating week 1.' : ''}`,
       correlations,
       days: [
         {
@@ -205,8 +205,12 @@ export function buildBaseballPerformancePlan(
         },
         {
           day: 'Sunday',
-          focus: 'Rest + workload check-in',
-          work: 'No required lifting. Record throwing volume, session RPE, soreness, sleep, and completed exercises.',
+          focus: week === 8 ? 'Final review + season reprogramming' : week % 2 === 0 ? `${week}-week video and workload reassessment` : 'Rest + workload check-in',
+          work: week === 8
+            ? 'No required lifting. Compare the first and final same-angle videos, review throwing volume and recovery, then replace this program with work that matches the current in-season, preseason, or offseason schedule.'
+            : week % 2 === 0
+              ? 'No required lifting. Compare the new same-angle pitching video with the last check, review throwing volume, soreness, sleep, and completed exercises, then adjust the next two weeks.'
+              : 'No required lifting. Record throwing volume, session RPE, soreness, sleep, and completed exercises.',
           cues: ['Report pain instead of training through it', 'Use the log to adjust the next week'],
           common_mistake: 'Ignoring unusual fatigue or trying to make up missed volume.',
           correlation: 'Recovery and workload monitoring support safer coordination of throwing, lifting, and mobility.'

@@ -29,12 +29,20 @@ export default async function DashboardPage() {
   const completedOrders = orders?.filter((o) => o.status === 'complete') ?? []
   const { data: motionAnalyses } = await supabase
     .from('motion_analyses')
-    .select('id,title,status,delivery_score,category_scores,velocity_estimate_low,velocity_estimate_high,velocity_confidence,strengths,development_priorities,coach_feedback,created_at,training_plans(duration_weeks,follow_up_date,weeks,title)')
+    .select('id,order_id,source_video_storage_path,title,status,delivery_score,category_scores,velocity_estimate_low,velocity_estimate_high,velocity_confidence,strengths,development_priorities,coach_feedback,created_at,training_plans(duration_weeks,follow_up_date,weeks,title)')
     .eq('user_id', user.id)
     .eq('status', 'published')
     .not('published_at', 'is', null)
     .order('created_at', { ascending: false })
     .limit(8)
+  const analysisOrderIds = (motionAnalyses ?? []).flatMap((analysis) => analysis.order_id ? [analysis.order_id] : [])
+  const { data: analysisVideos } = analysisOrderIds.length
+    ? await supabase
+        .from('video_submissions')
+        .select('id,order_id,angle,storage_path')
+        .in('order_id', analysisOrderIds)
+        .order('created_at', { ascending: false })
+    : { data: [] }
 
   return (
     <div className="max-w-5xl mx-auto">
@@ -69,6 +77,13 @@ export default async function DashboardPage() {
           <div className="grid gap-4 sm:grid-cols-2">
             {motionAnalyses.map((analysis, i) => {
               const plan = Array.isArray(analysis.training_plans) ? analysis.training_plans[0] : analysis.training_plans
+              const submittedVideo = analysisVideos?.find((video) => (
+                video.angle === 'open_side'
+                && (video.order_id === analysis.order_id || video.storage_path === analysis.source_video_storage_path)
+              ))
+              const videoReviewHref = submittedVideo
+                ? `/dashboard/motion-lab?videoId=${submittedVideo.id}`
+                : '/dashboard/motion-lab'
               const deliveryScore = calculateDeliveryScore(
                 analysis.category_scores as Array<{ score?: number | null }> | null,
                 analysis.delivery_score,
@@ -113,7 +128,7 @@ export default async function DashboardPage() {
                         Staff review in progress — we’ll email you when ready
                       </span>
                     )}
-                    <Link href="/dashboard/motion-lab" className="group inline-flex items-center text-sm font-semibold text-electric-blue-light hover:text-white">
+                    <Link href={videoReviewHref} className="group inline-flex items-center text-sm font-semibold text-electric-blue-light hover:text-white">
                       Open Video Review <ArrowRight className="ml-1 h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
                     </Link>
                   </div>

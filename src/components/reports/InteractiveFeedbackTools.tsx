@@ -28,6 +28,9 @@ type Phase = {
   label: string
   time: number
   confidence_note: string
+  strength?: string
+  opportunity?: string
+  coaching_cue?: string
   signedUrl?: string
 }
 type Day = { day: string; focus: string; work: string }
@@ -36,6 +39,7 @@ type Week = {
   priority: string
   coaching_cue?: string
   prescription?: string
+  reassessment?: boolean
   days?: Day[]
 }
 type PerformanceCorrelation = {
@@ -68,6 +72,7 @@ type CalendarEntry = {
   dateKey: string
   dayName: string
   planWeekNumber: number
+  programComplete: boolean
   throwingWeek?: Week
   throwing?: Day
   performanceWeek?: StrengthWeek
@@ -208,16 +213,19 @@ export function InteractiveFeedbackTools({
     return Array.from({ length: 14 }, (_, offset) => {
       const date = addDays(today, offset)
       const programDay = Math.max(0, daysBetween(programStart, date))
-      const throwingWeek = weeks.length ? weeks[Math.floor(programDay / 7) % weeks.length] : undefined
+      const programWeekIndex = Math.floor(programDay / 7)
+      const programComplete = weeks.length > 0 && programWeekIndex >= weeks.length
+      const throwingWeek = !programComplete && weeks.length ? weeks[programWeekIndex] : undefined
       const performanceWeek = tier === 'performance' && strengthWeeks.length
-        ? strengthWeeks[Math.floor(programDay / 7) % strengthWeeks.length]
+        ? strengthWeeks[programWeekIndex]
         : undefined
       const dayName = DAY_NAMES[date.getDay()]
       return {
         date,
         dateKey: dateKey(date),
         dayName,
-        planWeekNumber: Math.floor(programDay / 7) + 1,
+        planWeekNumber: programComplete ? weeks.length : programWeekIndex + 1,
+        programComplete,
         throwingWeek,
         throwing: findDay(throwingWeek?.days, dayName, programDay),
         performanceWeek,
@@ -333,9 +341,9 @@ export function InteractiveFeedbackTools({
             <div className="rounded-xl bg-navy-950 p-5">
               <h3 className="text-xl font-bold text-white">{phase.label}</h3>
               <p className="mt-1 text-xs text-electric-blue-light">{phase.time.toFixed(2)} seconds</p>
-              <p className="mt-4 text-sm text-slate-300"><b>Strength:</b> {categories[Math.min(categories.length - 1, phases.indexOf(phase))]?.strength ?? 'Coach confirmation pending.'}</p>
-              <p className="mt-3 text-sm text-slate-300"><b>Opportunity:</b> {categories[Math.min(categories.length - 1, phases.indexOf(phase))]?.development ?? 'Coach confirmation pending.'}</p>
-              <p className="mt-3 text-sm text-slate-300"><b>Measurement:</b> {categories[Math.min(categories.length - 1, phases.indexOf(phase))]?.evidence ?? 'Not available.'}</p>
+              <p className="mt-4 text-sm leading-6 text-slate-300"><b className="text-accent-green">What you did well:</b> {phase.strength ?? categories[Math.min(categories.length - 1, phases.indexOf(phase))]?.strength ?? 'The coach did not add a strength for this position.'}</p>
+              <p className="mt-3 text-sm leading-6 text-slate-300"><b className="text-yellow-300">What must improve:</b> {phase.opportunity ?? categories[Math.min(categories.length - 1, phases.indexOf(phase))]?.development ?? 'The coach did not add a correction for this position.'}</p>
+              {phase.coaching_cue && <p className="mt-3 rounded-lg bg-electric-blue/10 p-3 text-sm leading-6 text-electric-blue-light"><b>Use this cue:</b> {phase.coaching_cue}</p>}
               <p className="mt-4 text-xs text-slate-500">{phase.confidence_note}</p>
             </div>
           </div>
@@ -372,7 +380,7 @@ export function InteractiveFeedbackTools({
               <p className="text-xs font-bold uppercase tracking-[0.2em] text-electric-blue-light">Rolling plan</p>
               <h2 className="mt-1 text-2xl font-black text-white">Your next two weeks</h2>
               <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-400">
-                You&apos;ll always see today plus the next 13 days. A new day is added each morning.
+                You&apos;ll always see today plus the next 13 days. Video reassessments happen at the end of weeks 2, 4, 6, and 8. After week 8, this calendar stops and your coach builds a new plan for your in-season, preseason, or offseason schedule.
               </p>
             </div>
           </div>
@@ -402,9 +410,9 @@ export function InteractiveFeedbackTools({
                   </div>
                   {throwDone && performanceDone && <span className="flex h-6 w-6 items-center justify-center rounded-full bg-accent-green text-navy-950"><Check className="h-4 w-4" /></span>}
                 </div>
-                <p className="mt-3 line-clamp-2 text-xs leading-relaxed text-slate-400">{entry.throwing?.focus ?? 'Throwing plan check-in'}</p>
+                <p className="mt-3 line-clamp-2 text-xs leading-relaxed text-slate-400">{entry.programComplete ? 'Eight-week review complete · new season plan needed' : entry.throwing?.focus ?? 'Throwing plan check-in'}</p>
                 {tier === 'performance' && entry.performance && <p className="mt-2 line-clamp-1 text-[11px] font-semibold text-accent-green">+ {entry.performance.focus}</p>}
-                <div className="mt-3 flex items-center justify-between text-[10px] uppercase tracking-wider text-slate-600"><span>Plan week {entry.planWeekNumber}</span><ChevronRight className="h-4 w-4" /></div>
+                <div className="mt-3 flex items-center justify-between text-[10px] uppercase tracking-wider text-slate-600"><span>{entry.programComplete ? 'Plan complete' : entry.throwingWeek?.reassessment ? `Week ${entry.planWeekNumber} reassessment` : `Plan week ${entry.planWeekNumber}`}</span><ChevronRight className="h-4 w-4" /></div>
               </button>
             )
           })}
@@ -417,10 +425,16 @@ export function InteractiveFeedbackTools({
                 <p className="text-xs font-bold uppercase tracking-[0.18em] text-electric-blue-light">{selectedOffset === 0 ? 'Today’s complete routine' : 'Selected day'}</p>
                 <h3 className="mt-1 text-3xl font-black text-white">{selectedDay.dayName}, {selectedDay.date.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}</h3>
               </div>
-              <div className="flex items-center gap-2 text-sm text-slate-400"><Clock className="h-4 w-4" /> Plan week {selectedDay.planWeekNumber}</div>
+              <div className="flex items-center gap-2 text-sm text-slate-400"><Clock className="h-4 w-4" /> {selectedDay.programComplete ? 'Eight-week block complete' : `Plan week ${selectedDay.planWeekNumber}`}</div>
             </div>
 
-            <div className="mt-6 grid gap-5 xl:grid-cols-2">
+            {selectedDay.programComplete ? (
+              <article className="mt-6 rounded-xl border border-accent-green/25 bg-accent-green/5 p-6">
+                <p className="text-xs font-bold uppercase tracking-[0.18em] text-accent-green">Time to reprogram</p>
+                <h4 className="mt-1 text-2xl font-black text-white">This eight-week plan is finished.</h4>
+                <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-300">Do not repeat week 1 automatically. Submit the final same-angle video check so your coach can compare it with the first clip. Your next plan should match where you are now—managing games in-season, building toward competition in preseason, or developing more capacity in the offseason.</p>
+              </article>
+            ) : <div className="mt-6 grid gap-5 xl:grid-cols-2">
               <RoutineCard
                 title={selectedDay.throwing?.focus ?? 'Throwing plan check-in'}
                 label="Throwing development"
@@ -456,7 +470,7 @@ export function InteractiveFeedbackTools({
                   <p className="mt-2 text-sm leading-relaxed text-slate-400">This $25 plan includes the complete throwing routine. Tailored baseball lifting and mobility details are included with the $40 Complete Performance membership.</p>
                 </article>
               )}
-            </div>
+            </div>}
 
             {selectedDay.performanceWeek?.tailored_focus && (
               <div className="mt-5 rounded-xl border border-accent-green/20 bg-accent-green/5 p-4">
