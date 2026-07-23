@@ -24,7 +24,7 @@
 **Files:**
 - Create: `supabase/tests/restored-feature-bundle.test.cjs`
 - Test: `src/lib/throwing-plan.ts`
-- Test: `src/app/dashboard/feedback/[id]/page.tsx`
+- Test: `src/components/reports/InteractiveFeedbackTools.tsx`
 
 - [ ] **Step 1: Write a TypeScript module loader for the Node test**
 
@@ -65,7 +65,7 @@ Use a low-score/low-confidence category and a slightly higher-score/high-confide
 
 - [ ] **Step 3: Add a calendar non-looping characterization test**
 
-Read `src/app/dashboard/feedback/[id]/page.tsx` as text and assert that it:
+Read `src/components/reports/InteractiveFeedbackTools.tsx` as text and assert that it:
 
 ```js
 assert.doesNotMatch(source, /%\s*weeks\.length/)
