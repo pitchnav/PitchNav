@@ -77,3 +77,38 @@ test('athlete calendar stops after the final week instead of looping', () => {
   assert.match(source, /programWeekIndex\s*>=\s*weeks\.length/)
   assert.match(source, /Eight-week (?:review|block) complete/)
 })
+
+test('first publication anchors the training plan for exactly eight weeks', () => {
+  const { buildTrainingPlanPublishUpdate } = requireTypeScript(
+    join(projectRoot, 'src/lib/training-plan-schedule.ts')
+  )
+
+  assert.deepEqual(
+    buildTrainingPlanPublishUpdate('2026-07-23T14:30:00.000Z', {
+      published_at: null,
+      starts_on: null,
+      follow_up_date: null,
+    }),
+    {
+      published_at: '2026-07-23T14:30:00.000Z',
+      starts_on: '2026-07-23',
+      follow_up_date: '2026-09-17',
+    }
+  )
+})
+
+test('re-publication preserves the original training plan schedule', () => {
+  const { buildTrainingPlanPublishUpdate } = requireTypeScript(
+    join(projectRoot, 'src/lib/training-plan-schedule.ts')
+  )
+  const existing = {
+    published_at: '2026-07-23T14:30:00.000Z',
+    starts_on: '2026-07-23',
+    follow_up_date: '2026-09-17',
+  }
+
+  assert.deepEqual(
+    buildTrainingPlanPublishUpdate('2026-08-01T12:00:00.000Z', existing),
+    existing
+  )
+})
