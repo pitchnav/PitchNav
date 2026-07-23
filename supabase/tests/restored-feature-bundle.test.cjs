@@ -112,3 +112,24 @@ test('re-publication preserves the original training plan schedule', () => {
     existing
   )
 })
+
+test('publish route loads and applies the immutable training plan schedule', () => {
+  const source = readFileSync(
+    join(projectRoot, 'src/app/api/admin/publish-report/route.ts'),
+    'utf8'
+  )
+
+  assert.match(
+    source,
+    /import \{ buildTrainingPlanPublishUpdate \} from '@\/lib\/training-plan-schedule'/
+  )
+  assert.match(
+    source,
+    /\.from\('training_plans'\)[\s\S]*?\.select\('id,published_at,starts_on,follow_up_date'\)/
+  )
+  assert.match(source, /buildTrainingPlanPublishUpdate\(now, plan\)/)
+  assert.match(
+    source,
+    /\.from\('training_plans'\)\.update\(planUpdate\)\.eq\('id', plan\.id\)/
+  )
+})

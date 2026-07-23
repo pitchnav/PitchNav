@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient, createClient } from '@/lib/supabase/server'
 import { sendMotionAnalysisReadyEmail } from '@/lib/resend'
+import { buildTrainingPlanPublishUpdate } from '@/lib/training-plan-schedule'
 import { calculateDeliveryScore } from '@/lib/utils'
 
 export const runtime = 'nodejs'
@@ -42,8 +43,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: `The athlete report has not been created: ${reportError?.message ?? 'not found'}` }, { status: 409 })
     }
 
+    const { data: plan, error: planLoadError } = await admin.from('training_plans')
+      .select('id,published_at,starts_on,follow_up_date')
+      .eq('motion_analysis_id', analysisId)
+      .single()
+    if (planLoadError || !plan) {
+      return NextResponse.json({ error: `The athlete training plan has not been created: ${planLoadError?.message ?? 'not found'}` }, { status: 409 })
+    }
+
     const now = new Date().toISOString()
     const wasPublished = analysis.status === 'published' && Boolean(report.published_at)
+    const planUpdate = buildTrainingPlanPublishUpdate(now, plan)
     const { error: publishAnalysisError } = await admin.from('motion_analyses').update({
       status: 'published',
       ai_draft_status: 'published',
@@ -54,7 +64,7 @@ export async function POST(request: Request) {
     }).eq('id', analysisId)
     if (publishAnalysisError) return NextResponse.json({ error: `Could not publish feedback: ${publishAnalysisError.message}` }, { status: 500 })
 
-    const { error: planError } = await admin.from('training_plans').update({ published_at: now }).eq('motion_analysis_id', analysisId)
+    const { error: planError } = await admin.from('training_plans').update(planUpdate).eq('id', plan.id)
     if (planError) return NextResponse.json({ error: `Feedback was published, but the plan failed: ${planError.message}` }, { status: 500 })
 
     const { error: reportPublishError } = await admin.from('analysis_reports').update({ published_at: now, delivery_score: deliveryScore }).eq('id', report.id)
