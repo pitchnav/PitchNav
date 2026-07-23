@@ -44,6 +44,9 @@ test('unpublished analysis content is staff-only without breaking submissions', 
   const studio = read('src/components/analysis/MotionAnalysisStudio.tsx')
   assert.match(studio, /\.rpc\('get_motion_analysis_submission_state'/)
   assert.match(studio, /\.rpc\('get_recent_motion_analysis_for_cooldown'/)
+  assert.match(studio, /isMissingRpcError/)
+  assert.match(studio, /existingError && !isMissingRpcError\(existingError\)/)
+  assert.match(studio, /recentAnalysisError && !isMissingRpcError\(recentAnalysisError\)/)
   assert.doesNotMatch(studio, /\}\)\.select\('id'\)\.single\(\)/)
 
   const reviewRoute = read('src/app/api/motion-lab/request-review/route.ts')

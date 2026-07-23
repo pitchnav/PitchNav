@@ -182,6 +182,14 @@ function describeSupabaseError(reason: unknown): string {
   return 'Could not save your review. Please try again.'
 }
 
+function isMissingRpcError(reason: unknown): boolean {
+  if (!reason || typeof reason !== 'object') return false
+  const error = reason as { code?: string; message?: string }
+  return error.code === 'PGRST202'
+    || error.code === '42883'
+    || error.message?.includes('Could not find the function') === true
+}
+
 function calculateMetrics(
   landmarks: NormalizedLandmark[],
   time: number,
@@ -1223,11 +1231,31 @@ export function MotionAnalysisStudio({
             target_order_id: initialVideo.orderId,
           })
           .maybeSingle()
-        if (existingError) throw existingError
-        const submissionState = submissionStateResult as {
+        if (existingError && !isMissingRpcError(existingError)) throw existingError
+        let submissionState = submissionStateResult as {
           analysis_id: string
           plan_exists: boolean
         } | null
+        if (existingError) {
+          const { data: existingAnalysis, error: analysisLookupError } = await supabase
+            .from('motion_analyses')
+            .select('id')
+            .eq('order_id', initialVideo.orderId)
+            .maybeSingle()
+          if (analysisLookupError) throw analysisLookupError
+          if (existingAnalysis) {
+            const { data: existingPlan, error: planLookupError } = await supabase
+              .from('training_plans')
+              .select('id')
+              .eq('motion_analysis_id', existingAnalysis.id)
+              .maybeSingle()
+            if (planLookupError) throw planLookupError
+            submissionState = {
+              analysis_id: existingAnalysis.id,
+              plan_exists: Boolean(existingPlan),
+            }
+          }
+        }
         if (submissionState) {
           existingAnalysisId = submissionState.analysis_id
           if (submissionState.plan_exists) {
@@ -1245,11 +1273,26 @@ export function MotionAnalysisStudio({
             cutoff,
           })
           .maybeSingle()
-        if (recentAnalysisError) throw recentAnalysisError
-        const recentAnalysis = recentAnalysisResult as {
+        if (recentAnalysisError && !isMissingRpcError(recentAnalysisError)) throw recentAnalysisError
+        let recentAnalysis = recentAnalysisResult as {
           analysis_id: string
           created_at: string
         } | null
+        if (recentAnalysisError) {
+          const { data: legacyRecentAnalysis, error: legacyRecentAnalysisError } = await supabase
+            .from('motion_analyses')
+            .select('id,created_at')
+            .eq('user_id', targetUserId)
+            .eq('cooldown_exempt', false)
+            .gte('created_at', cutoff)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle()
+          if (legacyRecentAnalysisError) throw legacyRecentAnalysisError
+          recentAnalysis = legacyRecentAnalysis
+            ? { analysis_id: legacyRecentAnalysis.id, created_at: legacyRecentAnalysis.created_at }
+            : null
+        }
         if (recentAnalysis && !initialVideo?.staffProcessing) {
           const nextDate = new Date(new Date(recentAnalysis.created_at).getTime() + 14 * 24 * 60 * 60 * 1000)
           throw new Error(`Your membership includes one analysis every two weeks. Your next analysis is available ${nextDate.toLocaleDateString()}.`)
