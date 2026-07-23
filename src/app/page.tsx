@@ -571,7 +571,7 @@ export default async function HomePage() {
   if (user) {
     const [{ data: profile }, { data: latest }, { count: activeOrders }] = await Promise.all([
       supabase.from('profiles').select('full_name').eq('id', user.id).single(),
-      supabase.from('motion_analyses').select('id,title,delivery_score,velocity_estimate_low,velocity_estimate_high,category_scores,training_plans(duration_weeks,weeks)').eq('user_id', user.id).order('created_at', { ascending: false }).limit(1).maybeSingle(),
+      supabase.from('motion_analyses').select('id,title,delivery_score,velocity_estimate_low,velocity_estimate_high,category_scores,training_plans(duration_weeks,weeks)').eq('user_id', user.id).eq('status', 'published').not('published_at', 'is', null).order('created_at', { ascending: false }).limit(1).maybeSingle(),
       supabase.from('orders').select('id', { count: 'exact', head: true }).eq('user_id', user.id).not('status', 'in', '(complete,cancelled,refunded)'),
     ])
     const firstName = profile?.full_name?.split(' ')[0] || user.email?.split('@')[0] || 'Athlete'

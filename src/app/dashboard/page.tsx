@@ -31,6 +31,8 @@ export default async function DashboardPage() {
     .from('motion_analyses')
     .select('id,title,status,delivery_score,category_scores,velocity_estimate_low,velocity_estimate_high,velocity_confidence,strengths,development_priorities,coach_feedback,created_at,training_plans(duration_weeks,follow_up_date,weeks,title)')
     .eq('user_id', user.id)
+    .eq('status', 'published')
+    .not('published_at', 'is', null)
     .order('created_at', { ascending: false })
     .limit(8)
 

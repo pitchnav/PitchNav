@@ -66,6 +66,8 @@ export default async function FeedbackReportPage({ params }: { params: Promise<{
     .select('*,training_plans(*)')
     .eq('id', id)
     .eq('user_id', user.id)
+    .eq('status', 'published')
+    .not('published_at', 'is', null)
     .single()
   if (!analysis) notFound()
   if (analysis.status !== 'published') redirect('/dashboard?review=pending')

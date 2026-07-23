@@ -1218,21 +1218,19 @@ export function MotionAnalysisStudio({
       // success when the paired training plan never got created.
       let existingAnalysisId: string | null = null
       if (initialVideo?.orderId) {
-        const { data: existingAnalysis, error: existingError } = await supabase
-          .from('motion_analyses')
-          .select('id')
-          .eq('order_id', initialVideo.orderId)
+        const { data: submissionStateResult, error: existingError } = await supabase
+          .rpc('get_motion_analysis_submission_state', {
+            target_order_id: initialVideo.orderId,
+          })
           .maybeSingle()
         if (existingError) throw existingError
-        if (existingAnalysis) {
-          existingAnalysisId = existingAnalysis.id
-          const { data: existingPlan, error: existingPlanError } = await supabase
-            .from('training_plans')
-            .select('id')
-            .eq('motion_analysis_id', existingAnalysis.id)
-            .maybeSingle()
-          if (existingPlanError) throw existingPlanError
-          if (existingPlan) {
+        const submissionState = submissionStateResult as {
+          analysis_id: string
+          plan_exists: boolean
+        } | null
+        if (submissionState) {
+          existingAnalysisId = submissionState.analysis_id
+          if (submissionState.plan_exists) {
             setSaveMessage('Your six-phase analysis is already prepared and waiting for staff review.')
             return true
           }
@@ -1241,7 +1239,17 @@ export function MotionAnalysisStudio({
 
       if (!existingAnalysisId) {
         const cutoff = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString()
-        const { data: recentAnalysis } = await supabase.from('motion_analyses').select('id,created_at').eq('user_id', targetUserId).eq('cooldown_exempt', false).gte('created_at', cutoff).order('created_at', { ascending: false }).limit(1).maybeSingle()
+        const { data: recentAnalysisResult, error: recentAnalysisError } = await supabase
+          .rpc('get_recent_motion_analysis_for_cooldown', {
+            target_user_id: targetUserId,
+            cutoff,
+          })
+          .maybeSingle()
+        if (recentAnalysisError) throw recentAnalysisError
+        const recentAnalysis = recentAnalysisResult as {
+          analysis_id: string
+          created_at: string
+        } | null
         if (recentAnalysis && !initialVideo?.staffProcessing) {
           const nextDate = new Date(new Date(recentAnalysis.created_at).getTime() + 14 * 24 * 60 * 60 * 1000)
           throw new Error(`Your membership includes one analysis every two weeks. Your next analysis is available ${nextDate.toLocaleDateString()}.`)
@@ -1285,7 +1293,7 @@ export function MotionAnalysisStudio({
           throw new Error(`${missing} of 6 phase frames could not be saved. Keep this page open and retry automatic processing.`)
         }
 
-        const { data: inserted, error: analysisError } = await supabase.from('motion_analyses').insert({
+        const { error: analysisError } = await supabase.from('motion_analyses').insert({
           id: analysisId,
           order_id: initialVideo?.orderId ?? null,
           user_id: targetUserId,
@@ -1307,9 +1315,9 @@ export function MotionAnalysisStudio({
           phase_snapshots: phaseSnapshots,
           strengths: immediateStrengths,
           development_priorities: immediatePriorities,
-        }).select('id').single()
+        })
         if (analysisError) throw analysisError
-        analysis = inserted
+        analysis = { id: analysisId }
       }
 
       if (initialVideo?.orderId) {

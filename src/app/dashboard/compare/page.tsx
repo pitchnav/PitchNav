@@ -9,7 +9,7 @@ export default async function ComparePage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
-  const { data: analyses } = await supabase.from('motion_analyses').select('id,title,source_video_storage_path,delivery_score,velocity_estimate_low,velocity_estimate_high,category_scores,strengths,development_priorities,created_at').eq('user_id', user.id).order('created_at', { ascending: true })
+  const { data: analyses } = await supabase.from('motion_analyses').select('id,title,source_video_storage_path,delivery_score,velocity_estimate_low,velocity_estimate_high,category_scores,strengths,development_priorities,created_at').eq('user_id', user.id).eq('status', 'published').not('published_at', 'is', null).order('created_at', { ascending: true })
   if (!analyses || analyses.length < 2) {
     return (
       <div className="mx-auto max-w-4xl">
