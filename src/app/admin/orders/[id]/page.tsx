@@ -8,6 +8,7 @@ import {
   formatDateShort, formatFileSize, ORDER_STATUS_LABELS,
   PLAYING_LEVEL_LABELS, SCORECARD_CATEGORIES,
   PITCH_POSITION_LABELS, DRILL_CATEGORY_LABELS,
+  calculateDeliveryScore,
 } from '@/lib/utils'
 import type {
   Order, AthleteProfile, VideoSubmission, Drill,
@@ -25,6 +26,7 @@ type AutomatedCategory = {
   strength: string
   development: string
   evidence: string
+  likely_cause?: string
 }
 
 type AutomatedPhase = {
@@ -306,6 +308,22 @@ export default function AdminOrderDetailPage() {
       score,
       notes: note,
     }, { onConflict: 'report_id,category' })
+
+    // Keep the stored overall total in lockstep with the six visible
+    // category scores every time staff edits one by hand — otherwise the
+    // published report can keep showing a stale total (e.g. still 30) after
+    // a manual score change brings the real sum down.
+    const { data: currentCategories } = await supabase
+      .from('scorecard_categories')
+      .select('score')
+      .eq('report_id', reportId)
+    const recomputed = calculateDeliveryScore(currentCategories ?? [])
+    if (recomputed !== null) {
+      await supabase.from('analysis_reports').update({ delivery_score: recomputed }).eq('id', reportId)
+      if (automatedAnalysis) {
+        await supabase.from('motion_analyses').update({ delivery_score: recomputed }).eq('id', automatedAnalysis.id)
+      }
+    }
   }
 
   async function applyAutomatedDraft() {
@@ -325,6 +343,51 @@ export default function AdminOrderDetailPage() {
       setDraftMessage('Verified AI draft applied. Review the populated scores and phase frames before publishing.')
     } catch (reason) {
       setDraftMessage(reason instanceof Error ? reason.message : 'Could not apply the verified AI draft.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function deleteAnalysis() {
+    if (!automatedAnalysis) return
+    if (!window.confirm('Delete this automatic analysis? This removes the saved measurements and phase images. It does not count against the athlete\'s cooldown, and automatic processing can be retried from the Videos tab.')) return
+    setSaving(true)
+    setDraftMessage('Deleting the faulty analysis…')
+    try {
+      const response = await fetch('/api/admin/delete-analysis', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ analysisId: automatedAnalysis.id }),
+      })
+      const result = await response.json() as { error?: string }
+      if (!response.ok) throw new Error(result.error || 'Could not delete the analysis.')
+      await loadData()
+      setDraftMessage('Analysis deleted. Retry automatic processing from the Videos tab when ready.')
+    } catch (reason) {
+      setDraftMessage(reason instanceof Error ? reason.message : 'Could not delete the analysis.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function markPaidOverride(tier: 'throwing' | 'performance') {
+    if (order?.payment_confirmed_at) return
+    if (!window.confirm(`Mark this order paid as a ${tier === 'performance' ? '$40 Complete Performance' : '$25 Throwing Development'} admin/testing override? This bypasses Stripe and should only be used for testing.`)) return
+    setSaving(true)
+    try {
+      const now = new Date().toISOString()
+      await supabase.from('orders').update({
+        payment_confirmed_at: now,
+        amount_paid_cents: tier === 'performance' ? 4000 : 2500,
+        currency: 'usd',
+      }).eq('id', id)
+      await supabase.from('order_status_history').insert({
+        order_id: id,
+        new_status: order?.status ?? 'submitted',
+        changed_by: 'admin',
+        note: `Marked paid via admin/testing override (${tier}).`,
+      })
+      await loadData()
     } finally {
       setSaving(false)
     }
@@ -421,7 +484,16 @@ export default function AdminOrderDetailPage() {
           <a href="/admin/orders" className="text-sm text-slate-500 hover:text-white block mb-2">← All Orders</a>
           <h1 className="text-2xl font-black text-white">Order #{id.slice(0, 8).toUpperCase()}</h1>
         </div>
-        <div className="text-right"><OrderStatusBadge status={order.status} /><p className={`mt-2 text-xs font-bold ${order.payment_confirmed_at ? 'text-accent-green' : 'text-yellow-300'}`}>{order.payment_confirmed_at ? `Payment confirmed · $${((order.amount_paid_cents ?? 0)/100).toFixed(2)}` : 'Payment not confirmed'}</p></div>
+        <div className="text-right">
+          <OrderStatusBadge status={order.status} />
+          <p className={`mt-2 text-xs font-bold ${order.payment_confirmed_at ? 'text-accent-green' : 'text-yellow-300'}`}>{order.payment_confirmed_at ? `Payment confirmed · $${((order.amount_paid_cents ?? 0)/100).toFixed(2)}` : 'Payment not confirmed'}</p>
+          {!order.payment_confirmed_at && (
+            <div className="mt-2 flex justify-end gap-2">
+              <button onClick={() => markPaidOverride('throwing')} disabled={saving} className="btn-secondary px-2 py-1 text-xs">Mark Paid $25 (test)</button>
+              <button onClick={() => markPaidOverride('performance')} disabled={saving} className="btn-secondary px-2 py-1 text-xs">Mark Paid $40 (test)</button>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Tabs */}
@@ -451,6 +523,7 @@ export default function AdminOrderDetailPage() {
               <dl className="space-y-2 text-sm">
                 {[
                   ['Name', profile.athlete_full_name],
+                  ['Email', profile.athlete_email ?? '—'],
                   ['DOB', profile.date_of_birth ?? '—'],
                   ['Level', profile.playing_level ? PLAYING_LEVEL_LABELS[profile.playing_level as PlayingLevel] : '—'],
                   ['Throws', profile.throwing_hand],
@@ -709,6 +782,11 @@ export default function AdminOrderDetailPage() {
                   <button onClick={applyAutomatedDraft} disabled={saving || automatedAnalysis.ai_draft_status !== 'ready_for_staff_review'} className="btn-primary">
                     <CheckCircle className="h-4 w-4" /> {saving ? 'Applying…' : 'Apply verified AI draft'}
                   </button>
+                  {order.status !== 'complete' && (
+                    <button onClick={deleteAnalysis} disabled={saving} className="btn-secondary border-red-500/30 text-red-400 hover:border-red-500">
+                      <Trash2 className="h-4 w-4" /> Delete faulty analysis
+                    </button>
+                  )}
                 </div>
               ) : videos.find((video) => video.angle === 'open_side') ? (
                 <a href={`/admin/orders/${id}/motion-lab?videoId=${videos.find((video) => video.angle === 'open_side')!.id}&auto=1`} className="btn-primary shrink-0">
@@ -748,7 +826,7 @@ export default function AdminOrderDetailPage() {
                     <input
                       id={`note-${key}`}
                       type="text"
-                      defaultValue={existing?.notes ?? (automatic ? `${automatic.strength} ${automatic.development} Evidence: ${automatic.evidence} Confidence: ${automatic.confidence}.` : '')}
+                      defaultValue={existing?.notes ?? (automatic ? `${automatic.strength} ${automatic.development} Evidence: ${automatic.evidence} Confidence: ${automatic.confidence}.${automatic.likely_cause ? ` Likely cause: ${automatic.likely_cause.replaceAll('_', ' ')}.` : ''}` : '')}
                       placeholder="Coach note…"
                       onBlur={(e) => {
                         const score = parseInt(

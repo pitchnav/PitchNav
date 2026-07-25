@@ -86,6 +86,7 @@ export async function POST(request: Request) {
         category.development ? `Opportunity: ${category.development}` : null,
         category.evidence ? `Visible evidence: ${category.evidence}` : null,
         category.confidence ? `Confidence: ${category.confidence}` : null,
+        category.likely_cause ? `Likely cause: ${String(category.likely_cause).replaceAll('_', ' ')}` : null,
       ].filter(Boolean).join(' ')
       const { error } = await admin.from('scorecard_categories').upsert({
         report_id: report.id,

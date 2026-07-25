@@ -1,9 +1,29 @@
+export type LikelyCause =
+  | 'hamstring_tightness_or_weakness'
+  | 'hip_mobility_limitation'
+  | 'ankle_stability_limitation'
+  | 'core_pelvis_control'
+  | 'thoracic_mobility_limitation'
+  | 'scapular_control_limitation'
+  | 'general_repeatability'
+
+export const CAUSE_LABELS: Record<LikelyCause, string> = {
+  hamstring_tightness_or_weakness: 'hamstring tightness or strength',
+  hip_mobility_limitation: 'hip mobility',
+  ankle_stability_limitation: 'ankle stability',
+  core_pelvis_control: 'core and pelvis control',
+  thoracic_mobility_limitation: 'upper-back (thoracic) mobility',
+  scapular_control_limitation: 'shoulder-blade control',
+  general_repeatability: 'general movement repeatability',
+}
+
 export type CategoryAssessment = {
   category: string
   score: number
   confidence?: string
   development?: string
   evidence?: string
+  likely_cause?: LikelyCause | string
 }
 
 export type PerformanceCorrelation = {
@@ -92,6 +112,63 @@ const TRAINING_MATCHES: Record<string, TrainingMatch> = {
   },
 }
 
+// Physical root-cause hypotheses, independent of which of the six mechanics
+// categories they show up in. When the AI draft names one of these for a
+// weak category (e.g. a loose lead-leg block traced to hamstring tightness
+// or weakness), it overrides that category's generic lift/mobility default
+// with the more specific intervention below — this is what lets two
+// athletes with the same weak category end up with different plans.
+const CAUSE_INTERVENTIONS: Partial<Record<LikelyCause, TrainingMatch>> = {
+  hamstring_tightness_or_weakness: {
+    category: 'Hamstring tightness or weakness',
+    primaryLift: 'Single-leg Romanian deadlift',
+    secondaryLift: 'Nordic curl (or slider/towel hamstring curl regression)',
+    power: 'Broad jump to stick',
+    mobility: 'Standing active hamstring floss and 90/90 hip switches',
+    rationale: 'Eccentric hamstring strength and hip-hinge control help the lead leg block and absorb force at foot strike instead of the knee sliding or the front side collapsing.',
+  },
+  hip_mobility_limitation: {
+    category: 'Hip mobility limitation',
+    primaryLift: 'Rear-foot-elevated split squat',
+    secondaryLift: 'Half-kneeling hip-flexor isometric hold',
+    power: 'Lateral bound to stick',
+    mobility: '90/90 hip rotation and half-kneeling hip-flexor mobility',
+    rationale: 'Hip rotational range and hip-flexor length support getting into and out of loaded positions without compensating at the low back or trail leg.',
+  },
+  ankle_stability_limitation: {
+    category: 'Ankle stability limitation',
+    primaryLift: 'Single-leg calf raise',
+    secondaryLift: 'Rear-foot-elevated split-squat isometric',
+    power: 'Low box step-down to stick',
+    mobility: 'Knee-to-wall ankle rocker mobility',
+    rationale: 'Ankle range and single-leg landing stability support absorbing force through the foot and shin instead of losing the position on contact.',
+  },
+  core_pelvis_control: {
+    category: 'Core and pelvis control',
+    primaryLift: 'Dead bug with full exhale',
+    secondaryLift: 'Suitcase carry',
+    power: 'Tall-kneeling medicine-ball slam',
+    mobility: 'Bench thoracic extension and 90/90 hip switches',
+    rationale: 'Trunk and pelvis control let the lower half and upper half work in the right order instead of the trunk compensating for a late or early hip.',
+  },
+  thoracic_mobility_limitation: {
+    category: 'Thoracic mobility limitation',
+    primaryLift: 'Half-kneeling landmine press',
+    secondaryLift: 'Loaded open-book thoracic rotation',
+    power: 'Shot-put medicine-ball throw',
+    mobility: 'Open-book thoracic rotation and wall slide with lift-off',
+    rationale: 'Upper-back rotation and overhead positioning support trunk-to-arm timing without extra compensation at the shoulder.',
+  },
+  scapular_control_limitation: {
+    category: 'Scapular control limitation',
+    primaryLift: 'Chest-supported one-arm row',
+    secondaryLift: 'Bottoms-up kettlebell carry',
+    power: 'Step-behind medicine-ball scoop toss',
+    mobility: 'Wall slide with lift-off and shoulder controlled-articular rotations',
+    rationale: 'Shoulder-blade control and scapular strength support a repeatable arm path and release window.',
+  },
+}
+
 function normalizedConfidence(confidence?: string) {
   const value = (confidence ?? '').toLowerCase()
   if (value === 'high') return 0
@@ -99,8 +176,9 @@ function normalizedConfidence(confidence?: string) {
   return 0.65
 }
 
-function resolveMatch(category: string) {
-  return TRAINING_MATCHES[category] ?? TRAINING_MATCHES.Posture
+function resolveMatch(category: string, cause?: string) {
+  const causeMatch = cause ? CAUSE_INTERVENTIONS[cause as LikelyCause] : undefined
+  return causeMatch ?? TRAINING_MATCHES[category] ?? TRAINING_MATCHES.Posture
 }
 
 /**
@@ -120,8 +198,12 @@ export function buildBaseballPerformancePlan(
   const primaryCategory = ranked[0] ?? { category: 'Posture', score: 3, development: priorities[0] }
   const secondaryCategory = ranked.find((item) => item.category !== primaryCategory.category)
     ?? { category: 'Lower-Half Sequencing', score: 3, development: priorities[1] }
-  const primary = resolveMatch(primaryCategory.category)
-  const secondary = resolveMatch(secondaryCategory.category)
+  const primaryCause = primaryCategory.likely_cause as LikelyCause | undefined
+  const secondaryCause = secondaryCategory.likely_cause as LikelyCause | undefined
+  const primary = resolveMatch(primaryCategory.category, primaryCause)
+  const secondary = resolveMatch(secondaryCategory.category, secondaryCause)
+  const primaryCauseLabel = primaryCause ? CAUSE_LABELS[primaryCause] : undefined
+  const secondaryCauseLabel = secondaryCause ? CAUSE_LABELS[secondaryCause] : undefined
 
   const correlations: PerformanceCorrelation[] = [
     {
@@ -130,7 +212,7 @@ export function buildBaseballPerformancePlan(
       observed_deficiency: primaryCategory.development || priorities[0] || 'The first video does not show this movement clearly enough yet. Use the next same-angle video to identify the exact position that needs work.',
       lift_emphasis: `${primary.primaryLift}; ${primary.secondaryLift}; ${primary.power}`,
       mobility_emphasis: primary.mobility,
-      rationale: primary.rationale,
+      rationale: primaryCauseLabel ? `Likely driven by ${primaryCauseLabel}. ${primary.rationale}` : primary.rationale,
     },
     {
       assessment_category: secondaryCategory.category,
@@ -138,7 +220,7 @@ export function buildBaseballPerformancePlan(
       observed_deficiency: secondaryCategory.development || priorities[1] || 'The supporting movement needs a clearer same-angle comparison. The next video check should show whether it stays steady when throwing effort increases.',
       lift_emphasis: `${secondary.primaryLift}; ${secondary.secondaryLift}; ${secondary.power}`,
       mobility_emphasis: secondary.mobility,
-      rationale: secondary.rationale,
+      rationale: secondaryCauseLabel ? `Likely driven by ${secondaryCauseLabel}. ${secondary.rationale}` : secondary.rationale,
     },
   ]
 

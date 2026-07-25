@@ -12,17 +12,43 @@ export default async function AdminAthletesPage({
   const { filter, q } = await searchParams
   const supabase = await createClient()
 
-  // Load athlete profiles + related deletion requests
+  // Load athlete profiles. deletion_requests has no foreign key to
+  // athlete_profiles (it references profiles.user_id instead), so it cannot
+  // be embedded in this query — it's fetched separately below and merged by
+  // user_id.
   let profilesQuery = supabase
     .from('athlete_profiles')
-    .select('*, profiles(email, full_name), deletion_requests(id, request_type, created_at, processed_at)')
+    .select('*, profiles(email, full_name)')
     .order('created_at', { ascending: false })
 
   if (filter === 'health_flagged') {
     profilesQuery = profilesQuery.eq('health_flagged', true)
   }
 
-  const { data: athletes } = await profilesQuery
+  const { data: athletes, error: athletesError } = await profilesQuery
+
+  if (athletesError) {
+    console.error('[admin/athletes] failed to load athlete profiles', athletesError)
+  }
+
+  const userIds = (athletes ?? []).map((a) => a.user_id).filter(Boolean)
+  const { data: deletionRequests, error: deletionRequestsError } = userIds.length
+    ? await supabase
+        .from('deletion_requests')
+        .select('id, user_id, request_type, created_at, processed_at')
+        .in('user_id', userIds)
+    : { data: [], error: null }
+
+  if (deletionRequestsError) {
+    console.error('[admin/athletes] failed to load deletion requests', deletionRequestsError)
+  }
+
+  const deletionRequestsByUser = new Map<string, typeof deletionRequests>()
+  for (const request of deletionRequests ?? []) {
+    const list = deletionRequestsByUser.get(request.user_id) ?? []
+    list.push(request)
+    deletionRequestsByUser.set(request.user_id, list)
+  }
 
   const filtered = athletes?.filter((a) => {
     if (!q) return true
@@ -37,6 +63,12 @@ export default async function AdminAthletesPage({
   return (
     <div className="max-w-6xl mx-auto">
       <h1 className="text-3xl font-black text-white mb-8">Athletes</h1>
+
+      {athletesError && (
+        <div className="card mb-6 border-red-500/30 text-red-300">
+          Could not load athletes: {athletesError.message}
+        </div>
+      )}
 
       {/* Filters */}
       <div className="card mb-6">
@@ -61,9 +93,7 @@ export default async function AdminAthletesPage({
       <div className="space-y-4">
         {filtered.map((athlete) => {
           const profile = athlete.profiles as { email: string; full_name: string } | null
-          const deletions = athlete.deletion_requests as Array<{
-            id: string; request_type: string; created_at: string; processed_at: string | null
-          }> ?? []
+          const deletions = deletionRequestsByUser.get(athlete.user_id) ?? []
           const pendingDeletion = deletions.find((d) => !d.processed_at)
 
           return (

@@ -4,6 +4,43 @@ export type ThrowingAssessment = {
   confidence?: string
   development?: string
   evidence?: string
+  likely_cause?: string
+}
+
+export type DrillOption = {
+  name: string
+  category: string
+  description: string
+  coaching_cues?: string[] | null
+  sets?: number | null
+  reps?: string | null
+}
+
+// Scorecard categories (six mechanics scores shown to the athlete) don't use
+// the same key names as the drill library's categories, so weak categories
+// need to be translated before matching a real, named drill.
+const SCORECARD_TO_DRILL_CATEGORY: Record<string, string[]> = {
+  Direction: ['direction'],
+  'Lower-Half Sequencing': ['lower_half_sequencing', 'rhythm'],
+  'Upper-Half Timing': ['trunk_rotation', 'arm_timing'],
+  'Front-Side Stability': ['lead_leg_stability', 'deceleration'],
+  Posture: ['lower_half_sequencing', 'trunk_rotation'],
+  'Release Consistency': ['arm_timing', 'command'],
+}
+
+const CAUSE_LABELS: Record<string, string> = {
+  hamstring_tightness_or_weakness: 'hamstring tightness or strength',
+  hip_mobility_limitation: 'hip mobility',
+  ankle_stability_limitation: 'ankle stability',
+  core_pelvis_control: 'core and pelvis control',
+  thoracic_mobility_limitation: 'upper-back (thoracic) mobility',
+  scapular_control_limitation: 'shoulder-blade control',
+  general_repeatability: 'general movement repeatability',
+}
+
+function pickDrill(category: string, drills: DrillOption[], exclude: string[] = []): DrillOption | undefined {
+  const drillCategories = SCORECARD_TO_DRILL_CATEGORY[category] ?? []
+  return drills.find((d) => drillCategories.includes(d.category) && !exclude.includes(d.name))
 }
 
 export type ThrowingPlanDay = {
@@ -74,7 +111,8 @@ function confidencePenalty(confidence?: string) {
 
 export function buildEightWeekThrowingPlan(
   categories: ThrowingAssessment[],
-  priorities: string[] = []
+  priorities: string[] = [],
+  drills: DrillOption[] = []
 ): ThrowingPlanWeek[] {
   const ranked = [...categories]
     .filter((item) => Number.isFinite(item.score))
@@ -83,6 +121,10 @@ export function buildEightWeekThrowingPlan(
   const primary = ranked[0]
   const primaryCategory = primary?.category || 'delivery repeatability'
   const primaryFix = primary?.development || priorities[0] || 'Repeat the same delivery from leg lift through finish.'
+  const causeLabel = primary?.likely_cause ? CAUSE_LABELS[primary.likely_cause] : undefined
+  const primaryDrill = pickDrill(primaryCategory, drills)
+  const repeatabilityDrill = pickDrill(primaryCategory, drills, primaryDrill ? [primaryDrill.name] : [])
+  const primaryFixWithCause = causeLabel ? `${primaryFix} This is likely connected to ${causeLabel}.` : primaryFix
 
   return WEEK_BLOCKS.map((block, index) => {
     const week = index + 1
@@ -101,7 +143,9 @@ export function buildEightWeekThrowingPlan(
         {
           day: 'Monday',
           focus: `${primaryCategory} drill work`,
-          work: `Warm up, then complete 3 sets of 5 controlled reps. Your main correction is: ${primaryFix}`,
+          work: primaryDrill
+            ? `Warm up, then perform ${primaryDrill.name}: ${primaryDrill.sets ?? 3} sets of ${primaryDrill.reps ?? '5 reps'}. ${primaryDrill.description} Your main correction is: ${primaryFixWithCause}`
+            : `Warm up, then complete 3 sets of 5 controlled reps. Your main correction is: ${primaryFixWithCause}`,
         },
         {
           day: 'Tuesday',
@@ -116,7 +160,9 @@ export function buildEightWeekThrowingPlan(
         {
           day: 'Thursday',
           focus: 'Repeatability session',
-          work: `Complete 3 sets of 5 reps for ${primaryCategory.toLowerCase()}. Reset between reps and stop the set when the movement changes.`
+          work: repeatabilityDrill
+            ? `Perform ${repeatabilityDrill.name}: ${repeatabilityDrill.sets ?? 3} sets of ${repeatabilityDrill.reps ?? '5 reps'}. ${repeatabilityDrill.description} Reset between reps and stop the set when the movement changes.`
+            : `Complete 3 sets of 5 reps for ${primaryCategory.toLowerCase()}. Reset between reps and stop the set when the movement changes.`
         },
         {
           day: 'Friday',

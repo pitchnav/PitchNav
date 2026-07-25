@@ -36,13 +36,30 @@ export default async function DashboardPage() {
     .order('created_at', { ascending: false })
     .limit(8)
   const analysisOrderIds = (motionAnalyses ?? []).flatMap((analysis) => analysis.order_id ? [analysis.order_id] : [])
-  const { data: analysisVideos } = analysisOrderIds.length
-    ? await supabase
-        .from('video_submissions')
-        .select('id,order_id,angle,storage_path')
-        .in('order_id', analysisOrderIds)
-        .order('created_at', { ascending: false })
-    : { data: [] }
+  // Analyses created before order-linking (see 024_automatic_processing_save_repair.sql)
+  // have no order_id, so they can't be matched via analysisOrderIds. Fall
+  // back to matching those by their source video's storage path so "Open
+  // Video Review" still resolves to the athlete's actual submitted video
+  // instead of a bare, empty Motion Lab page.
+  const legacyStoragePaths = (motionAnalyses ?? []).flatMap((analysis) => (
+    !analysis.order_id && analysis.source_video_storage_path ? [analysis.source_video_storage_path] : []
+  ))
+  const [orderVideosRes, legacyVideosRes] = await Promise.all([
+    analysisOrderIds.length
+      ? supabase
+          .from('video_submissions')
+          .select('id,order_id,angle,storage_path')
+          .in('order_id', analysisOrderIds)
+          .order('created_at', { ascending: false })
+      : Promise.resolve({ data: [] as { id: string; order_id: string; angle: string; storage_path: string }[] }),
+    legacyStoragePaths.length
+      ? supabase
+          .from('video_submissions')
+          .select('id,order_id,angle,storage_path')
+          .in('storage_path', legacyStoragePaths)
+      : Promise.resolve({ data: [] as { id: string; order_id: string; angle: string; storage_path: string }[] }),
+  ])
+  const analysisVideos = [...(orderVideosRes.data ?? []), ...(legacyVideosRes.data ?? [])]
 
   return (
     <div className="max-w-5xl mx-auto">

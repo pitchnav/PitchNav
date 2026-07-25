@@ -224,6 +224,7 @@ export interface VideoSubmission {
   quality_rejection_reason: string | null
   replacement_requested_at: string | null
   checklist_confirmed: boolean
+  velocity_opt_in: boolean
   created_at: string
   updated_at: string
 }

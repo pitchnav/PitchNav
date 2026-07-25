@@ -18,7 +18,7 @@ export async function POST(request: Request) {
 
   const { data: video } = await supabase
     .from('video_submissions')
-    .select('id,order_id,angle,orders!inner(user_id,payment_confirmed_at)')
+    .select('id,order_id,angle,velocity_opt_in,orders!inner(user_id,payment_confirmed_at)')
     .eq('id', parsed.data.videoSubmissionId)
     .eq('order_id', parsed.data.orderId)
     .eq('angle', 'open_side')
@@ -29,6 +29,11 @@ export async function POST(request: Request) {
   const linkedOrder = Array.isArray(video.orders) ? video.orders[0] : video.orders
   if (!linkedOrder?.payment_confirmed_at) {
     return NextResponse.json({ error: 'Payment must be confirmed before automatic processing.' }, { status: 403 })
+  }
+  // Defense in depth: never queue automatic velocity processing for a video
+  // the athlete did not opt into, even if this endpoint is called directly.
+  if (!video.velocity_opt_in) {
+    return NextResponse.json({ ok: false, configured: false, reason: 'not_opted_in' }, { status: 200 })
   }
 
   const result = await enqueueAutomaticVelocityJob(parsed.data)

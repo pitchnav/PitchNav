@@ -901,6 +901,17 @@ export function MotionAnalysisStudio({
       setError('Video must be smaller than 500 MB.')
       return
     }
+    // Chrome (unlike Safari) cannot decode the QuickTime/.mov container at
+    // all in an HTML5 <video> element, regardless of the codec inside. An
+    // iPhone recording an unconverted .mov silently hangs every downstream
+    // step (pose model, skeleton export, staff review) with no error,
+    // because the "loaded" events this whole pipeline waits on simply never
+    // fire. Catch it here instead of hanging later.
+    if (file.type === 'video/quicktime' || /\.mov$/i.test(file.name)) {
+      setError('This video is a QuickTime (.mov) file, which cannot be automatically processed in this browser. On iPhone, go to Settings → Camera → Formats and choose "Most Compatible" (this saves as .mp4), then re-record or export and upload again.')
+      if (autoProcess) setAutomaticStage('error')
+      return
+    }
     if (fileUrl) URL.revokeObjectURL(fileUrl)
     setVideoReady(false)
     setFileUrl(URL.createObjectURL(file))
@@ -1483,6 +1494,21 @@ export function MotionAnalysisStudio({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoProcess, fileUrl, loadingInitialVideo, videoReady, modelStatus, automaticStage])
 
+  // Watchdog for the automatic pipeline: if the video/model never become
+  // ready (a silently undecodable file, a stalled model download, etc.) the
+  // "Preparing your review" screen would otherwise spin forever with no way
+  // for the athlete or staff to know something failed. Surface a clear,
+  // retry-safe error instead of hanging indefinitely.
+  useEffect(() => {
+    if (!autoProcess || automaticStage !== 'loading' || autoAnalyzeStartedRef.current) return
+    const timeout = setTimeout(() => {
+      if (autoAnalyzeStartedRef.current) return
+      setAutomaticStage('error')
+      setError('Automatic processing is taking longer than expected. This can happen if the video file could not load or the connection is slow. Press Retry below and keep this page open, or try again with a smaller file.')
+    }, 45000)
+    return () => clearTimeout(timeout)
+  }, [autoProcess, automaticStage, fileUrl, loadingInitialVideo, videoReady, modelStatus])
+
   useEffect(() => {
     if (!autoProcess || !summary || autoSaveStartedRef.current) return
     autoSaveStartedRef.current = true
@@ -1626,6 +1652,18 @@ export function MotionAnalysisStudio({
                   setPlaying(false)
                   if (analyzingRef.current) finishAnalysis()
                   if (exportingRef.current) recorderRef.current?.stop()
+                }}
+                onError={() => {
+                  // Without this handler, a file the browser cannot decode
+                  // (e.g. an HEVC/QuickTime container Chrome won't play)
+                  // silently never fires onLoadedData: videoReady stays
+                  // false forever and automatic processing hangs on
+                  // "Loading your video…" with no way for staff to tell
+                  // what went wrong or retry with a different file.
+                  const message = 'This video file could not be played back in this browser. It may be in a format that is not supported (for example HEVC/QuickTime). Re-export as a standard H.264 MP4 and upload again.'
+                  setError(message)
+                  setVideoReady(false)
+                  if (autoProcess) setAutomaticStage('error')
                 }}
               />
               <canvas

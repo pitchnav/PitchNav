@@ -8,6 +8,15 @@ export const runtime = 'nodejs'
 export const maxDuration = 300
 
 const CATEGORIES = ['Direction', 'Lower-Half Sequencing', 'Upper-Half Timing', 'Front-Side Stability', 'Posture', 'Release Consistency']
+const LIKELY_CAUSES = [
+  'hamstring_tightness_or_weakness',
+  'hip_mobility_limitation',
+  'ankle_stability_limitation',
+  'core_pelvis_control',
+  'thoracic_mobility_limitation',
+  'scapular_control_limitation',
+  'general_repeatability',
+]
 
 const schema = {
   type: 'object', additionalProperties: false,
@@ -18,7 +27,7 @@ const schema = {
     strengths: { type: 'array', minItems: 3, maxItems: 3, items: { type: 'string', minLength: 100 } },
     development_priorities: { type: 'array', minItems: 3, maxItems: 3, items: { type: 'string', minLength: 140 } },
     biggest_opportunity: { type: 'object', additionalProperties: false, required: ['title', 'observation', 'why_it_matters', 'coaching_cue'], properties: { title: { type: 'string', minLength: 12 }, observation: { type: 'string', minLength: 100 }, why_it_matters: { type: 'string', minLength: 100 }, coaching_cue: { type: 'string', minLength: 60 } } },
-    categories: { type: 'array', minItems: 6, maxItems: 6, items: { type: 'object', additionalProperties: false, required: ['category', 'score', 'strength', 'development', 'evidence', 'confidence'], properties: { category: { type: 'string', enum: CATEGORIES }, score: { type: 'integer', minimum: 1, maximum: 5 }, strength: { type: 'string', minLength: 100 }, development: { type: 'string', minLength: 180 }, evidence: { type: 'string', minLength: 100 }, confidence: { type: 'string', enum: ['High', 'Moderate', 'Limited'] } } } },
+    categories: { type: 'array', minItems: 6, maxItems: 6, items: { type: 'object', additionalProperties: false, required: ['category', 'score', 'strength', 'development', 'evidence', 'confidence', 'likely_cause'], properties: { category: { type: 'string', enum: CATEGORIES }, score: { type: 'integer', minimum: 1, maximum: 5 }, strength: { type: 'string', minLength: 100 }, development: { type: 'string', minLength: 180 }, evidence: { type: 'string', minLength: 100 }, confidence: { type: 'string', enum: ['High', 'Moderate', 'Limited'] }, likely_cause: { type: 'string', enum: LIKELY_CAUSES } } } },
     phase_notes: { type: 'array', minItems: 6, maxItems: 6, items: { type: 'object', additionalProperties: false, required: ['key', 'strength', 'opportunity', 'coaching_cue', 'confidence_note'], properties: { key: { type: 'string', enum: ['peak_leg_lift', 'hand_separation', 'lead_foot_contact', 'maximum_external_rotation', 'ball_release', 'finish'] }, strength: { type: 'string', minLength: 80 }, opportunity: { type: 'string', minLength: 120 }, coaching_cue: { type: 'string', minLength: 50 }, confidence_note: { type: 'string', minLength: 50 } } } },
   },
 }
@@ -76,6 +85,11 @@ Give the athlete enough value for a paid detailed review:
 - The eight-week plan is reassessed at weeks 2, 4, 6, and 8. The week-8 review leads to a new program based on the athlete’s in-season, preseason, or offseason workload.
 
 Every development priority must name an observable weakness and the phase/evidence supporting it, because verified category weaknesses will be mapped directly to baseball throwing, strength, and mobility work. Do not prescribe a lift as a guaranteed mechanics correction.
+
+For every category, pick the single most likely physical reason behind that score from this fixed list: hamstring_tightness_or_weakness, hip_mobility_limitation, ankle_stability_limitation, core_pelvis_control, thoracic_mobility_limitation, scapular_control_limitation, general_repeatability. Use general_repeatability only when no specific physical limitation is visible. This choice is not a diagnosis — it is a coaching hypothesis connecting a visible pattern to a plausible physical cause, and it directly determines which lifts and mobility work the athlete is assigned, so pick the closest real match instead of defaulting to general_repeatability. Reflect that same reasoning in the category's development field using this shape, in your own words and specific to what you observed:
+1. Name the visible pattern and when in the delivery it happens (for example, a lead leg that keeps traveling forward instead of blocking at foot strike).
+2. Name the plausible physical reason in plain language (for example, tightness or a strength gap in the hamstrings, or limited hip mobility) — match this to the likely_cause you selected.
+3. Say what the plan does about it this week (for example, focusing on hip-hinge strength work and hamstring mobility) so the athlete understands why their specific plan looks the way it does.
 Athlete: ${JSON.stringify(athlete ?? {})}
 Capture FPS: ${analysis.capture_fps ?? 'unknown'}
 Clip summary: ${JSON.stringify(analysis.clip_summary ?? {})}
@@ -103,6 +117,10 @@ Deterministic candidates (supporting data only): ${JSON.stringify(analysis.categ
       .eq('motion_analysis_id', analysisId)
       .maybeSingle()
     if (planLoadError) throw planLoadError
+    const { data: drillCatalog, error: drillsError } = await admin.from('drills')
+      .select('name,category,description,coaching_cues,sets,reps')
+      .eq('is_active', true)
+    if (drillsError) throw drillsError
     const currentPerformanceWeeks = Array.isArray(plan?.strength_mobility_weeks) ? plan.strength_mobility_weeks : []
     if (plan) {
       const planStart = plan.starts_on ? new Date(`${plan.starts_on}T12:00:00Z`) : new Date()
@@ -111,7 +129,7 @@ Deterministic candidates (supporting data only): ${JSON.stringify(analysis.categ
       const planUpdate: Record<string, unknown> = {
         duration_weeks: 8,
         title: '8-Week Pitching Development Plan',
-        weeks: buildEightWeekThrowingPlan(draft.categories as CategoryAssessment[], draft.development_priorities),
+        weeks: buildEightWeekThrowingPlan(draft.categories as CategoryAssessment[], draft.development_priorities, drillCatalog ?? []),
         rolling_window_days: 14,
         follow_up_date: finalReview.toISOString().slice(0, 10),
       }
