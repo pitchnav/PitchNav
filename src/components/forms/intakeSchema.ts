@@ -1,5 +1,15 @@
 import { z } from 'zod'
 
+// react-hook-form's `valueAsNumber: true` turns an empty optional number
+// input into NaN, not undefined, and Zod's `.optional()` rejects NaN as an
+// invalid number. Left unhandled, that silently blocks form submission with
+// no visible error, since these fields have no error message in the JSX.
+// This coerces NaN back to undefined so leaving an optional field blank
+// actually validates as "not provided."
+function optionalNumber<T extends z.ZodTypeAny>(schema: T) {
+  return z.preprocess((val) => (typeof val === 'number' && Number.isNaN(val) ? undefined : val), schema)
+}
+
 // ── Step 1: Contact ──────────────────────────────────────────
 
 export const stepContactSchema = z.object({
@@ -38,7 +48,7 @@ export const stepPhysicalSchema = z.object({
   throwingHand: z.enum(['right', 'left'], { required_error: 'Select throwing hand' }),
   primaryPosition: z.string().min(1, 'Select a position'),
   schoolOrg: z.string().optional(),
-  graduationYear: z.number().int().min(2020).max(2040).optional(),
+  graduationYear: optionalNumber(z.number().int().min(2020).max(2040).optional()),
   playingLevel: z.enum(['middle_school', 'high_school', 'travel', 'college', 'adult_recreational'], {
     required_error: 'Select a playing level',
   }),
@@ -56,7 +66,7 @@ export const stepVelocitySchema = z.object({
   ], { required_error: 'How was velocity measured?' }),
   velocityMeasuredAt: z.string().optional(),
   bullpenIntensity: z.enum(['game_intensity', 'moderate', 'light', 'varies']).optional(),
-  pitchesPerWeek: z.number().int().min(0).max(1000).optional(),
+  pitchesPerWeek: optionalNumber(z.number().int().min(0).max(1000).optional()),
 })
 
 // ── Step 4: Pitching Profile ─────────────────────────────────
@@ -64,7 +74,7 @@ export const stepVelocitySchema = z.object({
 export const stepPitchingSchema = z.object({
   fastballType: z.string().optional(),
   secondaryPitches: z.array(z.string()).optional(),
-  yearsPitching: z.number().int().min(0).max(30).optional(),
+  yearsPitching: optionalNumber(z.number().int().min(0).max(30).optional()),
   currentCoach: z.string().optional(),
   throwingProgram: z.string().optional(),
   strengthProgram: z.string().optional(),
