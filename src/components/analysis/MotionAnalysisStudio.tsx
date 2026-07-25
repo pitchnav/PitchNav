@@ -1174,6 +1174,34 @@ export function MotionAnalysisStudio({
     renderLoop()
   }
 
+  // A canvas-recorded MediaRecorder blob can come back malformed (empty or
+  // truncated) without the recorder itself reporting any error — the only
+  // way to tell is to try actually decoding it. Saving a broken export as if
+  // it succeeded would silently give the athlete/staff an unplayable file.
+  function blobDecodesAsVideo(blob: Blob): Promise<boolean> {
+    return new Promise((resolve) => {
+      const probe = document.createElement('video')
+      probe.muted = true
+      probe.preload = 'auto'
+      const url = URL.createObjectURL(blob)
+      let settled = false
+      const finish = (ok: boolean) => {
+        if (settled) return
+        settled = true
+        clearInterval(poll)
+        clearTimeout(timeout)
+        URL.revokeObjectURL(url)
+        resolve(ok)
+      }
+      const poll = setInterval(() => {
+        if (probe.videoWidth > 0) finish(true)
+      }, 150)
+      const timeout = setTimeout(() => finish(false), 4000)
+      probe.addEventListener('error', () => finish(false))
+      probe.src = url
+    })
+  }
+
   // Shared recorder for both export styles: 'tracked' draws simple pose
   // connector lines directly over the real captured footage (same
   // background/framing as the athlete filmed); 'skeleton' draws the
@@ -1182,6 +1210,17 @@ export function MotionAnalysisStudio({
   // can run silently during automatic processing (no forced browser
   // download) or explicitly from a staff-clicked button (with one).
   async function captureStyledExport(style: 'tracked' | 'skeleton'): Promise<Blob | null> {
+    for (let attempt = 1; attempt <= 2; attempt += 1) {
+      const blob = await recordStyledExport(style)
+      if (!blob) return null
+      if (await blobDecodesAsVideo(blob)) return blob
+      console.error(`Styled export (${style}) produced an undecodable video on attempt ${attempt}`)
+    }
+    setError('The recorded video did not save correctly. Please try the download again.')
+    return null
+  }
+
+  async function recordStyledExport(style: 'tracked' | 'skeleton'): Promise<Blob | null> {
     const video = videoRef.current
     const canvas = canvasRef.current
     if (!video || !canvas || !summary) return null
