@@ -269,60 +269,76 @@ function drawAnatomicalSkeleton(
   const hipMid = midpoint(hips[0], hips[1])
   const scale = Math.max(0.75, Math.min(1.35, Math.min(width, height) / 650))
 
-  const bone = (startIndex: number, endIndex: number, thickness = 1) => {
+  // A single tapered long bone: two rounded end-caps (epiphyses) joined by a
+  // narrower shaft, filled with a soft glow, so limbs read as real bones
+  // instead of a thin wireframe outline.
+  const longBone = (startIndex: number, endIndex: number, capScale = 1) => {
     const start = point(startIndex)
     const end = point(endIndex)
     if (Math.min(start.visibility, end.visibility) < 0.45) return
+    const length = Math.max(1, distance(start, end))
+    const capRadius = Math.max(2.6, Math.min(length * 0.17, scale * 11)) * capScale
+    const shaftHalf = capRadius * 0.36
+    const ux = (end.x - start.x) / length
+    const uy = (end.y - start.y) / length
+    const px = -uy
+    const py = ux
+    const inset = capRadius * 0.6
+    const s = { x: start.x + ux * inset, y: start.y + uy * inset }
+    const e = { x: end.x - ux * inset, y: end.y - uy * inset }
     context.save()
-    context.lineCap = 'round'
-    const length = Math.max(1, Math.hypot(end.x - start.x, end.y - start.y))
-    const normalX = -(end.y - start.y) / length
-    const normalY = (end.x - start.x) / length
-    const separation = Math.min(scale * thickness * 0.75, length * 0.022)
-    context.strokeStyle = 'rgba(226, 232, 240, 0.96)'
-    context.lineWidth = Math.max(0.72, scale * 0.68)
-    for (const side of [-1, 1]) {
-      context.beginPath()
-      context.moveTo(start.x + normalX * separation * side, start.y + normalY * separation * side)
-      context.lineTo(end.x + normalX * separation * side, end.y + normalY * separation * side)
-      context.stroke()
-    }
-    // A faint medullary line gives each tracked segment the appearance of a
-    // measured long bone rather than a heavy animated stick.
-    context.strokeStyle = 'rgba(125, 211, 252, 0.34)'
-    context.lineWidth = Math.max(0.42, scale * 0.38)
+    context.shadowColor = 'rgba(125, 211, 252, 0.5)'
+    context.shadowBlur = scale * 5
+    const grad = context.createLinearGradient(start.x, start.y, end.x, end.y)
+    grad.addColorStop(0, 'rgba(248, 250, 252, 0.97)')
+    grad.addColorStop(0.5, 'rgba(220, 229, 240, 0.86)')
+    grad.addColorStop(1, 'rgba(248, 250, 252, 0.97)')
+    context.fillStyle = grad
     context.beginPath()
-    context.moveTo(start.x, start.y)
-    context.lineTo(end.x, end.y)
+    context.moveTo(s.x + px * shaftHalf, s.y + py * shaftHalf)
+    context.lineTo(e.x + px * shaftHalf, e.y + py * shaftHalf)
+    context.lineTo(e.x - px * shaftHalf, e.y - py * shaftHalf)
+    context.lineTo(s.x - px * shaftHalf, s.y - py * shaftHalf)
+    context.closePath()
+    context.fill()
+    const capAngle = Math.atan2(uy, ux) + Math.PI / 2
+    context.beginPath()
+    context.ellipse(start.x, start.y, capRadius, capRadius * 0.8, capAngle, 0, Math.PI * 2)
+    context.fill()
+    context.beginPath()
+    context.ellipse(end.x, end.y, capRadius, capRadius * 0.8, capAngle, 0, Math.PI * 2)
+    context.fill()
+    context.shadowBlur = 0
+    context.strokeStyle = 'rgba(51, 75, 105, 0.4)'
+    context.lineWidth = Math.max(0.6, scale * 0.5)
     context.stroke()
     context.restore()
   }
 
-  const joint = (index: number, radius = 0.82) => {
+  // A glowing ball-joint at each major articulation point.
+  const joint = (index: number, radius = 1) => {
     const p = point(index)
     if (p.visibility < 0.45) return
+    const jointRadius = Math.max(3, scale * 5.2 * radius)
     context.save()
-    const jointRadius = Math.max(1.35, scale * radius * 1.25)
-    context.fillStyle = 'rgba(8, 15, 27, 0.92)'
-    context.strokeStyle = 'rgba(125, 211, 252, 0.88)'
-    context.lineWidth = Math.max(0.62, scale * 0.66)
+    context.shadowColor = 'rgba(125, 211, 252, 0.75)'
+    context.shadowBlur = scale * 8
+    const grad = context.createRadialGradient(
+      p.x - jointRadius * 0.3, p.y - jointRadius * 0.3, jointRadius * 0.1,
+      p.x, p.y, jointRadius
+    )
+    grad.addColorStop(0, 'rgba(255, 255, 255, 0.98)')
+    grad.addColorStop(0.55, 'rgba(191, 219, 254, 0.9)')
+    grad.addColorStop(1, 'rgba(96, 165, 250, 0.55)')
+    context.fillStyle = grad
     context.beginPath()
     context.arc(p.x, p.y, jointRadius, 0, Math.PI * 2)
     context.fill()
-    context.stroke()
-    context.strokeStyle = 'rgba(226, 232, 240, 0.62)'
-    context.lineWidth = Math.max(0.38, scale * 0.34)
-    context.beginPath()
-    context.moveTo(p.x - jointRadius * 1.55, p.y)
-    context.lineTo(p.x + jointRadius * 1.55, p.y)
-    context.moveTo(p.x, p.y - jointRadius * 1.55)
-    context.lineTo(p.x, p.y + jointRadius * 1.55)
-    context.stroke()
     context.restore()
   }
 
-  // Skull and jaw, sized from the detected shoulder width so it remains
-  // visually stable when facial landmarks are partially hidden.
+  // Skull, sized from the detected shoulder width so it remains visually
+  // stable when facial landmarks are partially hidden.
   const nose = point(0)
   const earLeft = point(7)
   const earRight = point(8)
@@ -335,10 +351,20 @@ function drawAnatomicalSkeleton(
     context.save()
     context.translate(headCenter.x, headCenter.y)
     context.rotate(Math.atan2(earRight.y - earLeft.y, earRight.x - earLeft.x))
-    context.strokeStyle = 'rgba(226, 232, 240, 0.95)'
-    context.lineWidth = Math.max(0.9, scale * 0.95)
+    context.shadowColor = 'rgba(125, 211, 252, 0.45)'
+    context.shadowBlur = scale * 6
+    const skullGrad = context.createRadialGradient(
+      -headWidth * 0.1, -headHeight * 0.15, headWidth * 0.1,
+      0, 0, headWidth * 0.6
+    )
+    skullGrad.addColorStop(0, 'rgba(248, 250, 252, 0.95)')
+    skullGrad.addColorStop(1, 'rgba(203, 213, 225, 0.55)')
+    context.fillStyle = skullGrad
     context.beginPath()
     context.ellipse(0, -headHeight * 0.04, headWidth / 2, headHeight * 0.47, 0, 0, Math.PI * 2)
+    context.fill()
+    context.strokeStyle = 'rgba(51, 75, 105, 0.45)'
+    context.lineWidth = Math.max(0.7, scale * 0.6)
     context.stroke()
     // Mandible and a short facial plane make the head read as a side-view
     // anatomical reference without inventing facial detail.
@@ -349,79 +375,114 @@ function drawAnatomicalSkeleton(
     context.lineTo(faceDirection * headWidth * 0.36, headHeight * 0.26)
     context.quadraticCurveTo(0, headHeight * 0.47, -faceDirection * headWidth * 0.24, headHeight * 0.25)
     context.stroke()
+    // A small dark eye socket reads as an anatomical reference point.
+    context.shadowBlur = 0
+    context.fillStyle = 'rgba(10, 16, 28, 0.7)'
+    context.beginPath()
+    context.ellipse(faceDirection * headWidth * 0.16, -headHeight * 0.1, headWidth * 0.1, headHeight * 0.08, 0, 0, Math.PI * 2)
+    context.fill()
     context.restore()
   }
 
-  // Neck and spine.
   if (shoulderMid.visibility >= 0.45 && hipMid.visibility >= 0.45) {
-    const neckBottom = shoulderMid
-    const neckTop = { x: headCenter.x, y: headCenter.y + distance(shoulderMid, hipMid) * 0.1, visibility: headCenter.visibility }
+    const torsoLength = distance(shoulderMid, hipMid)
+    const neckTop = { x: headCenter.x, y: headCenter.y + torsoLength * 0.1, visibility: headCenter.visibility }
+
+    // Spine: a stacked column of short vertebral discs rather than a single
+    // rod or a stack of closed rings, so it reads as a vertebral column
+    // instead of a floating line or a coiled spring.
     context.save()
-    context.strokeStyle = 'rgba(226, 232, 240, 0.92)'
-    context.lineCap = 'round'
-    context.lineWidth = Math.max(0.85, scale * 0.9)
-    context.beginPath()
-    context.moveTo(neckTop.x, neckTop.y)
-    context.lineTo(neckBottom.x, neckBottom.y)
-    context.lineTo(hipMid.x, hipMid.y)
-    context.stroke()
+    context.shadowColor = 'rgba(125, 211, 252, 0.4)'
+    context.shadowBlur = scale * 3
+    context.fillStyle = 'rgba(226, 232, 240, 0.85)'
+    context.strokeStyle = 'rgba(51, 75, 105, 0.35)'
+    context.lineWidth = Math.max(0.5, scale * 0.4)
+    const vertebraeCount = 8
+    for (let i = 0; i <= vertebraeCount; i += 1) {
+      const t = i / vertebraeCount
+      const x = neckTop.x + (hipMid.x - neckTop.x) * t
+      const y = neckTop.y + (hipMid.y - neckTop.y) * t
+      const discRadius = Math.max(1.6, scale * 2.1)
+      context.beginPath()
+      context.ellipse(x, y, discRadius, discRadius * 0.8, 0, 0, Math.PI * 2)
+      context.fill()
+      context.stroke()
+    }
     context.restore()
 
-    // Shoulder girdle, sternum and rib cage follow the torso's translation
-    // and rotation, so the visualization reads like a measured anatomy model.
-    const torsoLength = distance(shoulderMid, hipMid)
+    // Rib cage: open arcs that curve from the spine around to a front
+    // sternum bar. A closed ring at each height reads as a coiled spring, so
+    // each rib only sweeps the front and sides of the torso.
     const shoulderWidth = Math.max(distance(shoulders[0], shoulders[1]), torsoLength * 0.34)
     const torsoAngle = Math.atan2(hipMid.y - shoulderMid.y, hipMid.x - shoulderMid.x) - Math.PI / 2
     context.save()
     context.translate((shoulderMid.x + hipMid.x) / 2, (shoulderMid.y + hipMid.y) / 2)
     context.rotate(torsoAngle)
-    context.strokeStyle = 'rgba(226, 232, 240, 0.88)'
-    context.lineWidth = Math.max(0.72, scale * 0.7)
-    context.beginPath()
-    context.moveTo(-shoulderWidth * 0.5, -torsoLength * 0.43)
-    context.quadraticCurveTo(0, -torsoLength * 0.34, shoulderWidth * 0.5, -torsoLength * 0.43)
-    context.moveTo(0, -torsoLength * 0.39)
-    context.lineTo(0, torsoLength * 0.14)
-    context.stroke()
-    context.strokeStyle = 'rgba(203, 213, 225, 0.78)'
-    context.lineWidth = Math.max(0.65, scale * 0.58)
-    for (let rib = 0; rib < 5; rib += 1) {
-      const y = -torsoLength * 0.27 + rib * torsoLength * 0.105
-      const taper = 1 - Math.abs(rib - 2) * 0.1
+    context.shadowColor = 'rgba(125, 211, 252, 0.35)'
+    context.shadowBlur = scale * 3
+    context.strokeStyle = 'rgba(226, 232, 240, 0.82)'
+    context.lineCap = 'round'
+    const ribCount = 7
+    for (let rib = 0; rib < ribCount; rib += 1) {
+      const t = rib / (ribCount - 1)
+      const y = -torsoLength * 0.36 + t * torsoLength * 0.5
+      const taper = 1 - Math.abs(t - 0.45) * 0.5
+      const rx = shoulderWidth * 0.56 * taper
+      const ry = torsoLength * 0.09
+      context.lineWidth = Math.max(0.7, scale * 0.72 * taper)
       context.beginPath()
-      context.ellipse(0, y, shoulderWidth * 0.41 * taper, torsoLength * 0.075, 0, 0, Math.PI * 2)
+      context.ellipse(0, y, rx, ry, 0, Math.PI * 0.06, Math.PI * 0.94)
       context.stroke()
     }
+    // Sternum.
+    context.lineWidth = Math.max(0.85, scale * 0.85)
+    context.beginPath()
+    context.moveTo(0, -torsoLength * 0.38)
+    context.lineTo(0, torsoLength * 0.12)
+    context.stroke()
     context.restore()
 
-    // Pelvis bowl.
+    // Pelvis: filled ilium wings meeting a sacrum, so it reads as a solid
+    // basin rather than a thin outline. Sized to stay visible around the hip
+    // ball-joints drawn on top of it later, instead of being swallowed by them.
     context.save()
-    context.strokeStyle = 'rgba(226, 232, 240, 0.9)'
-    context.lineWidth = Math.max(0.75, scale * 0.72)
-    const pelvisHalfWidth = Math.max(distance(hips[0], hips[1]) / 2, torsoLength * 0.13)
+    context.shadowColor = 'rgba(125, 211, 252, 0.4)'
+    context.shadowBlur = scale * 4
+    const pelvisHalfWidth = Math.max(distance(hips[0], hips[1]) / 2 + scale * 7, torsoLength * 0.22)
+    const pelvisGrad = context.createLinearGradient(hipMid.x - pelvisHalfWidth, hipMid.y, hipMid.x + pelvisHalfWidth, hipMid.y)
+    pelvisGrad.addColorStop(0, 'rgba(226, 232, 240, 0.75)')
+    pelvisGrad.addColorStop(0.5, 'rgba(248, 250, 252, 0.92)')
+    pelvisGrad.addColorStop(1, 'rgba(226, 232, 240, 0.75)')
+    context.fillStyle = pelvisGrad
     context.beginPath()
-    context.ellipse(hipMid.x, hipMid.y + torsoLength * 0.045, pelvisHalfWidth, torsoLength * 0.12, 0, Math.PI * 0.06, Math.PI * 0.94)
-    context.moveTo(hipMid.x - pelvisHalfWidth, hipMid.y)
-    context.quadraticCurveTo(hipMid.x, hipMid.y + torsoLength * 0.19, hipMid.x + pelvisHalfWidth, hipMid.y)
-    context.moveTo(hipMid.x, hipMid.y - torsoLength * 0.02)
-    context.lineTo(hipMid.x, hipMid.y + torsoLength * 0.11)
+    context.moveTo(hipMid.x - pelvisHalfWidth, hipMid.y - torsoLength * 0.07)
+    context.quadraticCurveTo(hipMid.x - pelvisHalfWidth * 1.08, hipMid.y + torsoLength * 0.08, hipMid.x - pelvisHalfWidth * 0.5, hipMid.y + torsoLength * 0.17)
+    context.quadraticCurveTo(hipMid.x, hipMid.y + torsoLength * 0.24, hipMid.x + pelvisHalfWidth * 0.5, hipMid.y + torsoLength * 0.17)
+    context.quadraticCurveTo(hipMid.x + pelvisHalfWidth * 1.08, hipMid.y + torsoLength * 0.08, hipMid.x + pelvisHalfWidth, hipMid.y - torsoLength * 0.07)
+    context.quadraticCurveTo(hipMid.x, hipMid.y - torsoLength * 0.02, hipMid.x - pelvisHalfWidth, hipMid.y - torsoLength * 0.07)
+    context.closePath()
+    context.fill()
+    context.strokeStyle = 'rgba(51, 75, 105, 0.4)'
+    context.lineWidth = Math.max(0.6, scale * 0.55)
     context.stroke()
     context.restore()
   }
 
-  // Upper/lower arms and legs.
+  // Upper/lower arms and legs as real long bones.
   ;[[11, 13], [13, 15], [12, 14], [14, 16], [23, 25], [25, 27], [24, 26], [26, 28]].forEach(
-    ([start, end]) => bone(start, end)
+    ([start, end]) => longBone(start, end)
   )
-  ;[11, 12, 13, 14, 15, 16, 23, 24, 25, 26, 27, 28].forEach((index) => joint(index))
+  ;[11, 12, 13, 14, 25, 26, 27, 28].forEach((index) => joint(index))
+  ;[23, 24].forEach((index) => joint(index, 0.72))
+  ;[15, 16].forEach((index) => joint(index, 0.85))
 
-  // Hands and fingers.
+  // Hands and fingers as slimmer bones.
   ;[[15, 17], [15, 19], [15, 21], [17, 19], [16, 18], [16, 20], [16, 22], [18, 20]].forEach(
-    ([start, end]) => bone(start, end, 0.55)
+    ([start, end]) => longBone(start, end, 0.45)
   )
   // Feet, heels and toes.
   ;[[27, 29], [29, 31], [27, 31], [28, 30], [30, 32], [28, 32]].forEach(
-    ([start, end]) => bone(start, end, 0.65)
+    ([start, end]) => longBone(start, end, 0.55)
   )
 }
 
