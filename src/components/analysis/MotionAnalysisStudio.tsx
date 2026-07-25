@@ -180,6 +180,15 @@ function qualityLabel(value: number) {
 
 function describeSupabaseError(reason: unknown): string {
   console.error('Motion review save failed', reason)
+  // Errors thrown deliberately in this file (cooldown messages, missing
+  // phase frames, etc.) already have a specific, human-readable message —
+  // showing it instead of a generic fallback is the difference between
+  // "Could not save your review" and "your membership allows one analysis
+  // every two weeks, next available 7/29".
+  if (reason instanceof Error && reason.message) return reason.message
+  if (reason && typeof reason === 'object' && 'message' in reason && typeof (reason as { message?: unknown }).message === 'string') {
+    return (reason as { message: string }).message
+  }
   return 'Could not save your review. Please try again.'
 }
 
