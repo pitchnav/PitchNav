@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
       console.error('Staff review email was not delivered', delivery.error)
       return NextResponse.json(
         {
-          error: 'The analysis was saved, but the staff notification email could not be delivered.',
+          error: `The analysis was saved, but the staff notification email could not be delivered: ${delivery.error}`,
           saved: true,
           notificationSent: false,
         },
