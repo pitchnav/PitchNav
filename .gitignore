@@ -35,7 +35,11 @@ Thumbs.db
 *.swo
 .idea/
 .vscode/settings.json
-.claude/
+.claude/*
+!.claude/agents/
+!.claude/rules/
+!.claude/skills/
+!.claude/settings.json
 .codex/
 
 # ── Supabase local dev (if used) ─────────────────────────────

@@ -1,0 +1,27 @@
+---
+type: index
+status: active
+---
+
+# Memory Index
+
+## Always loaded by CLAUDE.md
+
+- [[01_MEMORY/CORE_MEMORY]]
+- [[01_MEMORY/FOUNDER_WORKING_STYLE]]
+- [[01_MEMORY/CURRENT_FOCUS]]
+- [[01_MEMORY/ACTIVE_DECISIONS]]
+- [[01_MEMORY/NON_NEGOTIABLES]]
+
+## Canonical reference
+
+- [[01_MEMORY/CANONICAL_FACTS]]
+- [[01_MEMORY/DECISION_LOG]]
+- [[01_MEMORY/ASSUMPTIONS_AND_UNKNOWNS]]
+- [[01_MEMORY/MEMORY_UPDATE_PROTOCOL]]
+
+## Intake and maintenance
+
+- [[01_MEMORY/MEMORY_INBOX]]
+- [[01_MEMORY/MEMORY_HEALTH_CHECK]]
+- [[01_MEMORY/CHANGELOG]]

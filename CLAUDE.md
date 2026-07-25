@@ -1,3 +1,5 @@
+@Pitch Nav Claude Memory/CLAUDE.md
+
 # Pitch Nav — Claude Code Handoff
 
 ## Start here
