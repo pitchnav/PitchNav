@@ -53,6 +53,7 @@ type AutomatedAnalysis = {
   ai_generated_at: string | null
   ai_model: string | null
   source_video_storage_path: string | null
+  tracked_video_storage_path: string | null
   rendered_video_storage_path: string | null
 }
 
@@ -94,6 +95,7 @@ export default function AdminOrderDetailPage() {
   const [automatedAnalysis, setAutomatedAnalysis] = useState<AutomatedAnalysis | null>(null)
   const [phaseUrls, setPhaseUrls] = useState<Record<string, string>>({})
   const [skeletonVideoUrl, setSkeletonVideoUrl] = useState<string | null>(null)
+  const [trackedVideoUrl, setTrackedVideoUrl] = useState<string | null>(null)
   const [originalVideoDownloadUrl, setOriginalVideoDownloadUrl] = useState<string | null>(null)
   const [velocityJob, setVelocityJob] = useState<AutomaticVelocityJob | null>(null)
   const [velocityBusy, setVelocityBusy] = useState(false)
@@ -138,7 +140,7 @@ export default function AdminOrderDetailPage() {
     setVelocityJob((latestVelocityJob as AutomaticVelocityJob | null) ?? null)
 
     const athleteProfileId = orderData.athlete_profiles?.id
-    const automatedSelect = 'id,order_id,delivery_score,category_scores,phase_snapshots,strengths,development_priorities,coach_feedback,velocity_estimate_low,velocity_estimate_high,velocity_confidence,ai_draft_status,ai_generated_at,ai_model,source_video_storage_path,rendered_video_storage_path'
+    const automatedSelect = 'id,order_id,delivery_score,category_scores,phase_snapshots,strengths,development_priorities,coach_feedback,velocity_estimate_low,velocity_estimate_high,velocity_confidence,ai_draft_status,ai_generated_at,ai_model,source_video_storage_path,tracked_video_storage_path,rendered_video_storage_path'
     const { data: orderAnalysis } = await supabase
       .from('motion_analyses')
       .select(automatedSelect)
@@ -167,6 +169,12 @@ export default function AdminOrderDetailPage() {
       setSkeletonVideoUrl(data?.signedUrl ?? null)
     } else {
       setSkeletonVideoUrl(null)
+    }
+    if (typed?.tracked_video_storage_path) {
+      const { data } = await supabase.storage.from('pitch-videos').createSignedUrl(typed.tracked_video_storage_path, 3600, { download: true })
+      setTrackedVideoUrl(data?.signedUrl ?? null)
+    } else {
+      setTrackedVideoUrl(null)
     }
     if (typed?.source_video_storage_path) {
       const { data } = await supabase.storage.from('pitch-videos').createSignedUrl(typed.source_video_storage_path, 3600, { download: true })
@@ -856,11 +864,16 @@ export default function AdminOrderDetailPage() {
             </div>
             {!automatedAnalysis && <p className="mt-3 text-sm text-yellow-300">Automatic processing has not finished for this order. The athlete does not need to run Motion Lab again. Use “Retry automatic processing” only if the original processing screen was closed or interrupted.</p>}
             {automatedAnalysis && <p className="mt-3 text-xs text-slate-400">Step 1: generate the AI coaching draft from the six saved phase images. Step 2: visually verify it. Step 3: apply the verified draft. AI output is educational and is not laboratory or medical analysis.</p>}
-            {automatedAnalysis && (originalVideoDownloadUrl || skeletonVideoUrl) && (
+            {automatedAnalysis && (originalVideoDownloadUrl || trackedVideoUrl || skeletonVideoUrl) && (
               <div className="mt-3 flex flex-wrap gap-2">
                 {originalVideoDownloadUrl && (
                   <a href={originalVideoDownloadUrl} download className="btn-secondary text-sm">
                     <Download className="h-4 w-4" /> Download original video
+                  </a>
+                )}
+                {trackedVideoUrl && (
+                  <a href={trackedVideoUrl} download className="btn-secondary text-sm">
+                    <Download className="h-4 w-4" /> Download video with trackers
                   </a>
                 )}
                 {skeletonVideoUrl && (
@@ -870,8 +883,8 @@ export default function AdminOrderDetailPage() {
                 )}
               </div>
             )}
-            {automatedAnalysis && !skeletonVideoUrl && (
-              <p className="mt-3 text-xs text-slate-500">No skeleton export saved yet for this analysis — it&apos;s produced automatically the next time this video runs through Motion Lab (use &quot;Retry automatic processing&quot; on the Videos tab, or Reset for Testing then re-upload).</p>
+            {automatedAnalysis && (!trackedVideoUrl || !skeletonVideoUrl) && (
+              <p className="mt-3 text-xs text-slate-500">{!trackedVideoUrl && !skeletonVideoUrl ? 'No tracker or skeleton video saved yet for this analysis' : !trackedVideoUrl ? 'No tracker-overlay video saved yet for this analysis' : 'No skeleton video saved yet for this analysis'} — it&apos;s produced automatically the next time this video runs through Motion Lab (use &quot;Retry automatic processing&quot; on the Videos tab, or Reset for Testing then re-upload).</p>
             )}
             {draftMessage && <p className="mt-3 text-sm text-accent-green">{draftMessage}</p>}
           </div>

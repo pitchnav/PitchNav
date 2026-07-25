@@ -627,6 +627,7 @@ export function MotionAnalysisStudio({
   const exportWatchdogRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const selectedFileRef = useRef<File | null>(null)
   const renderedBlobRef = useRef<Blob | null>(null)
+  const trackedBlobRef = useRef<Blob | null>(null)
   const existingSourcePathRef = useRef<string | null>(initialVideo?.storagePath ?? null)
   const initialVideoLoadedRef = useRef(false)
   const analysisStartRef = useRef(Math.max(0, initialVideo?.trimStartSecs ?? 0))
@@ -917,6 +918,7 @@ export function MotionAnalysisStudio({
     setFileUrl(URL.createObjectURL(file))
     selectedFileRef.current = file
     renderedBlobRef.current = null
+    trackedBlobRef.current = null
     analysisIdRef.current = null
     setFileName(file.name)
     analyzingRef.current = false
@@ -1102,24 +1104,31 @@ export function MotionAnalysisStudio({
     renderLoop()
   }
 
-  async function exportOverlay() {
+  // Shared recorder for both export styles: 'tracked' draws simple pose
+  // connector lines directly over the real captured footage (same
+  // background/framing as the athlete filmed); 'skeleton' draws the
+  // normalized anatomical skeleton on the fixed mound stage. Resolves with
+  // the recorded blob instead of only downloading it, so this same function
+  // can run silently during automatic processing (no forced browser
+  // download) or explicitly from a staff-clicked button (with one).
+  async function captureStyledExport(style: 'tracked' | 'skeleton'): Promise<Blob | null> {
     const video = videoRef.current
     const canvas = canvasRef.current
-    if (!video || !canvas || !summary) return
+    if (!video || !canvas || !summary) return null
     if (!('MediaRecorder' in window)) {
       setError('This browser cannot export the overlay. Try Chrome on a desktop computer.')
-      return
+      return null
     }
-    if (!landmarkerRef.current && !(await initializeModel())) return
+    if (!landmarkerRef.current && !(await initializeModel())) return null
     recordedChunksRef.current = []
     exportPoseRef.current = null
     exportFrameTransformRef.current = null
     video.pause()
     setPlaying(false)
-    // Render the skeleton at quarter speed so the downloaded motion study is
-    // easier to inspect frame by frame.
+    // Render at the reviewer's chosen playback speed so the downloaded
+    // motion study is easier to inspect frame by frame.
     video.playbackRate = playbackSpeedRef.current
-    exportStyleRef.current = true
+    exportStyleRef.current = style === 'skeleton'
 
     // Seeking is asynchronous. Recording before it finishes was the cause of
     // exports beginning near the end and containing only a few seconds.
@@ -1145,41 +1154,49 @@ export function MotionAnalysisStudio({
     recorder.ondataavailable = (event) => {
       if (event.data.size) recordedChunksRef.current.push(event.data)
     }
-    recorder.onstop = () => {
-      if (exportWatchdogRef.current) {
-        clearTimeout(exportWatchdogRef.current)
-        exportWatchdogRef.current = null
-      }
-      const blob = new Blob(recordedChunksRef.current, { type: 'video/webm' })
-      renderedBlobRef.current = blob
-      const url = URL.createObjectURL(blob)
-      const anchor = document.createElement('a')
-      anchor.href = url
-      anchor.download = `${fileName.replace(/\.[^.]+$/, '')}-pitch-nav-skeleton.webm`
-      anchor.click()
-      setTimeout(() => URL.revokeObjectURL(url), 1000)
-      exportingRef.current = false
-      exportStyleRef.current = false
-      setExporting(false)
-      drawFrame()
-    }
     exportingRef.current = true
     setExporting(true)
-    recorder.start(250)
-    try {
-      await video.play()
-      setPlaying(true)
-      renderLoop()
-      // Fallback only: onEnded normally stops the recorder. This prevents a
-      // recording from hanging forever if a browser drops the ended event.
-      exportWatchdogRef.current = setTimeout(() => {
+    const blob = await new Promise<Blob | null>((resolve) => {
+      recorder.onstop = () => {
+        if (exportWatchdogRef.current) {
+          clearTimeout(exportWatchdogRef.current)
+          exportWatchdogRef.current = null
+        }
+        exportingRef.current = false
+        exportStyleRef.current = false
+        setExporting(false)
+        drawFrame()
+        resolve(new Blob(recordedChunksRef.current, { type: 'video/webm' }))
+      }
+      recorder.start(250)
+      video.play().then(() => {
+        setPlaying(true)
+        renderLoop()
+        // Fallback only: onEnded normally stops the recorder. This prevents a
+        // recording from hanging forever if a browser drops the ended event.
+        exportWatchdogRef.current = setTimeout(() => {
+          if (recorder.state !== 'inactive') recorder.stop()
+        }, Math.ceil(((exportEnd - exportStart) / video.playbackRate) * 1000) + 5000)
+      }).catch((reason) => {
+        console.error(reason)
         if (recorder.state !== 'inactive') recorder.stop()
-      }, Math.ceil(((exportEnd - exportStart) / video.playbackRate) * 1000) + 5000)
-    } catch (reason) {
-      console.error(reason)
-      if (recorder.state !== 'inactive') recorder.stop()
-      setError('The browser blocked video rendering. Press Play once, then try the download again.')
-    }
+        setError('The browser blocked video rendering. Press Play once, then try the download again.')
+        resolve(null)
+      })
+    })
+    return blob
+  }
+
+  async function exportOverlay() {
+    const blob = await captureStyledExport('skeleton')
+    if (!blob) return
+    renderedBlobRef.current = blob
+    const url = URL.createObjectURL(blob)
+    const anchor = document.createElement('a')
+    anchor.href = url
+    anchor.download = `${fileName.replace(/\.[^.]+$/, '')}-pitch-nav-skeleton.webm`
+    anchor.click()
+    setTimeout(() => URL.revokeObjectURL(url), 1000)
   }
 
   function selectVideoPoint(event: React.MouseEvent<HTMLCanvasElement>) {
@@ -1392,6 +1409,20 @@ export function MotionAnalysisStudio({
           if (sourceError) throw sourceError
         }
 
+        // Both video exports were previously only produced if staff happened
+        // to click a manual "Download" button mid-session, so the automatic
+        // pipeline almost never actually saved them. Generate whichever one
+        // is still missing here so every automatically processed submission
+        // gets both downloadable videos without a second manual pass.
+        if (!trackedBlobRef.current) trackedBlobRef.current = await captureStyledExport('tracked')
+        if (!renderedBlobRef.current) renderedBlobRef.current = await captureStyledExport('skeleton')
+
+        let trackedPath: string | null = null
+        if (trackedBlobRef.current) {
+          trackedPath = `${targetUserId}/motion-lab/${analysisId}/tracked.webm`
+          const { error: trackedError } = await supabase.storage.from('pitch-videos').upload(trackedPath, trackedBlobRef.current, { upsert: true, contentType: 'video/webm' })
+          if (trackedError) throw trackedError
+        }
         let renderedPath: string | null = null
         if (renderedBlobRef.current) {
           renderedPath = `${targetUserId}/motion-lab/${analysisId}/skeleton.webm`
@@ -1412,6 +1443,7 @@ export function MotionAnalysisStudio({
           title: fileName.replace(/\.[^.]+$/, '') || 'Motion Lab Analysis',
           status: 'submitted_for_review',
           source_video_storage_path: sourcePath,
+          tracked_video_storage_path: trackedPath,
           rendered_video_storage_path: renderedPath,
           capture_fps: captureFps,
           calibration_passed: setupConfirmed,
