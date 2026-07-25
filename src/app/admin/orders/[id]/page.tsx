@@ -886,6 +886,9 @@ export default function AdminOrderDetailPage() {
             {automatedAnalysis && (!trackedVideoUrl || !skeletonVideoUrl) && (
               <p className="mt-3 text-xs text-slate-500">{!trackedVideoUrl && !skeletonVideoUrl ? 'No tracker or skeleton video saved yet for this analysis' : !trackedVideoUrl ? 'No tracker-overlay video saved yet for this analysis' : 'No skeleton video saved yet for this analysis'} — it&apos;s produced automatically the next time this video runs through Motion Lab (use &quot;Retry automatic processing&quot; on the Videos tab, or Reset for Testing then re-upload).</p>
             )}
+            {automatedAnalysis && !originalVideoDownloadUrl && (
+              <p className="mt-3 text-xs text-slate-500">The original submitted video is no longer available to download — it was likely cleared by a &quot;Reset for Testing&quot; run after this analysis was saved. The tracker and skeleton exports above are unaffected.</p>
+            )}
             {draftMessage && <p className="mt-3 text-sm text-accent-green">{draftMessage}</p>}
           </div>
           {/* Scorecard */}

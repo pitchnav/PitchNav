@@ -29,7 +29,8 @@ export async function POST(request: Request) {
       .single()
     if (orderError || !order) return NextResponse.json({ error: 'Order not found.' }, { status: 404 })
 
-    const { data: reports } = await admin.from('analysis_reports').select('id').eq('order_id', orderId)
+    const { data: reports, error: reportsLoadError } = await admin.from('analysis_reports').select('id').eq('order_id', orderId)
+    if (reportsLoadError) return NextResponse.json({ error: `Could not load the report to clear: ${reportsLoadError.message}` }, { status: 500 })
     const reportIds = (reports ?? []).map((r: { id: string }) => r.id)
     if (reportIds.length) {
       // scorecard_categories, position_screenshots, assigned_drills all
@@ -38,7 +39,8 @@ export async function POST(request: Request) {
       if (error) return NextResponse.json({ error: `Could not clear the report: ${error.message}` }, { status: 500 })
     }
 
-    const { data: analyses } = await admin.from('motion_analyses').select('id,phase_snapshots').eq('order_id', orderId)
+    const { data: analyses, error: analysesLoadError } = await admin.from('motion_analyses').select('id,phase_snapshots').eq('order_id', orderId)
+    if (analysesLoadError) return NextResponse.json({ error: `Could not load the analysis to clear: ${analysesLoadError.message}` }, { status: 500 })
     for (const analysis of analyses ?? []) {
       const snapshots = Array.isArray(analysis.phase_snapshots) ? analysis.phase_snapshots as Array<{ storage_path?: string }> : []
       const storagePaths = snapshots.map((s) => s.storage_path).filter((p): p is string => Boolean(p))
@@ -53,7 +55,8 @@ export async function POST(request: Request) {
       if (error) return NextResponse.json({ error: `Could not clear the analysis: ${error.message}` }, { status: 500 })
     }
 
-    const { data: videos } = await admin.from('video_submissions').select('id,storage_path').eq('order_id', orderId)
+    const { data: videos, error: videosLoadError } = await admin.from('video_submissions').select('id,storage_path').eq('order_id', orderId)
+    if (videosLoadError) return NextResponse.json({ error: `Could not load the videos to clear: ${videosLoadError.message}` }, { status: 500 })
     const videoStoragePaths = (videos ?? []).map((v: { storage_path: string | null }) => v.storage_path).filter((p: string | null): p is string => Boolean(p))
     if (videoStoragePaths.length) {
       const { error: storageError } = await admin.storage.from('pitch-videos').remove(videoStoragePaths)
