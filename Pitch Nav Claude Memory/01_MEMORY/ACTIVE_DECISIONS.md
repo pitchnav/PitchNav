@@ -47,3 +47,17 @@ Build the internal business foundation before high-risk athlete recommendations:
 **Date:** 2026-07-25
 
 Agents may draft by default. Publishing, sending, spending, deploying, refunding, changing prices, or making consequential athlete-plan changes requires explicit approval.
+
+## D-006 — Vault connected to the real codebase
+
+**Status:** Approved  
+**Date:** 2026-07-24
+
+Connected this vault to the actual Pitch Nav application in "connected coding mode": the vault folder lives inside the app root, and the app's own `CLAUDE.md` imports this vault's `CLAUDE.md`. The app's `.claude/agents`, `.claude/rules`, `.claude/skills` were merged in alongside it (project `.gitignore` narrowed from a blanket `.claude/` rule to track these while keeping `settings.local.json` local-only).
+
+## D-007 — Production deploy approved, 2026-07-24 bug-fix/AI-revamp release
+
+**Status:** Approved and shipped  
+**Date:** 2026-07-24
+
+With explicit approval, pushed a release to `main` (auto-deployed by Vercel) covering: admin Athletes-page fix, score-total sync fix, Open Video Review link fix, a fix for silent hangs on undecodable `.mov` uploads, a deficiency-to-intervention mapping layer for AI coaching drafts, and customer opt-in gating for automatic velocity estimation. Verified live on production after deploy. See `01_MEMORY/CHANGELOG.md` and the app repository's own git history for full detail.
