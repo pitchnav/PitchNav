@@ -108,7 +108,7 @@ Deterministic candidates (supporting data only): ${JSON.stringify(analysis.categ
     )
     const notes = new Map(draft.phase_notes.map((phase) => [phase.key, phase]))
     const { error } = await admin.from('motion_analyses').update({ delivery_score: deliveryScore, strengths: draft.strengths, development_priorities: draft.development_priorities, coach_feedback: draft.overall_assessment, category_scores: draft.categories, phase_snapshots: snapshots.map((shot) => ({ ...shot, ...(notes.get(shot.key) ?? {}) })), biggest_opportunity: draft.biggest_opportunity, ai_draft_status: 'ready_for_staff_review', ai_generated_at: new Date().toISOString(), ai_model: model }).eq('id', analysisId)
-    if (error) throw error
+    if (error) throw new Error(`Could not save the AI draft: ${error.message}`)
 
     // Rebuild the throwing plan from the final AI-assisted weaknesses for every
     // athlete. Performance members also receive the correlated strength plan.
@@ -116,11 +116,11 @@ Deterministic candidates (supporting data only): ${JSON.stringify(analysis.categ
       .select('id,starts_on,strength_mobility_weeks')
       .eq('motion_analysis_id', analysisId)
       .maybeSingle()
-    if (planLoadError) throw planLoadError
+    if (planLoadError) throw new Error(`Could not load the training plan: ${planLoadError.message}`)
     const { data: drillCatalog, error: drillsError } = await admin.from('drills')
       .select('name,category,description,coaching_cues,sets,reps')
       .eq('is_active', true)
-    if (drillsError) throw drillsError
+    if (drillsError) throw new Error(`Could not load the drill library: ${drillsError.message}`)
     const currentPerformanceWeeks = Array.isArray(plan?.strength_mobility_weeks) ? plan.strength_mobility_weeks : []
     if (plan) {
       const planStart = plan.starts_on ? new Date(`${plan.starts_on}T12:00:00Z`) : new Date()
@@ -142,7 +142,7 @@ Deterministic candidates (supporting data only): ${JSON.stringify(analysis.categ
       const { error: planUpdateError } = await admin.from('training_plans')
         .update(planUpdate)
         .eq('id', plan.id)
-      if (planUpdateError) throw planUpdateError
+      if (planUpdateError) throw new Error(`Could not update the training plan: ${planUpdateError.message}`)
     }
 
     return NextResponse.json({ ok: true })
