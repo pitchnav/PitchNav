@@ -25,7 +25,7 @@ status: active
 - [[.claude/skills/start-pitch-nav-feature/SKILL]]
 - [[.claude/skills/weekly-memory-review/SKILL]]
 - [[00_HOME/CONNECT_TO_PITCH_NAV_CODE]]
-- [[00_HOME/HOME]]
+- [[HOME]]
 - [[00_HOME/HOW_CLAUDE_MEMORY_WORKS]]
 - [[00_HOME/VAULT_MAP]]
 - [[01_MEMORY/ACTIVE_DECISIONS]]

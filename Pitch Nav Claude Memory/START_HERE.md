@@ -20,7 +20,7 @@ It is designed to do four jobs:
 2. Open Obsidian.
 3. Choose **Open folder as vault**.
 4. Select `Pitch Nav Claude Memory`.
-5. Open [[00_HOME/HOME]].
+5. Open [[HOME]].
 
 ## Use it with Claude Code
 

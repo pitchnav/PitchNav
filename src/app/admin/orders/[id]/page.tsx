@@ -84,6 +84,7 @@ export default function AdminOrderDetailPage() {
   const [profile, setProfile] = useState<AthleteProfile | null>(null)
   const [videos, setVideos] = useState<VideoSubmission[]>([])
   const [videoUrls, setVideoUrls] = useState<Record<string, string>>({})
+  const [videoLoadErrors, setVideoLoadErrors] = useState<Record<string, boolean>>({})
   const [drills, setDrills] = useState<Drill[]>([])
   const [assigned, setAssigned] = useState<AssignedDrill[]>([])
   const [scorecard, setScorecard] = useState<ScorecardCategory[]>([])
@@ -370,6 +371,27 @@ export default function AdminOrderDetailPage() {
     }
   }
 
+  async function resetTestOrder() {
+    if (!window.confirm('Reset this order for testing? This permanently deletes its videos, motion analysis, and report so you can run the whole flow again from Start Analysis / Motion Lab. Payment status is left as-is — no new checkout needed. This cannot be undone.')) return
+    setSaving(true)
+    setDraftMessage('Resetting order for testing…')
+    try {
+      const response = await fetch('/api/admin/reset-test-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId: id }),
+      })
+      const result = await response.json() as { error?: string }
+      if (!response.ok) throw new Error(result.error || 'Could not reset the order.')
+      await loadData()
+      setDraftMessage('Order reset. Videos, analysis, and report are cleared — upload a new video to run the flow again.')
+    } catch (reason) {
+      setDraftMessage(reason instanceof Error ? reason.message : 'Could not reset the order.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
   async function markPaidOverride(tier: 'throwing' | 'performance') {
     if (order?.payment_confirmed_at) return
     if (!window.confirm(`Mark this order paid as a ${tier === 'performance' ? '$40 Complete Performance' : '$25 Throwing Development'} admin/testing override? This bypasses Stripe and should only be used for testing.`)) return
@@ -580,6 +602,18 @@ export default function AdminOrderDetailPage() {
               </button>
             </div>
 
+            <div className="card border-red-500/20">
+              <h2 className="text-base font-semibold text-white mb-1">Reset for Testing</h2>
+              <p className="mb-4 text-xs text-slate-500">Clears this order&apos;s videos, motion analysis, and report so you can run the whole flow again on the same order — no new signup or payment needed. Payment status is untouched.</p>
+              <button
+                onClick={resetTestOrder}
+                disabled={saving}
+                className="btn-secondary w-full justify-center border-red-500/30 text-red-400 hover:border-red-500"
+              >
+                <RefreshCw className="h-4 w-4" /> Reset order for testing
+              </button>
+            </div>
+
             {/* Email athlete */}
             <div className="card">
               <h2 className="text-base font-semibold text-white mb-4">Email Athlete</h2>
@@ -645,11 +679,19 @@ export default function AdminOrderDetailPage() {
               </div>
 
               {videoUrls[video.id] ? (
-                <video
-                  src={videoUrls[video.id]}
-                  controls
-                  className="w-full rounded-lg bg-black max-h-80 object-contain mb-3"
-                />
+                <div className="mb-3">
+                  <video
+                    src={videoUrls[video.id]}
+                    controls
+                    className="w-full rounded-lg bg-black max-h-80 object-contain"
+                    onError={() => setVideoLoadErrors((prev) => ({ ...prev, [video.id]: true }))}
+                  />
+                  {videoLoadErrors[video.id] && (
+                    <p className="mt-2 rounded-lg border border-red-500/25 bg-red-500/5 p-3 text-xs text-red-300">
+                      This video file could not be played back in this browser. It may be corrupted or in an unsupported format (for example HEVC/QuickTime .mov). Reject it below to let the athlete upload a replacement.
+                    </p>
+                  )}
+                </div>
               ) : (
                 <div className="flex items-center gap-2 text-sm text-slate-500 mb-3">
                   <Video className="h-4 w-4" />
