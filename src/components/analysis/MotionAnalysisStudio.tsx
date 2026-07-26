@@ -86,14 +86,21 @@ function buildCategoryFeedback(frames: FrameMetrics[], summary: ClipSummary): Ca
     if (valid.length < 2) return 0
     return Math.max(...valid) - Math.min(...valid)
   }
+  // A single low-confidence frame (motion blur, brief occlusion — common in
+  // real phone video) can misplace a joint and swing its angle estimate to
+  // an extreme. Spread is just max-min, so one bad frame among many good
+  // ones would otherwise tank a score that should reflect the real pitch.
+  // The displayed elbow/knee/trunk ranges elsewhere already filter on this
+  // same confidence threshold; the scorecard needs the same filter.
+  const reliableFrames = frames.filter((frame) => frame.confidence >= 0.45)
   const quality: CategoryFeedback['confidence'] =
     summary.averageConfidence >= 0.8 ? 'High' : summary.averageConfidence >= 0.6 ? 'Moderate' : 'Low'
   const peak = summary.peakLegLiftTime
   const stride = summary.widestStrideTime
   const sequenceGap = peak !== null && stride !== null ? stride - peak : null
-  const trunkSpread = spread(frames.map((frame) => frame.trunkTilt))
-  const kneeSpread = spread(frames.filter((frame) => stride === null || frame.time >= stride).map((frame) => frame.leadKnee))
-  const elbowSpread = spread(frames.map((frame) => frame.throwingElbow))
+  const trunkSpread = spread(reliableFrames.map((frame) => frame.trunkTilt))
+  const kneeSpread = spread(reliableFrames.filter((frame) => stride === null || frame.time >= stride).map((frame) => frame.leadKnee))
+  const elbowSpread = spread(reliableFrames.map((frame) => frame.throwingElbow))
   const score = (value: number, good: number, fair: number) =>
     value <= good ? 5 : value <= fair ? 4 : value <= fair * 1.5 ? 3 : value <= fair * 2 ? 2 : 1
 
