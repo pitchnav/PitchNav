@@ -1405,13 +1405,23 @@ export function MotionAnalysisStudio({
     const clipDuration = Math.max(0.01, clipEnd - clipStart)
     const peak = summary?.peakLegLiftTime ?? clipStart + clipDuration * 0.25
     const stride = summary?.widestStrideTime ?? clipStart + clipDuration * 0.55
+    // Foot-contact through ball release happens in a fixed, short real-world window
+    // (roughly 100-170ms) no matter how much dead time the athlete leaves in the
+    // trimmed clip. Anchoring these to a percentage of total clip length (the old
+    // approach) could walk the frame past release into the deceleration phase on
+    // any clip that wasn't trimmed to the exact instant. Anchor to real seconds
+    // from the two genuinely detected events (peak leg lift, widest stride) instead.
+    const handSeparation = peak + (stride - peak) * 0.65
+    const maxExternalRotation = stride + 0.04
+    const ballRelease = stride + 0.13
+    const finish = ballRelease + 0.35
     const phases = [
       { key: 'peak_leg_lift', label: 'Peak Leg Lift', time: peak },
-      { key: 'hand_separation', label: 'Hand Separation', time: Math.min(clipEnd, peak + clipDuration * 0.1) },
+      { key: 'hand_separation', label: 'Hand Separation', time: Math.min(clipEnd, handSeparation) },
       { key: 'lead_foot_contact', label: 'Lead-Foot Contact Candidate', time: stride },
-      { key: 'maximum_external_rotation', label: 'Maximum External Rotation Candidate', time: Math.min(clipEnd, stride + clipDuration * 0.1) },
-      { key: 'ball_release', label: 'Ball Release Candidate', time: Math.min(clipEnd, stride + clipDuration * 0.18) },
-      { key: 'finish', label: 'Finish & Deceleration', time: clipStart + clipDuration * 0.9 },
+      { key: 'maximum_external_rotation', label: 'Maximum External Rotation Candidate', time: Math.min(clipEnd, maxExternalRotation) },
+      { key: 'ball_release', label: 'Ball Release Candidate', time: Math.min(clipEnd, ballRelease) },
+      { key: 'finish', label: 'Finish & Deceleration', time: Math.min(clipEnd, finish) },
     ]
     const output: Array<{ key: string; label: string; time: number; storage_path: string; confidence_note: string }> = []
     video.pause()
