@@ -1291,8 +1291,13 @@ export function MotionAnalysisStudio({
           window.setTimeout(finish, 800)
         })
       }
+      // Unlike capturePhaseScreenshots, nothing here reads the canvas pixels
+      // (no toBlob/export), so there is nothing to wait a paint tick for --
+      // drawFrame() already runs pose detection and pushes the sample
+      // synchronously. Waiting on requestAnimationFrame here would just
+      // reintroduce the same background-tab throttling this loop exists to
+      // avoid.
       drawFrame()
-      await new Promise((resolve) => requestAnimationFrame(() => resolve(null)))
     }
     if (analyzingRef.current) finishAnalysis()
   }
