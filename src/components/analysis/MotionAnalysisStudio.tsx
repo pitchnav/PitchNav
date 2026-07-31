@@ -1169,20 +1169,31 @@ export function MotionAnalysisStudio({
       setAnalyzing(false)
       return
     }
-    const peakLegLift = [...frames].sort((a, b) => (b.legLift ?? -1) - (a.legLift ?? -1))[0]
     const widestStride = [...frames].sort((a, b) => (b.strideWidth ?? -1) - (a.strideWidth ?? -1))[0]
+    // legLift is just "whichever knee is currently highest" -- it does not
+    // distinguish the lead leg from the trail leg. A hard-throwing pitcher's
+    // trail (drive) leg often kicks up higher during the finish than the
+    // real pre-pitch leg lift ever did, so searching the whole clip for the
+    // single highest knee can land on the finish instead of the windup (this
+    // is what produced a "peak leg lift" phase screenshot taken from the end
+    // of a real delivery). Leg lift must happen before the stride by
+    // definition, so only search frames up to that point.
+    const framesBeforeStride = widestStride ? frames.filter((frame) => frame.time <= widestStride.time) : frames
+    const peakLegLift = [...(framesBeforeStride.length ? framesBeforeStride : frames)]
+      .sort((a, b) => (b.legLift ?? -1) - (a.legLift ?? -1))[0]
     const video = videoRef.current
     const clipStart = analysisStartRef.current
     const clipEnd = video ? Math.min(video.duration, analysisEndRef.current ?? video.duration) : null
     const clipDuration = clipEnd !== null ? Math.max(0.01, clipEnd - clipStart) : null
     const peakFraction = clipDuration !== null && peakLegLift ? (peakLegLift.time - clipStart) / clipDuration : null
     const strideFraction = clipDuration !== null && widestStride ? (widestStride.time - clipStart) / clipDuration : null
-    // A real delivery's leg lift happens early-to-mid clip, well before the
-    // stride, which itself still needs room afterward for the arm action and
-    // finish. Peak leg-lift landing in the final third, or stride landing at
-    // the very end, means the clip almost certainly is not one clean pitch.
+    // Leg lift is now structurally before the stride, so this just catches
+    // clips with no real gap between the two (no windup was captured) or a
+    // stride landing at the very end (no room left for the throw itself) --
+    // both signs the clip likely is not one clean pitch from set position
+    // through release.
     const deliveryShapeValid = peakFraction !== null && strideFraction !== null
-      && peakFraction <= 0.65 && strideFraction > peakFraction && strideFraction <= 0.92
+      && strideFraction - peakFraction >= 0.05 && strideFraction <= 0.95
     setSummary({
       frames: frames.length,
       averageConfidence: frames.reduce((sum, frame) => sum + frame.confidence, 0) / frames.length,
