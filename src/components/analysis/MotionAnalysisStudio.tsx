@@ -1245,6 +1245,18 @@ export function MotionAnalysisStudio({
     setAnalyzing(false)
   }
 
+  // Scoring, phase timing, and every screenshot candidate in this report all
+  // come from these sampled frames, so collecting them must not depend on
+  // sustained real-time video decode. Browsers throttle -- sometimes almost
+  // to a full stop -- playback of a backgrounded, occluded, or low-power-mode
+  // video, which can silently starve a continuous-playback pass down to just
+  // a couple of frames on a real, clean delivery (observed directly: a
+  // genuine 3.9s pitch produced only 2 samples and tripped the "not one
+  // complete pitch" safety flag). Explicit seeks with a bounded per-step
+  // timeout make no such assumption -- each step either lands on a decoded
+  // frame or times out on its own, regardless of tab visibility or device
+  // power state. This is the same seek-and-wait pattern capturePhaseScreenshots
+  // already uses successfully for the six phase photos.
   async function analyzeFullClip() {
     const video = videoRef.current
     if (!video || !fileUrl) return
@@ -1255,11 +1267,34 @@ export function MotionAnalysisStudio({
     setError('')
     analyzingRef.current = true
     setAnalyzing(true)
-    video.currentTime = analysisStartRef.current
-    video.playbackRate = playbackSpeedRef.current
-    await video.play()
-    setPlaying(true)
-    renderLoop()
+    video.pause()
+    setPlaying(false)
+
+    const start = analysisStartRef.current
+    const end = Math.min(video.duration, analysisEndRef.current ?? video.duration)
+    const duration = Math.max(0.01, end - start)
+    const sampleCount = Math.max(60, Math.round(duration * 30))
+    for (let i = 0; i <= sampleCount; i += 1) {
+      if (!analyzingRef.current) break
+      const targetTime = Math.min(end, start + (duration * i) / sampleCount)
+      if (Math.abs(video.currentTime - targetTime) > 0.002) {
+        await new Promise<void>((resolve) => {
+          let settled = false
+          const finish = () => {
+            if (settled) return
+            settled = true
+            video.removeEventListener('seeked', finish)
+            resolve()
+          }
+          video.addEventListener('seeked', finish, { once: true })
+          video.currentTime = targetTime
+          window.setTimeout(finish, 800)
+        })
+      }
+      drawFrame()
+      await new Promise((resolve) => requestAnimationFrame(() => resolve(null)))
+    }
+    if (analyzingRef.current) finishAnalysis()
   }
 
   // A canvas-recorded MediaRecorder blob can come back malformed (empty or
