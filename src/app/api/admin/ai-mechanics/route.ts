@@ -3,6 +3,7 @@ import { createAdminClient, createClient } from '@/lib/supabase/server'
 import { buildBaseballPerformancePlan, type CategoryAssessment } from '@/lib/performance-plan'
 import { buildEightWeekThrowingPlan } from '@/lib/throwing-plan'
 import { calculateDeliveryScore } from '@/lib/utils'
+import { summarizeScreenSession, type ScreenResult } from '@/lib/movement-screens'
 
 export const runtime = 'nodejs'
 export const maxDuration = 300
@@ -27,7 +28,54 @@ const schema = {
     strengths: { type: 'array', minItems: 3, maxItems: 3, items: { type: 'string', minLength: 100 } },
     development_priorities: { type: 'array', minItems: 3, maxItems: 3, items: { type: 'string', minLength: 140 } },
     biggest_opportunity: { type: 'object', additionalProperties: false, required: ['title', 'observation', 'why_it_matters', 'coaching_cue'], properties: { title: { type: 'string', minLength: 12 }, observation: { type: 'string', minLength: 100 }, why_it_matters: { type: 'string', minLength: 100 }, coaching_cue: { type: 'string', minLength: 60 } } },
-    categories: { type: 'array', minItems: 6, maxItems: 6, items: { type: 'object', additionalProperties: false, required: ['category', 'score', 'strength', 'development', 'evidence', 'confidence', 'likely_cause'], properties: { category: { type: 'string', enum: CATEGORIES }, score: { type: 'integer', minimum: 1, maximum: 5 }, strength: { type: 'string', minLength: 100 }, development: { type: 'string', minLength: 180 }, evidence: { type: 'string', minLength: 100 }, confidence: { type: 'string', enum: ['High', 'Moderate', 'Limited'] }, likely_cause: { type: 'string', enum: LIKELY_CAUSES } } } },
+    categories: {
+      type: 'array', minItems: 6, maxItems: 6,
+      items: {
+        type: 'object', additionalProperties: false,
+        required: ['category', 'score', 'strength', 'development', 'evidence', 'confidence', 'likely_cause', 'physical_hypothesis'],
+        properties: {
+          category: { type: 'string', enum: CATEGORIES },
+          score: { type: 'integer', minimum: 1, maximum: 5 },
+          strength: { type: 'string', minLength: 100 },
+          development: { type: 'string', minLength: 180 },
+          evidence: { type: 'string', minLength: 100 },
+          confidence: { type: 'string', enum: ['High', 'Moderate', 'Limited'] },
+          // Coarse tag retained only so the existing program mapping keeps
+          // working. The real reasoning lives in physical_hypothesis, which
+          // is not restricted to a fixed list.
+          likely_cause: { type: 'string', enum: LIKELY_CAUSES },
+          physical_hypothesis: {
+            type: 'object', additionalProperties: false,
+            required: ['limitation', 'mechanism', 'competing_explanations', 'evidence_basis', 'confirming_screen', 'confidence'],
+            properties: {
+              // Free text on purpose. Athletes vary far too much to force
+              // every physical explanation into a fixed enum.
+              limitation: { type: 'string', minLength: 25 },
+              mechanism: { type: 'string', minLength: 120 },
+              // Forces differential thinking instead of committing to the
+              // first plausible story. This is the main guard against
+              // confident-sounding nonsense.
+              competing_explanations: {
+                type: 'array', minItems: 1, maxItems: 3,
+                items: {
+                  type: 'object', additionalProperties: false,
+                  required: ['explanation', 'why_less_likely'],
+                  properties: {
+                    explanation: { type: 'string', minLength: 20 },
+                    why_less_likely: { type: 'string', minLength: 40 },
+                  },
+                },
+              },
+              // Declares out loud whether this rests on a real measurement or
+              // is still an inference from video.
+              evidence_basis: { type: 'string', enum: ['measured_screen', 'video_inference'] },
+              confirming_screen: { type: 'string', minLength: 10 },
+              confidence: { type: 'string', enum: ['High', 'Moderate', 'Limited'] },
+            },
+          },
+        },
+      },
+    },
     phase_notes: { type: 'array', minItems: 6, maxItems: 6, items: { type: 'object', additionalProperties: false, required: ['key', 'strength', 'opportunity', 'coaching_cue', 'confidence_note'], properties: { key: { type: 'string', enum: ['peak_leg_lift', 'hand_separation', 'lead_foot_contact', 'maximum_external_rotation', 'ball_release', 'finish'] }, strength: { type: 'string', minLength: 80 }, opportunity: { type: 'string', minLength: 120 }, coaching_cue: { type: 'string', minLength: 50 }, confidence_note: { type: 'string', minLength: 50 } } } },
   },
 }
@@ -53,7 +101,7 @@ export async function POST(request: Request) {
 
     const admin = createAdminClient()
     const { data: analysis, error: analysisError } = await admin.from('motion_analyses')
-      .select('id,mechanics_metrics,clip_summary,category_scores,phase_snapshots,capture_fps,athlete_profiles(date_of_birth,height_feet,height_inches,weight_lbs,throwing_hand,playing_level,current_avg_velocity,current_max_velocity,goal_velocity,main_goal,mechanical_concern,throwing_program,strength_program,upcoming_deadline,bullpen_intensity,pitches_per_week)')
+      .select('id,user_id,mechanics_metrics,clip_summary,category_scores,phase_snapshots,capture_fps,athlete_profiles(date_of_birth,height_feet,height_inches,weight_lbs,throwing_hand,playing_level,current_avg_velocity,current_max_velocity,goal_velocity,main_goal,mechanical_concern,throwing_program,strength_program,upcoming_deadline,bullpen_intensity,pitches_per_week)')
       .eq('id', analysisId).single()
     if (analysisError) return NextResponse.json({ error: `Could not load the saved Motion Lab result: ${analysisError.message}` }, { status: 500 })
     if (!analysis) return NextResponse.json({ error: 'Motion analysis not found.' }, { status: 404 })
@@ -71,6 +119,27 @@ export async function POST(request: Request) {
       error: 'Automatic six-phase processing has not finished for this order. Retry automatic processing only if the customer processing screen was interrupted.',
     }, { status: 409 })
     const athlete = Array.isArray(analysis.athlete_profiles) ? analysis.athlete_profiles[0] : analysis.athlete_profiles
+
+    const analysisUserId = analysis.user_id as string
+
+    // Movement screens are measured physical capacity, captured separately
+    // from the pitch. When present they replace guesswork about WHY a
+    // mechanics fault is happening; when absent the model must say the
+    // physical explanation is still an inference from video.
+    const { data: screenSession } = await admin.from('movement_screen_sessions')
+      .select('id,results,summary,completed_at')
+      .eq('user_id', analysisUserId)
+      .eq('status', 'complete')
+      .order('completed_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    const screenResults = Array.isArray(screenSession?.results) ? screenSession.results as ScreenResult[] : []
+    const screenSummary = screenResults.length ? summarizeScreenSession(screenResults) : null
+    const screensUsable = Boolean(screenSummary && !screenSummary.insufficient)
+    const screenBlock = screensUsable && screenSummary
+      ? `MEASURED MOVEMENT SCREENS (captured ${screenSession?.completed_at ?? 'recently'}). These are measured numbers, not guesses. Ground every physical explanation in them and set evidence_basis to "measured_screen" when you do:
+${screenSummary.findings.map((finding) => `- [${finding.kind}, ${finding.reliability.toLowerCase()} reliability] ${finding.detail}`).join('\n') || '- Every screen measured inside the expected range with no notable side-to-side difference.'}`
+      : `NO USABLE MOVEMENT SCREENS ON FILE. You have not measured this athlete's physical capacity. Every physical explanation is therefore an inference from video only: set evidence_basis to "video_inference", keep confidence at "Limited" or "Moderate", and name the screen that would settle it in confirming_screen. Do not state a physical limitation as established fact.`
     const prompt = `Prepare a conservative baseball pitching-coach draft for mandatory human review. Analyze only visible evidence in these side-view phase candidates and supplied 2D pose data. Do not diagnose injury, calculate injury risk, claim laboratory biomechanics, infer exact internal joint rotation, or promise velocity gains. Lower confidence for obscured phases. Maximum external rotation and ball release are only candidates. Scores are internal coaching scores, not medical scores.
 
 Write every athlete-facing field so an eighth grader can understand it on the first read. Use short, direct sentences and familiar body words. If a baseball term is necessary, explain it in the same sentence. Do not use vague handoffs such as “staff should confirm,” “review whether,” “a basic directional check is possible,” or “use this as a starting point.” Do not use unexplained phrases such as “plate-line direction,” “lateral drift,” “frontal plane,” or “kinetic chain.”
@@ -86,7 +155,21 @@ Give the athlete enough value for a paid detailed review:
 
 Every development priority must name an observable weakness and the phase/evidence supporting it, because verified category weaknesses will be mapped directly to baseball throwing, strength, and mobility work. Do not prescribe a lift as a guaranteed mechanics correction.
 
-For every category, pick the single most likely physical reason behind that score from this fixed list: hamstring_tightness_or_weakness, hip_mobility_limitation, ankle_stability_limitation, core_pelvis_control, thoracic_mobility_limitation, scapular_control_limitation, general_repeatability. Use general_repeatability only when no specific physical limitation is visible. This choice is not a diagnosis — it is a coaching hypothesis connecting a visible pattern to a plausible physical cause, and it directly determines which lifts and mobility work the athlete is assigned, so pick the closest real match instead of defaulting to general_repeatability. Reflect that same reasoning in the category's development field using this shape, in your own words and specific to what you observed:
+${screenBlock}
+
+For every category, reason out the physical explanation in physical_hypothesis. Do not pick from a menu — describe the actual limitation you believe is driving what you see, in your own plain words, however specific or compound it is. Athletes differ enormously in build, training age, and movement history, and forcing every explanation into a small fixed set produces generic, wrong advice.
+
+Rules for physical_hypothesis:
+- limitation: name the movement-capacity limitation in plain language (for example, "the lead hip does not rotate inward far enough to let the pelvis clear the front leg"). Describe capacity and control only. Never name a diagnosis, injury, or anatomical pathology — no labrum, no UCL, no impingement, no tears, no inflammation. If you find yourself naming a body-part injury, you have gone too far; describe the movement limitation instead.
+- mechanism: explain why that limitation would produce this specific fault at this specific phase. If you cannot construct that chain, your hypothesis is probably wrong — pick a different one.
+- competing_explanations: name at least one other credible explanation for the same visible fault, and say why you consider it less likely here. This is required. A fault almost always has more than one possible cause, and the second-best explanation is often the right one.
+- evidence_basis: "measured_screen" only if a measured movement screen above actually supports it. If you are reasoning from the pitch video alone, it is "video_inference" — say so honestly. A single camera watching a fast rotational movement cannot establish a physical limitation on its own.
+- confirming_screen: name the specific screen or test that would confirm or rule this out at the next check.
+- confidence: be conservative. "High" requires a supporting measurement, not a convincing story.
+
+Also set likely_cause to the closest coarse tag from this list purely for program routing: hamstring_tightness_or_weakness, hip_mobility_limitation, ankle_stability_limitation, core_pelvis_control, thoracic_mobility_limitation, scapular_control_limitation, general_repeatability. This tag is a rough bucket, not your actual reasoning — use general_repeatability when none of them fit what you described.
+
+Reflect that same reasoning in the category's development field using this shape, in your own words and specific to what you observed:
 1. Name the visible pattern and when in the delivery it happens (for example, a lead leg that keeps traveling forward instead of blocking at foot strike).
 2. Name the plausible physical reason in plain language (for example, tightness or a strength gap in the hamstrings, or limited hip mobility) — match this to the likely_cause you selected.
 3. Say what the plan does about it this week (for example, focusing on hip-hinge strength work and hamstring mobility) so the athlete understands why their specific plan looks the way it does.
