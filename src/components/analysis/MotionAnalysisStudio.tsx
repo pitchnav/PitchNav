@@ -30,6 +30,8 @@ type ClipSummary = {
   trunkTiltRange: [number, number] | null
   peakLegLiftTime: number | null
   widestStrideTime: number | null
+  maxExternalRotationTime: number | null
+  ballReleaseTime: number | null
   // Peak leg-lift and widest-stride are each just the single frame with the
   // highest value for that joint across the whole clip. On one continuous
   // pitch that's a reasonable proxy for those real phases. On anything else
@@ -1181,6 +1183,28 @@ export function MotionAnalysisStudio({
     const framesBeforeStride = widestStride ? frames.filter((frame) => frame.time <= widestStride.time) : frames
     const peakLegLift = [...(framesBeforeStride.length ? framesBeforeStride : frames)]
       .sort((a, b) => (b.legLift ?? -1) - (a.legLift ?? -1))[0]
+    // Hip-shoulder separation (trunk coil) is a real, camera-angle-tolerant 2D
+    // signal, not a guess: it builds through the stride, peaks around foot
+    // contact as the arm cocks, then collapses rapidly as the trunk rotates
+    // open through release. Detecting that actual peak-then-collapse shape in
+    // this pitcher's own data is a real event, unlike a fixed fraction of
+    // total clip length, which has no relationship to when the throw
+    // actually happened. Windows are capped at 0.6s -- several times longer
+    // than a real foot-contact-to-release interval -- purely as a guardrail
+    // against a noisy/low-confidence stretch pulling the peak search into
+    // unrelated later footage.
+    const framesAfterStride = widestStride
+      ? frames.filter((frame) => frame.time >= widestStride.time && frame.time <= widestStride.time + 0.6)
+      : []
+    const maxExternalRotation = framesAfterStride.length
+      ? [...framesAfterStride].sort((a, b) => (b.hipShoulderSeparation ?? -Infinity) - (a.hipShoulderSeparation ?? -Infinity))[0]
+      : null
+    const framesAfterMer = maxExternalRotation
+      ? frames.filter((frame) => frame.time >= maxExternalRotation.time && frame.time <= maxExternalRotation.time + 0.6)
+      : []
+    const ballRelease = framesAfterMer.length
+      ? [...framesAfterMer].sort((a, b) => (a.hipShoulderSeparation ?? Infinity) - (b.hipShoulderSeparation ?? Infinity))[0]
+      : null
     const video = videoRef.current
     const clipStart = analysisStartRef.current
     const clipEnd = video ? Math.min(video.duration, analysisEndRef.current ?? video.duration) : null
@@ -1202,6 +1226,8 @@ export function MotionAnalysisStudio({
       trunkTiltRange: range(frames.map((frame) => frame.trunkTilt)),
       peakLegLiftTime: peakLegLift?.time ?? null,
       widestStrideTime: widestStride?.time ?? null,
+      maxExternalRotationTime: maxExternalRotation?.time ?? null,
+      ballReleaseTime: ballRelease?.time ?? null,
       deliveryShapeValid,
     })
     analyzingRef.current = false
@@ -1405,22 +1431,36 @@ export function MotionAnalysisStudio({
     const clipDuration = Math.max(0.01, clipEnd - clipStart)
     const peak = summary?.peakLegLiftTime ?? clipStart + clipDuration * 0.25
     const stride = summary?.widestStrideTime ?? clipStart + clipDuration * 0.55
-    // Foot-contact through ball release happens in a fixed, short real-world window
-    // (roughly 100-170ms) no matter how much dead time the athlete leaves in the
-    // trimmed clip. Anchoring these to a percentage of total clip length (the old
-    // approach) could walk the frame past release into the deceleration phase on
-    // any clip that wasn't trimmed to the exact instant. Anchor to real seconds
-    // from the two genuinely detected events (peak leg lift, widest stride) instead.
     const handSeparation = peak + (stride - peak) * 0.65
-    const maxExternalRotation = stride + 0.04
-    const ballRelease = stride + 0.13
+    // Prefer the actual detected hip-shoulder-separation peak/collapse (see
+    // finishAnalysis) for MER and ball release. Only fall back to a fixed
+    // real-world offset from foot contact if that signal wasn't available for
+    // this clip (e.g. too few confident frames in the window).
+    const merDetected = summary?.maxExternalRotationTime ?? null
+    const releaseDetected = summary?.ballReleaseTime ?? null
+    const maxExternalRotation = merDetected ?? stride + 0.04
+    const ballRelease = releaseDetected ?? stride + 0.13
     const finish = ballRelease + 0.35
     const phases = [
       { key: 'peak_leg_lift', label: 'Peak Leg Lift', time: peak },
       { key: 'hand_separation', label: 'Hand Separation', time: Math.min(clipEnd, handSeparation) },
       { key: 'lead_foot_contact', label: 'Lead-Foot Contact Candidate', time: stride },
-      { key: 'maximum_external_rotation', label: 'Maximum External Rotation Candidate', time: Math.min(clipEnd, maxExternalRotation) },
-      { key: 'ball_release', label: 'Ball Release Candidate', time: Math.min(clipEnd, ballRelease) },
+      {
+        key: 'maximum_external_rotation',
+        label: 'Maximum External Rotation Candidate',
+        time: Math.min(clipEnd, maxExternalRotation),
+        note: merDetected !== null
+          ? 'Detected from this pitch’s own trunk-rotation timing, not an estimate.'
+          : 'Could not detect a clear trunk-rotation peak in this clip; timing is an estimate.',
+      },
+      {
+        key: 'ball_release',
+        label: 'Ball Release Candidate',
+        time: Math.min(clipEnd, ballRelease),
+        note: releaseDetected !== null
+          ? 'Detected from this pitch’s own trunk-rotation timing, not an estimate.'
+          : 'Could not detect a clear release point in this clip; timing is an estimate.',
+      },
       { key: 'finish', label: 'Finish & Deceleration', time: Math.min(clipEnd, finish) },
     ]
     const output: Array<{ key: string; label: string; time: number; storage_path: string; confidence_note: string }> = []
@@ -1448,11 +1488,14 @@ export function MotionAnalysisStudio({
       const path = `${userId}/motion-lab/${analysisId}/phases/${phase.key}.png`
       const { error: uploadError } = await supabase.storage.from('analysis-assets').upload(path, blob, { upsert: true, contentType: 'image/png' })
       if (!uploadError) output.push({
-        ...phase,
+        key: phase.key,
+        label: phase.label,
+        time: phase.time,
         storage_path: path,
-        confidence_note: phase.key === 'peak_leg_lift' || phase.key === 'finish'
-          ? 'Clear frame selected for coach review.'
-          : 'Frame selected for coach review.',
+        confidence_note: phase.note
+          ?? (phase.key === 'peak_leg_lift' || phase.key === 'finish'
+            ? 'Clear frame selected for coach review.'
+            : 'Frame selected for coach review.'),
       })
     }
     video.currentTime = originalTime
