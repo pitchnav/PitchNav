@@ -32,6 +32,17 @@ type ClipSummary = {
   widestStrideTime: number | null
   maxExternalRotationTime: number | null
   ballReleaseTime: number | null
+  // Peak hip-shoulder separation and when it happened. Carried through
+  // because these are what a predicted mechanical signature gets tested
+  // against: a thoracic-rotation limitation should show up either as a low
+  // peak or as a peak that arrives before the front foot lands.
+  peakSeparation: number | null
+  peakSeparationTime: number | null
+  // Lead-knee angle change measured only AFTER front-foot contact. The
+  // whole-clip knee range is not a substitute: it includes the leg lift and
+  // stride, so it would report large "instability" for a delivery whose
+  // landing is actually solid.
+  leadKneeChangeAfterStride: number | null
   // Peak leg-lift and widest-stride are each just the single frame with the
   // highest value for that joint across the whole clip. On one continuous
   // pitch that's a reasonable proxy for those real phases. On anything else
@@ -1223,6 +1234,11 @@ export function MotionAnalysisStudio({
     const ballRelease = framesAfterMer.length
       ? [...framesAfterMer].sort((a, b) => (a.hipShoulderSeparation ?? Infinity) - (b.hipShoulderSeparation ?? Infinity))[0]
       : null
+    // Peak trunk coil across the whole clip, with its timing. Used later to
+    // test predicted mechanical signatures against what the delivery
+    // actually did.
+    const peakSeparationFrame = [...frames]
+      .sort((a, b) => (b.hipShoulderSeparation ?? -Infinity) - (a.hipShoulderSeparation ?? -Infinity))[0]
     const video = videoRef.current
     const clipStart = analysisStartRef.current
     const clipEnd = video ? Math.min(video.duration, analysisEndRef.current ?? video.duration) : null
@@ -1246,6 +1262,17 @@ export function MotionAnalysisStudio({
       widestStrideTime: widestStride?.time ?? null,
       maxExternalRotationTime: maxExternalRotation?.time ?? null,
       ballReleaseTime: ballRelease?.time ?? null,
+      peakSeparation: peakSeparationFrame?.hipShoulderSeparation ?? null,
+      peakSeparationTime: peakSeparationFrame?.time ?? null,
+      leadKneeChangeAfterStride: (() => {
+        if (!widestStride) return null
+        const after = frames
+          .filter((frame) => frame.time >= widestStride.time)
+          .map((frame) => frame.leadKnee)
+          .filter((value): value is number => value !== null && Number.isFinite(value))
+        if (after.length < 2) return null
+        return Math.max(...after) - Math.min(...after)
+      })(),
       deliveryShapeValid,
     })
     analyzingRef.current = false

@@ -4,6 +4,7 @@ import { buildBaseballPerformancePlan, type CategoryAssessment } from '@/lib/per
 import { buildEightWeekThrowingPlan } from '@/lib/throwing-plan'
 import { calculateDeliveryScore } from '@/lib/utils'
 import { summarizeScreenSession, type ScreenResult } from '@/lib/movement-screens'
+import { buildConvergenceReport, type DeliveryMetrics } from '@/lib/screen-mechanics-convergence'
 
 export const runtime = 'nodejs'
 export const maxDuration = 300
@@ -140,6 +141,46 @@ export async function POST(request: Request) {
       ? `MEASURED MOVEMENT SCREENS (captured ${screenSession?.completed_at ?? 'recently'}). These are measured numbers, not guesses. Ground every physical explanation in them and set evidence_basis to "measured_screen" when you do:
 ${screenSummary.findings.map((finding) => `- [${finding.kind}, ${finding.reliability.toLowerCase()} reliability] ${finding.detail}`).join('\n') || '- Every screen measured inside the expected range with no notable side-to-side difference.'}`
       : `NO USABLE MOVEMENT SCREENS ON FILE. You have not measured this athlete's physical capacity. Every physical explanation is therefore an inference from video only: set evidence_basis to "video_inference", keep confidence at "Limited" or "Moderate", and name the screen that would settle it in confirming_screen. Do not state a physical limitation as established fact.`
+
+    // Cross-reference the two independent measurements against each other
+    // BEFORE any advice is written. Each prediction below was fixed in code
+    // ahead of time, with its refuting condition defined, so a disagreement is
+    // genuinely possible rather than manufactured.
+    const clip = (analysis.clip_summary ?? {}) as Record<string, number | null | undefined>
+    const deliveryMetrics: DeliveryMetrics = {
+      kneeChangeAfterStride: clip.leadKneeChangeAfterStride ?? null,
+      trunkTiltChange: Array.isArray(clip.trunkTiltRange)
+        ? (clip.trunkTiltRange as unknown as number[])[1] - (clip.trunkTiltRange as unknown as number[])[0]
+        : null,
+      elbowChange: Array.isArray(clip.elbowRange)
+        ? (clip.elbowRange as unknown as number[])[1] - (clip.elbowRange as unknown as number[])[0]
+        : null,
+      peakSeparation: clip.peakSeparation ?? null,
+      peakSeparationTime: clip.peakSeparationTime ?? null,
+      strideTime: clip.widestStrideTime ?? null,
+    }
+    const priorCategories = Array.isArray(analysis.category_scores)
+      ? (analysis.category_scores as Array<{ category?: string; score?: number }>)
+          .filter((item): item is { category: string; score: number } =>
+            typeof item?.category === 'string' && typeof item?.score === 'number')
+          .map((item) => ({ category: item.category, score: item.score }))
+      : []
+    const convergence = screensUsable
+      ? buildConvergenceReport(screenResults, deliveryMetrics, priorCategories)
+      : { checks: [], unexplained: [], insufficient: true }
+
+    const convergenceBlock = convergence.insufficient
+      ? ''
+      : `
+CROSS-CHECK BETWEEN THE SCREENS AND THIS DELIVERY. Each prediction was fixed before the delivery was examined, so these outcomes are real results and not confirmation. Use them to rank what to work on:
+${convergence.checks.map((check) => `- ${check.screen_name} — predicted: ${check.prediction} RESULT: ${check.outcome.replace('_', ' ').toUpperCase()}. ${check.observed} ${check.implication}`).join('\n') || '- No measured limitation produced a prediction to test in this delivery.'}
+${convergence.unexplained.map((fault) => `- ${fault.observed} ${fault.implication}`).join('\n')}
+
+How to use this cross-check:
+- A CONFIRMED result is your strongest available evidence: the screen and the delivery agree independently. Lead with it, and set evidence_basis to "measured_screen".
+- A NOT SHOWING result means the limitation is real but this delivery is not currently paying for it. Say so plainly and give it lower training priority. Do not describe it as ruled out — compensations vary from pitch to pitch.
+- An UNEXPLAINED fault has no measured physical limitation behind it, so treat it as a timing or skill pattern and prescribe drill and cue work rather than more mobility or lifting for it.
+- Do not claim agreement the cross-check did not find. If a result came back NOT SHOWING or INCONCLUSIVE, your write-up must reflect that rather than asserting the limitation is causing the fault.`
     const prompt = `Prepare a conservative baseball pitching-coach draft for mandatory human review. Analyze only visible evidence in these side-view phase candidates and supplied 2D pose data. Do not diagnose injury, calculate injury risk, claim laboratory biomechanics, infer exact internal joint rotation, or promise velocity gains. Lower confidence for obscured phases. Maximum external rotation and ball release are only candidates. Scores are internal coaching scores, not medical scores.
 
 Write every athlete-facing field so an eighth grader can understand it on the first read. Use short, direct sentences and familiar body words. If a baseball term is necessary, explain it in the same sentence. Do not use vague handoffs such as “staff should confirm,” “review whether,” “a basic directional check is possible,” or “use this as a starting point.” Do not use unexplained phrases such as “plate-line direction,” “lateral drift,” “frontal plane,” or “kinetic chain.”
@@ -156,6 +197,9 @@ Give the athlete enough value for a paid detailed review:
 Every development priority must name an observable weakness and the phase/evidence supporting it, because verified category weaknesses will be mapped directly to baseball throwing, strength, and mobility work. Do not prescribe a lift as a guaranteed mechanics correction.
 
 ${screenBlock}
+${convergenceBlock}
+
+Before you write any advice, read the delivery evidence and the movement-screen evidence against each other. The screens tell you what this athlete's body can do; the delivery tells you what it actually did. Neither alone is enough: a limitation that never shows up in the throw is not this month's priority, and a fault with no physical limitation behind it will not be fixed by mobility work.
 
 For every category, reason out the physical explanation in physical_hypothesis. Do not pick from a menu — describe the actual limitation you believe is driving what you see, in your own plain words, however specific or compound it is. Athletes differ enormously in build, training age, and movement history, and forcing every explanation into a small fixed set produces generic, wrong advice.
 
