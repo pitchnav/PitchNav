@@ -80,12 +80,24 @@ export async function POST(request: Request) {
       note: 'Staff-verified report released to athlete.',
     })
 
+    let notificationSent = true
+    let notificationError: string | null = null
     if (!wasPublished) {
       const { data: athlete } = await admin.from('profiles').select('email,full_name').eq('id', analysis.user_id).single()
-      if (athlete?.email) await sendMotionAnalysisReadyEmail(athlete.email, athlete.full_name || 'Athlete', analysisId)
+      if (athlete?.email) {
+        const delivery = await sendMotionAnalysisReadyEmail(athlete.email, athlete.full_name || 'Athlete', analysisId)
+        if (!delivery.success) {
+          notificationSent = false
+          notificationError = delivery.error
+          console.error('Motion analysis ready email was not delivered', delivery.error)
+        }
+      } else {
+        notificationSent = false
+        notificationError = 'Athlete has no email on file.'
+      }
     }
 
-    return NextResponse.json({ ok: true })
+    return NextResponse.json({ ok: true, notificationSent, notificationError })
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : 'Could not publish and send the report.' }, { status: 500 })
   }

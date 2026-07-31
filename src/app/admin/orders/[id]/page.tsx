@@ -472,10 +472,14 @@ export default function AdminOrderDetailPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ analysisId: automatedAnalysis.id, orderId: id }),
       })
-      const result = await response.json() as { error?: string }
+      const result = await response.json() as { error?: string; notificationSent?: boolean; notificationError?: string | null }
       if (!response.ok) throw new Error(result.error || 'Could not publish and send the report.')
       await loadData()
-      setDraftMessage('Report published. The athlete can now open Feedback & Plan, and the notification email was sent.')
+      setDraftMessage(
+        result.notificationSent === false
+          ? `Report published and the athlete can now open Feedback & Plan, but the notification email could not be delivered: ${result.notificationError ?? 'unknown error'}. Tell the athlete directly that their report is ready.`
+          : 'Report published. The athlete can now open Feedback & Plan, and the notification email was sent.'
+      )
     } catch (reason) {
       setDraftMessage(reason instanceof Error ? reason.message : 'Could not publish and send the report.')
     } finally {
