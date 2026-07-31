@@ -980,7 +980,18 @@ export function MotionAnalysisStudio({
       return
     }
     if (video && !video.paused && !video.ended) {
-      animationRef.current = requestAnimationFrame(renderLoop)
+      // requestAnimationFrame is throttled -- sometimes almost to a full
+      // stop -- for a backgrounded or occluded tab. That silently starved
+      // automatic analysis down to just a couple of sampled frames when the
+      // tab lost focus mid-run, which can produce an unreliable score or a
+      // false "this doesn't look like one complete pitch" flag on a real,
+      // clean delivery. requestVideoFrameCallback fires once per actually
+      // decoded video frame regardless of tab visibility, so prefer it.
+      if ('requestVideoFrameCallback' in video) {
+        video.requestVideoFrameCallback(renderLoop)
+      } else {
+        animationRef.current = requestAnimationFrame(renderLoop)
+      }
     }
   }, [drawFrame])
 
