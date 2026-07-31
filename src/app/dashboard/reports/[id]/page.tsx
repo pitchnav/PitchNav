@@ -56,6 +56,22 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
   const positions = positionsRes.data as PositionScreenshot[] ?? []
   const assignedDrills = assignedDrillsRes.data as (AssignedDrill & { drill: Drill })[] ?? []
 
+  // Automatic processing (apply-ai-draft) writes storage_path, a private
+  // analysis-assets path -- it never sets image_url. Signed URLs must be
+  // generated per position the same way pdfUrl/voiceoverUrl are below,
+  // otherwise every automatically-processed report shows placeholder boxes
+  // instead of the six phase screenshots.
+  const positionImageUrls = await Promise.all(
+    positions.map(async (pos) => {
+      if (pos.image_url) return pos.image_url
+      if (!pos.storage_path) return null
+      const { data } = await supabase.storage
+        .from('analysis-assets')
+        .createSignedUrl(pos.storage_path, 3600)
+      return data?.signedUrl ?? null
+    })
+  )
+
   // Generate PDF download URL
   let pdfUrl: string | null = null
   if (report.pdf_storage_path) {
@@ -173,11 +189,11 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
         <div className="mb-8">
           <h2 className="text-xl font-bold text-white mb-6">Six Key Positions</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {positions.map((pos) => (
+            {positions.map((pos, index) => (
               <div key={pos.id} className="card min-w-0 transition-transform duration-200 hover:-translate-y-0.5">
-                {pos.image_url ? (
+                {positionImageUrls[index] ? (
                   <img
-                    src={pos.image_url}
+                    src={positionImageUrls[index]}
                     alt={`Annotated screenshot — ${PITCH_POSITION_LABELS[pos.position as PitchPosition]}`}
                     className="mb-4 aspect-video w-full rounded-lg bg-navy-950 object-contain"
                   />
