@@ -1,0 +1,441 @@
+/**
+ * Pitch Nav movement screens.
+ *
+ * Why these exist: the mechanics assessment can see *what* breaks in a
+ * delivery, but it cannot see *why*. Reading "thoracic mobility limitation"
+ * off a 90mph blur is a guess. These screens turn that guess into a measured
+ * number that can be re-measured in two weeks.
+ *
+ * Why these specific screens: every one is slow, held, and moves mostly in a
+ * plane that faces the camera. That is the one situation where single-camera
+ * 2D pose estimation is genuinely reliable. High-speed rotational movement --
+ * the pitch itself -- is the hardest case for 2D and is exactly what we do NOT
+ * rely on for physical findings. Each screen carries an explicit reliability
+ * tier so a moderate-confidence proxy is never presented as a hard number.
+ *
+ * These are movement-capacity measurements for training decisions. They are
+ * not a medical examination, they do not diagnose pathology, and nothing here
+ * may be presented as clinical range-of-motion testing.
+ */
+
+export type ScreenReliability = 'High' | 'Moderate'
+
+export type ScreenSide = 'left' | 'right' | 'single'
+
+export type LandmarkPoint = { x: number; y: number; visibility?: number }
+
+export type ScreenMeasurement = {
+  /** Primary measured value, in degrees unless the screen says otherwise. */
+  value: number | null
+  /** Landmark visibility across the joints this screen depends on, 0-1. */
+  confidence: number
+  /** Set when the frame cannot support an honest measurement. */
+  problem?: string
+}
+
+export type ScreenBand = {
+  /** At or above this value is unrestricted for pitching purposes. */
+  clear: number
+  /** Below this value is a meaningful limitation worth programming for. */
+  limited: number
+}
+
+export type MovementScreen = {
+  id: string
+  name: string
+  /** Plain-language reason this matters for a pitcher. */
+  whyItMatters: string
+  /** How the athlete sets the phone up. */
+  cameraSetup: string
+  /** How the athlete gets into position. */
+  position: string
+  /** What the athlete does while filming. */
+  action: string
+  /** Measured separately per side, or a single whole-body value. */
+  bilateral: boolean
+  reliability: ScreenReliability
+  /** Why the reliability is what it is, in plain language. */
+  reliabilityNote: string
+  unit: 'degrees' | 'ratio'
+  band: ScreenBand
+  /** Higher is better for most screens; false where lower is better. */
+  higherIsBetter: boolean
+  measure: (landmarks: LandmarkPoint[], side: ScreenSide) => ScreenMeasurement
+}
+
+const LEFT = { shoulder: 11, elbow: 13, wrist: 15, hip: 23, knee: 25, ankle: 27, heel: 29, foot: 31 }
+const RIGHT = { shoulder: 12, elbow: 14, wrist: 16, hip: 24, knee: 26, ankle: 28, heel: 30, foot: 32 }
+
+function sideJoints(side: ScreenSide) {
+  return side === 'left' ? LEFT : RIGHT
+}
+
+function visibilityOf(landmarks: LandmarkPoint[], indices: number[]): number {
+  const values = indices.map((index) => landmarks[index]?.visibility ?? 0)
+  if (!values.length) return 0
+  return values.reduce((sum, value) => sum + value, 0) / values.length
+}
+
+function present(landmarks: LandmarkPoint[], indices: number[]): boolean {
+  return indices.every((index) => Boolean(landmarks[index]))
+}
+
+/** Angle at `vertex` between the two rays, 0-180 degrees. */
+function jointAngle(a: LandmarkPoint, vertex: LandmarkPoint, b: LandmarkPoint): number | null {
+  const ax = a.x - vertex.x
+  const ay = a.y - vertex.y
+  const bx = b.x - vertex.x
+  const by = b.y - vertex.y
+  const magnitude = Math.hypot(ax, ay) * Math.hypot(bx, by)
+  if (!magnitude) return null
+  const cosine = Math.max(-1, Math.min(1, (ax * bx + ay * by) / magnitude))
+  return (Math.acos(cosine) * 180) / Math.PI
+}
+
+/**
+ * Angle of the segment from `from` to `to` measured off vertical, 0-180.
+ * Image y grows downward, so "up" is negative y.
+ */
+function angleFromVertical(from: LandmarkPoint, to: LandmarkPoint): number | null {
+  const dx = to.x - from.x
+  const dy = to.y - from.y
+  if (!Math.hypot(dx, dy)) return null
+  // Vertical reference points up the image.
+  return (Math.acos(Math.max(-1, Math.min(1, -dy / Math.hypot(dx, dy)))) * 180) / Math.PI
+}
+
+/** Angle of the segment off horizontal, signed so positive means the `to` end sits higher. */
+function angleFromHorizontal(from: LandmarkPoint, to: LandmarkPoint): number | null {
+  const dx = to.x - from.x
+  const dy = to.y - from.y
+  if (!Math.hypot(dx, dy)) return null
+  return (Math.atan2(-dy, Math.abs(dx) || 1e-6) * 180) / Math.PI
+}
+
+function insufficient(confidence: number): ScreenMeasurement {
+  return {
+    value: null,
+    confidence,
+    problem: 'The joints needed for this screen were not clearly visible. Re-record with the whole body in frame and better lighting.',
+  }
+}
+
+export const MOVEMENT_SCREENS: MovementScreen[] = [
+  {
+    id: 'active_straight_leg_raise',
+    name: 'Active Straight Leg Raise',
+    whyItMatters:
+      'This is the most direct check of how much your hamstring lets your leg travel. A tight or weak hamstring is one of the common reasons a lead leg keeps drifting forward at foot strike instead of blocking and letting the hips rotate around it.',
+    cameraSetup: 'Lie on the floor. Put the phone on the ground about 6 feet away, level with your hips, filming your whole body from the side.',
+    position: 'Lie flat on your back with both legs straight and both arms at your sides.',
+    action: 'Keeping both knees straight and the down leg flat on the floor, raise one leg as high as you can without pain. Hold it at the top for 3 seconds.',
+    bilateral: true,
+    reliability: 'High',
+    reliabilityNote: 'This movement happens in a flat plane facing the camera, so the 2D measurement is dependable.',
+    unit: 'degrees',
+    band: { clear: 70, limited: 55 },
+    higherIsBetter: true,
+    measure(landmarks, side) {
+      const joints = sideJoints(side)
+      const down = side === 'left' ? RIGHT : LEFT
+      const needed = [joints.hip, joints.ankle, down.hip, down.ankle]
+      const confidence = visibilityOf(landmarks, needed)
+      if (!present(landmarks, needed)) return insufficient(confidence)
+      // Measure the raised leg against the down leg rather than against the
+      // image horizontal, so a phone that is not perfectly level does not
+      // silently add or remove range.
+      const raised = jointAngle(landmarks[joints.ankle], landmarks[joints.hip], landmarks[down.ankle])
+      return { value: raised, confidence }
+    },
+  },
+  {
+    id: 'overhead_reach',
+    name: 'Overhead Reach',
+    whyItMatters:
+      'This shows how far your arm can travel overhead before your back has to arch to help. When it is limited, the upper back and shoulder often have to borrow range from somewhere else during the throw.',
+    cameraSetup: 'Stand side-on to the phone, about 8 feet away, with the camera at chest height and your whole body in frame.',
+    position: 'Stand with your back against a wall, feet a few inches out, and your low back flat against the wall.',
+    action: 'Keeping your low back flat on the wall and your elbow straight, raise one arm overhead as far as it goes. Hold for 3 seconds.',
+    bilateral: true,
+    reliability: 'High',
+    reliabilityNote: 'Filmed from the side, the arm swings straight across the camera view, which 2D measurement handles well.',
+    unit: 'degrees',
+    band: { clear: 165, limited: 140 },
+    higherIsBetter: true,
+    measure(landmarks, side) {
+      const joints = sideJoints(side)
+      const needed = [joints.hip, joints.shoulder, joints.wrist]
+      const confidence = visibilityOf(landmarks, needed)
+      if (!present(landmarks, needed)) return insufficient(confidence)
+      const value = jointAngle(landmarks[joints.hip], landmarks[joints.shoulder], landmarks[joints.wrist])
+      return { value, confidence }
+    },
+  },
+  {
+    id: 'ankle_dorsiflexion',
+    name: 'Ankle Bend (Knee-to-Wall)',
+    whyItMatters:
+      'This is how far your shin can travel over your foot. The lead ankle has to absorb landing. When this is limited, the landing force usually has to go somewhere less useful, and the front side can give way early.',
+    cameraSetup: 'Place the phone on the floor about 4 feet to the side of your front foot, filming your lower leg from the side.',
+    position: 'Stand facing a wall in a short split stance with the front toe a few inches from the wall.',
+    action: 'Keeping your front heel flat on the ground, drive your front knee forward toward the wall as far as it goes. Hold for 3 seconds.',
+    bilateral: true,
+    reliability: 'High',
+    reliabilityNote: 'The shin travels straight across the camera view, so this is a dependable 2D measurement.',
+    unit: 'degrees',
+    band: { clear: 35, limited: 25 },
+    higherIsBetter: true,
+    measure(landmarks, side) {
+      const joints = sideJoints(side)
+      const needed = [joints.knee, joints.ankle]
+      const confidence = visibilityOf(landmarks, needed)
+      if (!present(landmarks, needed)) return insufficient(confidence)
+      // Shin lean off vertical: ankle -> knee.
+      const value = angleFromVertical(landmarks[joints.ankle], landmarks[joints.knee])
+      return { value, confidence }
+    },
+  },
+  {
+    id: 'seated_hip_rotation',
+    name: 'Seated Hip Rotation',
+    whyItMatters:
+      'Pitching asks both hips to rotate a long way in opposite directions. When one hip is short on rotation, that range is usually taken from the low back or the front leg instead, and it often shows up as a side-to-side difference.',
+    cameraSetup: 'Sit on a table or bench with your shins hanging free. Put the phone about 6 feet in front of you at knee height, filming you straight on.',
+    position: 'Sit tall with your knees bent 90 degrees and your thighs together, shins hanging straight down.',
+    action: 'Keeping your thigh still and your hips level on the bench, swing one shin outward as far as it goes. Hold for 3 seconds. This measures inward rotation of that hip.',
+    bilateral: true,
+    reliability: 'Moderate',
+    reliabilityNote:
+      'The shin swings mostly across the camera, but small trunk lean or hip lift can add apparent range. Treat this as a comparison between your own sides and your own follow-ups, not an exact clinical number.',
+    unit: 'degrees',
+    band: { clear: 35, limited: 22 },
+    higherIsBetter: true,
+    measure(landmarks, side) {
+      const joints = sideJoints(side)
+      const needed = [joints.knee, joints.ankle]
+      const confidence = visibilityOf(landmarks, needed)
+      if (!present(landmarks, needed)) return insufficient(confidence)
+      const value = angleFromVertical(landmarks[joints.knee], landmarks[joints.ankle])
+      return { value, confidence }
+    },
+  },
+  {
+    id: 'seated_trunk_rotation',
+    name: 'Seated Trunk Rotation',
+    whyItMatters:
+      'This is how far your upper back rotates when your hips cannot help. Pitching separates the shoulders from the hips, so when upper-back rotation is short, the shoulder and elbow usually end up covering the difference.',
+    cameraSetup: 'Sit on a chair with the phone about 6 feet in front of you at chest height, filming you straight on.',
+    position: 'Sit tall with your arms crossed over your chest and a ball or rolled towel squeezed between your knees to keep your hips square.',
+    action: 'Keeping your hips square and the ball squeezed, rotate your shoulders as far as you can to one side. Hold for 3 seconds.',
+    bilateral: true,
+    reliability: 'Moderate',
+    reliabilityNote:
+      'Rotation toward or away from a single camera is the hardest thing for 2D video to see. This estimates rotation from how much narrower your shoulders become versus your hips, so it is useful for tracking your own change over time and side-to-side differences, but it is not an exact rotation measurement.',
+    unit: 'degrees',
+    band: { clear: 45, limited: 30 },
+    higherIsBetter: true,
+    measure(landmarks, side) {
+      const needed = [LEFT.shoulder, RIGHT.shoulder, LEFT.hip, RIGHT.hip]
+      const confidence = visibilityOf(landmarks, needed)
+      if (!present(landmarks, needed)) return insufficient(confidence)
+      const shoulderWidth = Math.hypot(
+        landmarks[LEFT.shoulder].x - landmarks[RIGHT.shoulder].x,
+        landmarks[LEFT.shoulder].y - landmarks[RIGHT.shoulder].y,
+      )
+      const hipWidth = Math.hypot(
+        landmarks[LEFT.hip].x - landmarks[RIGHT.hip].x,
+        landmarks[LEFT.hip].y - landmarks[RIGHT.hip].y,
+      )
+      if (!hipWidth || !shoulderWidth) return insufficient(confidence)
+      // With the hips held square, the shoulders foreshorten as the trunk
+      // turns away from the camera. Normalizing against hip width keeps the
+      // estimate stable if the athlete sits closer or further away than
+      // expected. The neutral shoulder:hip ratio is captured on the athlete's
+      // own neutral frame, so this returns the raw ratio and the caller
+      // converts it against that baseline.
+      const ratio = shoulderWidth / hipWidth
+      return { value: ratio, confidence }
+    },
+  },
+  {
+    id: 'single_leg_stance',
+    name: 'Single-Leg Stance',
+    whyItMatters:
+      'Standing on one leg shows whether your pelvis stays level when only one hip is holding you up. A hip that drops here is often the same hip that lets the front side give way after landing.',
+    cameraSetup: 'Put the phone about 8 feet in front of you at hip height, filming you straight on with your whole body in frame.',
+    position: 'Stand tall on one leg with your hands on your hips and the other knee lifted to about hip height.',
+    action: 'Hold as still as you can for 10 seconds. Do not let your standing-side hip drop.',
+    bilateral: true,
+    reliability: 'High',
+    reliabilityNote: 'Pelvic drop happens side-to-side across the camera view, which 2D measurement reads well from the front.',
+    unit: 'degrees',
+    band: { clear: 3, limited: 6 },
+    higherIsBetter: false,
+    measure(landmarks) {
+      const needed = [LEFT.hip, RIGHT.hip]
+      const confidence = visibilityOf(landmarks, needed)
+      if (!present(landmarks, needed)) return insufficient(confidence)
+      const tilt = angleFromHorizontal(landmarks[LEFT.hip], landmarks[RIGHT.hip])
+      return { value: tilt === null ? null : Math.abs(tilt), confidence }
+    },
+  },
+]
+
+export function getMovementScreen(id: string): MovementScreen | undefined {
+  return MOVEMENT_SCREENS.find((screen) => screen.id === id)
+}
+
+export type ScreenClassification = 'clear' | 'watch' | 'limited' | 'unmeasured'
+
+/**
+ * Buckets a measured value against the screen's reference band. Deliberately
+ * coarse: these bands guide training emphasis, and pretending a 2D video can
+ * separate 61 degrees from 64 degrees would be dishonest precision.
+ */
+export function classifyScreenValue(screen: MovementScreen, value: number | null): ScreenClassification {
+  if (value === null || !Number.isFinite(value)) return 'unmeasured'
+  if (screen.higherIsBetter) {
+    if (value >= screen.band.clear) return 'clear'
+    if (value >= screen.band.limited) return 'watch'
+    return 'limited'
+  }
+  if (value <= screen.band.clear) return 'clear'
+  if (value <= screen.band.limited) return 'watch'
+  return 'limited'
+}
+
+/**
+ * Side-to-side difference matters as much as the raw number: a pitcher whose
+ * lead hip rotates 20 degrees less than the trail hip has an asymmetry worth
+ * programming for even when both sides sit inside the "clear" band.
+ */
+export function asymmetryDegrees(left: number | null, right: number | null): number | null {
+  if (left === null || right === null) return null
+  if (!Number.isFinite(left) || !Number.isFinite(right)) return null
+  return Math.abs(left - right)
+}
+
+/** Above this side-to-side gap, the asymmetry itself is the finding. */
+export const NOTABLE_ASYMMETRY_DEGREES = 12
+
+/** One measured screen, as stored in movement_screen_sessions.results. */
+export type ScreenResult = {
+  screen_id: string
+  side: ScreenSide
+  value: number | null
+  unit: 'degrees' | 'ratio'
+  confidence: number
+  classification: ScreenClassification
+  reliability: ScreenReliability
+  storage_path?: string | null
+  problem?: string | null
+}
+
+export type ScreenFindingKind = 'limitation' | 'asymmetry' | 'unmeasured'
+
+export type ScreenFinding = {
+  screen_id: string
+  screen_name: string
+  kind: ScreenFindingKind
+  /** Plain-language statement of what was measured. */
+  detail: string
+  reliability: ScreenReliability
+  /** Sorting weight — a hard limitation outranks a watch-level result. */
+  weight: number
+}
+
+export type ScreenSessionSummary = {
+  findings: ScreenFinding[]
+  measured_count: number
+  limitation_count: number
+  asymmetry_count: number
+  unmeasured_count: number
+  /** True when too little was measured to reason from these screens at all. */
+  insufficient: boolean
+}
+
+function describeValue(screen: MovementScreen, value: number): string {
+  return screen.unit === 'degrees' ? `${Math.round(value)}°` : value.toFixed(2)
+}
+
+function sideLabel(side: ScreenSide): string {
+  return side === 'single' ? '' : side === 'left' ? 'left ' : 'right '
+}
+
+/**
+ * Converts raw screen measurements into findings the assessment can reason
+ * from. This is deliberately mechanical: the numbers and the side-to-side
+ * gaps are computed here, so the model receives measured facts to interpret
+ * rather than being asked to infer a physical limitation from pitch footage.
+ */
+export function summarizeScreenSession(results: ScreenResult[]): ScreenSessionSummary {
+  const findings: ScreenFinding[] = []
+  let measured = 0
+
+  for (const screen of MOVEMENT_SCREENS) {
+    const forScreen = results.filter((item) => item.screen_id === screen.id)
+    if (!forScreen.length) continue
+
+    for (const result of forScreen) {
+      if (result.value === null || !Number.isFinite(result.value)) {
+        findings.push({
+          screen_id: screen.id,
+          screen_name: screen.name,
+          kind: 'unmeasured',
+          detail: `${screen.name}${result.side === 'single' ? '' : ` (${result.side} side)`} could not be measured from the video that was recorded.`,
+          reliability: screen.reliability,
+          weight: 0,
+        })
+        continue
+      }
+      measured += 1
+      const classification = classifyScreenValue(screen, result.value)
+      if (classification === 'limited' || classification === 'watch') {
+        const severity = classification === 'limited' ? 'clearly limited' : 'below the range we would like to see'
+        findings.push({
+          screen_id: screen.id,
+          screen_name: screen.name,
+          kind: 'limitation',
+          detail: `${screen.name}: ${sideLabel(result.side)}measured ${describeValue(screen, result.value)}, which is ${severity}.`,
+          reliability: screen.reliability,
+          weight: classification === 'limited' ? 3 : 2,
+        })
+      }
+    }
+
+    if (screen.bilateral) {
+      const left = forScreen.find((item) => item.side === 'left')?.value ?? null
+      const right = forScreen.find((item) => item.side === 'right')?.value ?? null
+      const gap = asymmetryDegrees(left, right)
+      if (gap !== null && gap >= NOTABLE_ASYMMETRY_DEGREES && screen.unit === 'degrees') {
+        const shorter = (left as number) < (right as number) ? 'left' : 'right'
+        findings.push({
+          screen_id: screen.id,
+          screen_name: screen.name,
+          kind: 'asymmetry',
+          detail: `${screen.name}: ${Math.round(gap)}° difference between sides (${shorter} side is the shorter one, ${describeValue(screen, Math.min(left as number, right as number))} versus ${describeValue(screen, Math.max(left as number, right as number))}).`,
+          reliability: screen.reliability,
+          weight: 2.5,
+        })
+      }
+    }
+  }
+
+  findings.sort((a, b) => b.weight - a.weight)
+
+  const limitation_count = findings.filter((item) => item.kind === 'limitation').length
+  const asymmetry_count = findings.filter((item) => item.kind === 'asymmetry').length
+  const unmeasured_count = findings.filter((item) => item.kind === 'unmeasured').length
+
+  return {
+    findings,
+    measured_count: measured,
+    limitation_count,
+    asymmetry_count,
+    unmeasured_count,
+    // Fewer than half the expected measurements is not enough to base a
+    // physical explanation on. The assessment must fall back to saying the
+    // screens were incomplete rather than quietly reasoning from two numbers.
+    insufficient: measured < 4,
+  }
+}

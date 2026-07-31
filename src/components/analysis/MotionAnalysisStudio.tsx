@@ -723,6 +723,13 @@ export function MotionAnalysisStudio({
   const analyzingRef = useRef(false)
   const exportingRef = useRef(false)
   const exportStyleRef = useRef(false)
+  // The six phase photos are the frames staff and the athlete actually look at
+  // to judge position. Pose-tracker dots and connector lines drawn over real
+  // footage frequently sit slightly off the true joint, and a visibly wrong
+  // marker undermines the frame even when the frame itself is correct. The
+  // saved phase photos are therefore captured clean; the tracker overlay
+  // remains available in the live studio view and in the tracked-video export.
+  const plainCaptureRef = useRef(false)
   const exportWatchdogRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const selectedFileRef = useRef<File | null>(null)
   const renderedBlobRef = useRef<Blob | null>(null)
@@ -914,7 +921,7 @@ export function MotionAnalysisStudio({
           context.drawImage(watermarkRef.current, width - logoWidth - width * 0.035, height - logoHeight - height * 0.035, logoWidth, logoHeight)
           context.restore()
         }
-      } else {
+      } else if (!plainCaptureRef.current) {
         context.lineCap = 'round'
         context.lineJoin = 'round'
         context.shadowBlur = 12
@@ -950,7 +957,7 @@ export function MotionAnalysisStudio({
       { point: ballEnd, color: '#ef4444', label: 'BALL 2' },
     ]
     for (const marker of markers) {
-      if (!marker.point || exportStyleRef.current) continue
+      if (!marker.point || exportStyleRef.current || plainCaptureRef.current) continue
       context.save()
       context.strokeStyle = marker.color
       context.fillStyle = marker.color
@@ -1482,6 +1489,8 @@ export function MotionAnalysisStudio({
     const canvas = canvasRef.current
     if (!video || !canvas || !video.duration) return []
     const originalTime = video.currentTime
+    // Capture these six frames as clean footage, without the pose overlay.
+    plainCaptureRef.current = true
     const clipStart = analysisStartRef.current
     const clipEnd = Math.min(video.duration, analysisEndRef.current ?? video.duration)
     const clipDuration = Math.max(0.01, clipEnd - clipStart)
@@ -1554,7 +1563,9 @@ export function MotionAnalysisStudio({
             : 'Frame selected for coach review.'),
       })
     }
+    plainCaptureRef.current = false
     video.currentTime = originalTime
+    drawFrame()
     return output
   }
 
