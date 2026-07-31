@@ -1273,7 +1273,12 @@ export function MotionAnalysisStudio({
     const start = analysisStartRef.current
     const end = Math.min(video.duration, analysisEndRef.current ?? video.duration)
     const duration = Math.max(0.01, end - start)
-    const sampleCount = Math.max(60, Math.round(duration * 30))
+    // A typical trimmed pitch clip is a few seconds, so ~30 samples/sec gives
+    // plenty of density without a large step count. Cap the upper end so an
+    // untrimmed, multi-minute upload can't turn one analysis pass into
+    // thousands of individual seeks -- density just tapers for longer clips
+    // instead of growing without bound.
+    const sampleCount = Math.min(400, Math.max(60, Math.round(duration * 30)))
     for (let i = 0; i <= sampleCount; i += 1) {
       if (!analyzingRef.current) break
       const targetTime = Math.min(end, start + (duration * i) / sampleCount)
