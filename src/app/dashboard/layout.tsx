@@ -1,12 +1,13 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { Activity, LayoutDashboard, Settings, ClipboardList, Dumbbell, TrendingUp } from 'lucide-react'
+import { Activity, LayoutDashboard, Settings, ClipboardList, Dumbbell, TrendingUp, Ruler } from 'lucide-react'
 
 const DASHBOARD_NAV = [
   { href: '/dashboard', label: 'Overview', icon: LayoutDashboard },
   { href: '/dashboard/orders', label: 'My Orders', icon: ClipboardList },
   { href: '/dashboard/motion-lab', label: 'Video Review', icon: Activity },
+  { href: '/dashboard/movement-screens', label: 'Movement Screens', icon: Ruler },
   { href: '/dashboard#feedback-plan', label: 'Feedback & Plan', icon: Dumbbell },
   { href: '/dashboard/compare', label: 'Compare Progress', icon: TrendingUp },
   { href: '/dashboard/profile', label: 'Profile Settings', icon: Settings },
