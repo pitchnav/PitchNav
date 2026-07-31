@@ -47,10 +47,12 @@ async function deleteAnalysis(formData: FormData) {
 
 export default async function AdminMotionLabPage() {
   const supabase = await createClient()
-  const [{ data: analyses }, { data: submissions }] = await Promise.all([
+  const [{ data: analyses, error: analysesError }, { data: submissions, error: submissionsError }] = await Promise.all([
     supabase.from('motion_analyses').select('*,profiles(email,full_name),training_plans(*)').order('created_at', { ascending: false }),
     supabase.from('orders').select('id,status,created_at,payment_confirmed_at,amount_paid_cents,stripe_checkout_session_id,athlete_profiles(athlete_full_name,athlete_email),video_submissions(id,angle,file_name)').order('created_at', { ascending: false }),
   ])
+  if (analysesError) console.error('[diagnostic] motion_analyses query failed', analysesError)
+  if (submissionsError) console.error('[diagnostic] orders query failed', submissionsError)
   return <div className="space-y-8"><div><h1 className="text-3xl font-black text-white">Motion Lab Reviews</h1><p className="mt-2 text-slate-400">See every customer video submission, then review and release completed Motion Lab reports.</p></div>
     <section><div className="mb-4"><p className="text-xs font-bold uppercase tracking-[0.18em] text-electric-blue-light">Incoming queue</p><h2 className="mt-1 text-xl font-black text-white">Customer video submissions</h2></div>
       {!submissions?.length ? <div className="card text-slate-400">No customer orders or uploaded videos were found.</div> : <div className="grid gap-4">{submissions.map((submission) => { const athlete = Array.isArray(submission.athlete_profiles) ? submission.athlete_profiles[0] : submission.athlete_profiles; const videos = submission.video_submissions ?? []; return <article key={submission.id} className="card"><div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center"><div><h3 className="text-lg font-bold text-white">{athlete?.athlete_full_name ?? 'Athlete name unavailable'}</h3><p className="mt-1 text-sm text-electric-blue-light">{athlete?.athlete_email ?? 'Email unavailable'}</p><p className="mt-2 text-xs capitalize text-slate-500">{submission.status.replaceAll('_',' ')} · {submission.payment_confirmed_at ? `PAID $${((submission.amount_paid_cents ?? 0) / 100).toFixed(2)}` : 'PAYMENT NOT CONFIRMED'} · {videos.length} uploaded video{videos.length === 1 ? '' : 's'}</p>{videos.length > 0 && <p className="mt-2 text-xs text-slate-400">{videos.map((video) => `${video.angle.replaceAll('_',' ')}: ${video.file_name}`).join(' · ')}</p>}</div><Link href={`/admin/orders/${submission.id}`} className="btn-primary shrink-0">Open athlete & videos →</Link></div></article> })}</div>}
