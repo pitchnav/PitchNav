@@ -53,6 +53,13 @@ export type MovementScreen = {
   action: string
   /** Measured separately per side, or a single whole-body value. */
   bilateral: boolean
+  /**
+   * True when a limitation on this screen should produce a signature visible
+   * in the delivery, so it can be cross-checked against the pitch. Capacity
+   * screens that do not predict one specific mechanical fault set this false
+   * rather than having a prediction invented for them.
+   */
+  predictsMechanics: boolean
   reliability: ScreenReliability
   /** Why the reliability is what it is, in plain language. */
   reliabilityNote: string
@@ -130,6 +137,7 @@ export const MOVEMENT_SCREENS: MovementScreen[] = [
     position: 'Lie flat on your back with both legs straight and both arms at your sides.',
     action: 'Keeping both knees straight and the down leg flat on the floor, raise one leg as high as you can without pain. Hold it at the top for 3 seconds.',
     bilateral: true,
+    predictsMechanics: true,
     reliability: 'High',
     reliabilityNote: 'This movement happens in a flat plane facing the camera, so the 2D measurement is dependable.',
     unit: 'degrees',
@@ -157,6 +165,7 @@ export const MOVEMENT_SCREENS: MovementScreen[] = [
     position: 'Stand with your back against a wall, feet a few inches out, and your low back flat against the wall.',
     action: 'Keeping your low back flat on the wall and your elbow straight, raise one arm overhead as far as it goes. Hold for 3 seconds.',
     bilateral: true,
+    predictsMechanics: true,
     reliability: 'High',
     reliabilityNote: 'Filmed from the side, the arm swings straight across the camera view, which 2D measurement handles well.',
     unit: 'degrees',
@@ -180,6 +189,7 @@ export const MOVEMENT_SCREENS: MovementScreen[] = [
     position: 'Stand facing a wall in a short split stance with the front toe a few inches from the wall.',
     action: 'Keeping your front heel flat on the ground, drive your front knee forward toward the wall as far as it goes. Hold for 3 seconds.',
     bilateral: true,
+    predictsMechanics: true,
     reliability: 'High',
     reliabilityNote: 'The shin travels straight across the camera view, so this is a dependable 2D measurement.',
     unit: 'degrees',
@@ -204,6 +214,7 @@ export const MOVEMENT_SCREENS: MovementScreen[] = [
     position: 'Sit tall with your knees bent 90 degrees and your thighs together, shins hanging straight down.',
     action: 'Keeping your thigh still and your hips level on the bench, swing one shin outward as far as it goes. Hold for 3 seconds. This measures inward rotation of that hip.',
     bilateral: true,
+    predictsMechanics: true,
     reliability: 'Moderate',
     reliabilityNote:
       'The shin swings mostly across the camera, but small trunk lean or hip lift can add apparent range. Treat this as a comparison between your own sides and your own follow-ups, not an exact clinical number.',
@@ -228,6 +239,7 @@ export const MOVEMENT_SCREENS: MovementScreen[] = [
     position: 'Sit tall with your arms crossed over your chest and a ball or rolled towel squeezed between your knees to keep your hips square.',
     action: 'Keeping your hips square and the ball squeezed, rotate your shoulders as far as you can to one side. Hold for 3 seconds.',
     bilateral: true,
+    predictsMechanics: true,
     reliability: 'Moderate',
     reliabilityNote:
       'Rotation toward or away from a single camera is the hardest thing for 2D video to see. This estimates rotation from how much narrower your shoulders become versus your hips, so it is useful for tracking your own change over time and side-to-side differences, but it is not an exact rotation measurement.',
@@ -266,6 +278,7 @@ export const MOVEMENT_SCREENS: MovementScreen[] = [
     position: 'Stand tall on one leg with your hands on your hips and the other knee lifted to about hip height.',
     action: 'Hold as still as you can for 10 seconds. Do not let your standing-side hip drop.',
     bilateral: true,
+    predictsMechanics: true,
     reliability: 'High',
     reliabilityNote: 'Pelvic drop happens side-to-side across the camera view, which 2D measurement reads well from the front.',
     unit: 'degrees',
@@ -280,6 +293,124 @@ export const MOVEMENT_SCREENS: MovementScreen[] = [
     },
   },
 ]
+
+MOVEMENT_SCREENS.push(
+  {
+    id: 'shoulder_external_rotation',
+    name: 'Shoulder Lay-Back',
+    whyItMatters:
+      'This is how far your throwing shoulder can rotate back into the cocked position. It is the single most throwing-specific thing on this list. When it is short, the trunk and elbow usually make up the difference, and that is a change you can see in the delivery.',
+    cameraSetup: 'Stand side-on to the phone, about 6 feet away, camera at shoulder height, filming your throwing arm.',
+    position: 'Stand tall with your upper arm out to the side at shoulder height and your elbow bent 90 degrees, forearm pointing straight forward.',
+    action: 'Keeping your upper arm level and your back flat, rotate your hand back and up as far as it goes without pain. Hold for 3 seconds.',
+    bilateral: true,
+    predictsMechanics: true,
+    reliability: 'Moderate',
+    reliabilityNote:
+      'The forearm swings across the camera, which reads well, but the upper arm drifting out of position adds apparent range. Treat this as a comparison against your other side and your own follow-ups, not an exact clinical number.',
+    unit: 'degrees',
+    band: { clear: 85, limited: 60 },
+    higherIsBetter: true,
+    measure(landmarks, side) {
+      const joints = sideJoints(side)
+      const needed = [joints.elbow, joints.wrist]
+      const confidence = visibilityOf(landmarks, needed)
+      if (!present(landmarks, needed)) return insufficient(confidence)
+      // Forearm pointing straight forward reads 0; rotating the hand up and
+      // back raises the wrist above the elbow and increases the angle.
+      const value = angleFromHorizontal(landmarks[joints.elbow], landmarks[joints.wrist])
+      return { value: value === null ? null : value + 90, confidence }
+    },
+  },
+  {
+    id: 'cross_body_reach',
+    name: 'Cross-Body Reach',
+    whyItMatters:
+      'This shows how freely your throwing arm can travel across your body. That is the range your arm has to give up after release while it slows down, so when it is tight the trunk usually has to move instead.',
+    cameraSetup: 'Face the phone from about 8 feet away, camera at chest height, with your head and both shoulders in frame.',
+    position: 'Stand tall facing the camera with your throwing arm straight out in front at shoulder height.',
+    action: 'Keeping your shoulders square to the camera and your chest still, pull your straight arm across your body as far as it goes. Hold for 3 seconds.',
+    bilateral: true,
+    predictsMechanics: true,
+    reliability: 'Moderate',
+    reliabilityNote:
+      'Filmed from the front this reads well, but turning your chest instead of moving the arm adds apparent range. Use it as a comparison between your sides and against your own follow-ups rather than an exact measurement.',
+    unit: 'degrees',
+    band: { clear: 40, limited: 60 },
+    higherIsBetter: false,
+    measure(landmarks, side) {
+      const joints = sideJoints(side)
+      const opposite = side === 'left' ? RIGHT : LEFT
+      const needed = [joints.shoulder, joints.elbow, opposite.shoulder]
+      const confidence = visibilityOf(landmarks, needed)
+      if (!present(landmarks, needed)) return insufficient(confidence)
+      // Angle at the throwing shoulder between the opposite shoulder and the
+      // elbow. Arm straight out to the side reads near 180; pulling it across
+      // the chest drives it down, so a smaller number is more range.
+      const value = jointAngle(landmarks[opposite.shoulder], landmarks[joints.shoulder], landmarks[joints.elbow])
+      return { value, confidence }
+    },
+  },
+  {
+    id: 'hip_extension',
+    name: 'Hip Extension',
+    whyItMatters:
+      'This is how far the front of your hip lets your thigh travel backward. The back leg needs that range to drive down the mound, and when it is short the low back usually arches to make up for it.',
+    cameraSetup: 'Put the phone about 6 feet to your side at hip height, filming your whole body from the side.',
+    position: 'Lie on your back at the very end of a bed or bench so that one leg can hang freely off the edge from the hip down.',
+    action: 'Pull one knee to your chest and hold it there. Let the other leg relax and hang down as far as it goes. Hold for 3 seconds.',
+    bilateral: true,
+    predictsMechanics: true,
+    reliability: 'High',
+    reliabilityNote: 'The hanging thigh moves straight across the camera view, so this is a dependable 2D measurement.',
+    unit: 'degrees',
+    band: { clear: 0, limited: -10 },
+    higherIsBetter: true,
+    measure(landmarks, side) {
+      const joints = sideJoints(side)
+      const needed = [joints.hip, joints.knee]
+      const confidence = visibilityOf(landmarks, needed)
+      if (!present(landmarks, needed)) return insufficient(confidence)
+      const fromHorizontal = angleFromHorizontal(landmarks[joints.hip], landmarks[joints.knee])
+      // Positive means the thigh dropped below level, which is the range we
+      // are looking for. A thigh that stays propped above level reads negative.
+      return { value: fromHorizontal === null ? null : -fromHorizontal, confidence }
+    },
+  },
+  {
+    id: 'squat_depth',
+    name: 'Squat Depth',
+    whyItMatters:
+      'This is a whole lower-body check in one movement: ankles, knees, and hips together. It will not tell you which one is short on its own, but a shallow squat alongside a limited ankle or hip screen tells you the restriction is real and not a one-off.',
+    cameraSetup: 'Put the phone about 8 feet to your side at hip height, filming your whole body from the side.',
+    position: 'Stand with your feet about shoulder-width apart and your arms out in front for balance.',
+    action: 'Squat down as far as you comfortably can while keeping your heels on the floor. Hold the bottom for 3 seconds.',
+    bilateral: false,
+    // A shallow squat is a combined result of several joints, so on its own it
+    // does not predict one specific fault in the delivery. It is used as
+    // supporting evidence for the joint-specific screens instead.
+    predictsMechanics: false,
+    reliability: 'High',
+    reliabilityNote: 'Squatting happens straight across the camera view from the side, so the depth measurement is dependable.',
+    unit: 'degrees',
+    band: { clear: 110, limited: 80 },
+    higherIsBetter: true,
+    measure(landmarks) {
+      // Use whichever leg is tracked more clearly; from a side view the near
+      // leg is usually far more visible than the far one.
+      const leftVisibility = visibilityOf(landmarks, [LEFT.hip, LEFT.knee, LEFT.ankle])
+      const rightVisibility = visibilityOf(landmarks, [RIGHT.hip, RIGHT.knee, RIGHT.ankle])
+      const joints = leftVisibility >= rightVisibility ? LEFT : RIGHT
+      const confidence = Math.max(leftVisibility, rightVisibility)
+      const needed = [joints.hip, joints.knee, joints.ankle]
+      if (!present(landmarks, needed)) return insufficient(confidence)
+      const kneeAngle = jointAngle(landmarks[joints.hip], landmarks[joints.knee], landmarks[joints.ankle])
+      // Report depth achieved rather than the raw knee angle, so a deeper
+      // squat is a larger number like every other higher-is-better screen.
+      return { value: kneeAngle === null ? null : 180 - kneeAngle, confidence }
+    },
+  },
+)
 
 export function getMovementScreen(id: string): MovementScreen | undefined {
   return MOVEMENT_SCREENS.find((screen) => screen.id === id)

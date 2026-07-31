@@ -232,6 +232,63 @@ const PREDICTIONS: Prediction[] = [
       return { outcome: 'inconclusive', observed: `Trunk angle changed ${describeDegrees(trunkTiltChange)}, which is borderline.` }
     },
   },
+  {
+    screenId: 'shoulder_external_rotation',
+    predicts:
+      'If the throwing shoulder cannot lay back far enough, the trunk usually leans further to buy the arm room, which shows up as a larger trunk-angle change through the throw.',
+    explains: ['Upper-Half Timing', 'Posture'],
+    evaluate(metrics) {
+      const { trunkTiltChange } = metrics
+      if (trunkTiltChange === null) {
+        return { outcome: 'inconclusive', observed: 'Trunk-angle change could not be measured in this delivery.' }
+      }
+      if (trunkTiltChange > 25) {
+        return { outcome: 'confirmed', observed: `Trunk angle changed ${describeDegrees(trunkTiltChange)}, consistent with the trunk buying room for a restricted shoulder.` }
+      }
+      if (trunkTiltChange <= 14) {
+        return { outcome: 'not_showing', observed: `Trunk angle only changed ${describeDegrees(trunkTiltChange)}, so the delivery is not visibly compensating for it here.` }
+      }
+      return { outcome: 'inconclusive', observed: `Trunk angle changed ${describeDegrees(trunkTiltChange)}, which is borderline.` }
+    },
+  },
+  {
+    screenId: 'cross_body_reach',
+    predicts:
+      'If the arm cannot travel freely across the body, the trunk tends to take over during deceleration, which shows up as a larger trunk-angle change through the finish.',
+    explains: ['Upper-Half Timing', 'Release Consistency'],
+    evaluate(metrics) {
+      const { trunkTiltChange } = metrics
+      if (trunkTiltChange === null) {
+        return { outcome: 'inconclusive', observed: 'Trunk-angle change could not be measured in this delivery.' }
+      }
+      if (trunkTiltChange > 25) {
+        return { outcome: 'confirmed', observed: `Trunk angle changed ${describeDegrees(trunkTiltChange)}, consistent with the trunk absorbing what the arm cannot.` }
+      }
+      if (trunkTiltChange <= 14) {
+        return { outcome: 'not_showing', observed: `Trunk angle only changed ${describeDegrees(trunkTiltChange)}, so the finish is not visibly paying for it here.` }
+      }
+      return { outcome: 'inconclusive', observed: `Trunk angle changed ${describeDegrees(trunkTiltChange)}, which is borderline.` }
+    },
+  },
+  {
+    screenId: 'hip_extension',
+    predicts:
+      'If the front of the hip is short on range, the back leg cannot extend fully down the mound, so the hips tend to rotate early and total separation stays small.',
+    explains: ['Lower-Half Sequencing', 'Direction'],
+    evaluate(metrics) {
+      const { peakSeparation } = metrics
+      if (peakSeparation === null) {
+        return { outcome: 'inconclusive', observed: 'Trunk separation could not be measured in this delivery.' }
+      }
+      if (peakSeparation < 25) {
+        return { outcome: 'confirmed', observed: `Separation peaked at ${describeDegrees(peakSeparation)}, consistent with a back leg that is not extending fully.` }
+      }
+      if (peakSeparation >= 32) {
+        return { outcome: 'not_showing', observed: `Separation reached ${describeDegrees(peakSeparation)}, so the drive leg is working well enough in this delivery.` }
+      }
+      return { outcome: 'inconclusive', observed: `Separation reached ${describeDegrees(peakSeparation)}, which is not decisive either way.` }
+    },
+  },
 ]
 
 /** Screens measuring 'limited' or 'watch' on either side. */
@@ -316,7 +373,14 @@ export function buildConvergenceReport(
 /** Screens that have a prediction defined. Used by tests and tooling. */
 export const PREDICTED_SCREEN_IDS = PREDICTIONS.map((prediction) => prediction.screenId)
 
-/** Guards against a screen being added without anyone deciding what it predicts. */
+/**
+ * Guards against a screen being added without anyone deciding what it
+ * predicts. Screens explicitly marked as not predicting one specific
+ * mechanical fault are exempt, so a capacity screen never gets a prediction
+ * invented for it just to satisfy this check.
+ */
 export function screensWithoutPredictions(): string[] {
-  return MOVEMENT_SCREENS.filter((screen) => !PREDICTED_SCREEN_IDS.includes(screen.id)).map((screen) => screen.id)
+  return MOVEMENT_SCREENS
+    .filter((screen) => screen.predictsMechanics && !PREDICTED_SCREEN_IDS.includes(screen.id))
+    .map((screen) => screen.id)
 }

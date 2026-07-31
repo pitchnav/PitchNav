@@ -226,6 +226,105 @@ describe('asymmetry', () => {
   })
 })
 
+describe('shoulder lay-back', () => {
+  it('reads 90 when the forearm points straight forward from the elbow', () => {
+    const landmarks = frame({
+      [RIGHT.elbow]: [0.5, 0.5],
+      [RIGHT.wrist]: [0.8, 0.5],
+    })
+    expect(screen('shoulder_external_rotation').measure(landmarks, 'right').value).toBeCloseTo(90, 1)
+  })
+
+  it('increases as the hand rotates up and back', () => {
+    const landmarks = frame({
+      [RIGHT.elbow]: [0.5, 0.5],
+      [RIGHT.wrist]: [0.7, 0.3],
+    })
+    const value = screen('shoulder_external_rotation').measure(landmarks, 'right').value as number
+    expect(value).toBeGreaterThan(90)
+    expect(value).toBeCloseTo(135, 1)
+  })
+})
+
+describe('cross-body reach', () => {
+  it('reads near 180 with the arm straight out to the side', () => {
+    const landmarks = frame({
+      [LEFT.shoulder]: [0.4, 0.4],
+      [RIGHT.shoulder]: [0.6, 0.4],
+      [RIGHT.elbow]: [0.9, 0.4],
+    })
+    expect(screen('cross_body_reach').measure(landmarks, 'right').value).toBeCloseTo(180, 1)
+  })
+
+  it('drops toward zero as the arm is pulled across the chest', () => {
+    const landmarks = frame({
+      [LEFT.shoulder]: [0.4, 0.4],
+      [RIGHT.shoulder]: [0.6, 0.4],
+      [RIGHT.elbow]: [0.3, 0.4],
+    })
+    expect(screen('cross_body_reach').measure(landmarks, 'right').value).toBeCloseTo(0, 1)
+  })
+
+  it('treats more reach across the body as better', () => {
+    const item = screen('cross_body_reach')
+    expect(item.higherIsBetter).toBe(false)
+    expect(classifyScreenValue(item, 30)).toBe('clear')
+    expect(classifyScreenValue(item, 80)).toBe('limited')
+  })
+})
+
+describe('hip extension', () => {
+  it('reads positive when the thigh hangs below level', () => {
+    const landmarks = frame({
+      [LEFT.hip]: [0.5, 0.5],
+      // Knee sits below and forward of the hip.
+      [LEFT.knee]: [0.7, 0.6],
+    })
+    const value = screen('hip_extension').measure(landmarks, 'left').value as number
+    expect(value).toBeGreaterThan(0)
+    expect(classifyScreenValue(screen('hip_extension'), value)).toBe('clear')
+  })
+
+  it('reads negative when the thigh stays propped above level', () => {
+    const landmarks = frame({
+      [LEFT.hip]: [0.5, 0.5],
+      [LEFT.knee]: [0.7, 0.4],
+    })
+    const value = screen('hip_extension').measure(landmarks, 'left').value as number
+    expect(value).toBeLessThan(0)
+    expect(classifyScreenValue(screen('hip_extension'), value)).toBe('limited')
+  })
+})
+
+describe('squat depth', () => {
+  it('reports greater depth for a deeper squat', () => {
+    const shallow = frame({
+      [LEFT.hip]: [0.5, 0.4],
+      [LEFT.knee]: [0.5, 0.6],
+      [LEFT.ankle]: [0.5, 0.8],
+      [RIGHT.hip]: [0.5, 0.4],
+      [RIGHT.knee]: [0.5, 0.6],
+      [RIGHT.ankle]: [0.5, 0.8],
+    })
+    const deep = frame({
+      [LEFT.hip]: [0.55, 0.62],
+      [LEFT.knee]: [0.4, 0.6],
+      [LEFT.ankle]: [0.5, 0.8],
+      [RIGHT.hip]: [0.55, 0.62],
+      [RIGHT.knee]: [0.4, 0.6],
+      [RIGHT.ankle]: [0.5, 0.8],
+    })
+    const shallowValue = screen('squat_depth').measure(shallow, 'single').value as number
+    const deepValue = screen('squat_depth').measure(deep, 'single').value as number
+    expect(shallowValue).toBeCloseTo(0, 1)
+    expect(deepValue).toBeGreaterThan(shallowValue)
+  })
+
+  it('is not cross-checked against the delivery, since several joints produce it', () => {
+    expect(screen('squat_depth').predictsMechanics).toBe(false)
+  })
+})
+
 describe('session summary', () => {
   function result(over: Partial<ScreenResult> & Pick<ScreenResult, 'screen_id' | 'side' | 'value'>): ScreenResult {
     return {
