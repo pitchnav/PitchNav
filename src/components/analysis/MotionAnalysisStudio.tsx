@@ -30,6 +30,14 @@ type ClipSummary = {
   trunkTiltRange: [number, number] | null
   peakLegLiftTime: number | null
   widestStrideTime: number | null
+  // Peak leg-lift and widest-stride are each just the single frame with the
+  // highest value for that joint across the whole clip. On one continuous
+  // pitch that's a reasonable proxy for those real phases. On anything else
+  // in frame (walking, warming up, multiple pitches), the global max can land
+  // anywhere -- including near the very end -- so this checks that the two
+  // detected moments actually fall in a plausible single-delivery order and
+  // position before any score gets built from them.
+  deliveryShapeValid: boolean
 }
 
 type CategoryFeedback = {
@@ -93,8 +101,14 @@ function buildCategoryFeedback(frames: FrameMetrics[], summary: ClipSummary): Ca
   // The displayed elbow/knee/trunk ranges elsewhere already filter on this
   // same confidence threshold; the scorecard needs the same filter.
   const reliableFrames = frames.filter((frame) => frame.confidence >= 0.45)
-  const quality: CategoryFeedback['confidence'] =
-    summary.averageConfidence >= 0.8 ? 'High' : summary.averageConfidence >= 0.6 ? 'Moderate' : 'Low'
+  // Pose-tracking confidence only measures whether a body was visible and
+  // trackable -- it says nothing about whether the clip actually shows one
+  // complete pitching delivery. A clear walking video scores High confidence
+  // here just as easily as a real pitch, so the shape check caps confidence
+  // separately from tracking quality.
+  const quality: CategoryFeedback['confidence'] = !summary.deliveryShapeValid
+    ? 'Low'
+    : summary.averageConfidence >= 0.8 ? 'High' : summary.averageConfidence >= 0.6 ? 'Moderate' : 'Low'
   const peak = summary.peakLegLiftTime
   const stride = summary.widestStrideTime
   const sequenceGap = peak !== null && stride !== null ? stride - peak : null
@@ -115,17 +129,23 @@ function buildCategoryFeedback(frames: FrameMetrics[], summary: ClipSummary): Ca
     },
     {
       category: 'Lower-Half Sequencing',
-      score: sequenceGap !== null && sequenceGap > 0 ? 4 : 2,
+      score: !summary.deliveryShapeValid ? 3 : sequenceGap !== null && sequenceGap > 0 ? 4 : 2,
       confidence: quality,
-      strength: sequenceGap !== null && sequenceGap > 0
-        ? 'Your leg lift reached its highest point before your stride opened all the way. That order gives your lower body time to start moving before the rest of the pitch speeds up.'
-        : 'Your hips, knees, and feet stayed visible through most of the delivery. That makes it possible to find the timing problem once the key moments are clearer.',
-      development: sequenceGap !== null && sequenceGap > 0
-        ? 'The order is good, but you still need to prove that it stays the same at higher effort. On the next check, compare the time from peak leg lift to foot contact on several pitches. If that time changes a lot, slow the drill down and make the move repeatable before adding intent.'
-        : 'The video did not give us two clear timing points, so we cannot tell whether your lower half starts in the right order. Record your full body in brighter light and keep both feet in the frame. We need to see peak leg lift and front-foot landing in the same pitch before changing your sequence.',
-      evidence: sequenceGap === null
-        ? 'Peak leg lift or the widest part of the stride could not be found clearly. Without both moments, the timing gap cannot be measured honestly.'
-        : `The video shows ${sequenceGap.toFixed(2)} seconds from peak leg lift to the widest part of the stride. Use the same camera angle and effort at each two-week check so that number can be compared fairly.`,
+      strength: !summary.deliveryShapeValid
+        ? 'A body stayed visible through the clip, so pose tracking had something to follow.'
+        : sequenceGap !== null && sequenceGap > 0
+          ? 'Your leg lift reached its highest point before your stride opened all the way. That order gives your lower body time to start moving before the rest of the pitch speeds up.'
+          : 'Your hips, knees, and feet stayed visible through most of the delivery. That makes it possible to find the timing problem once the key moments are clearer.',
+      development: !summary.deliveryShapeValid
+        ? 'Automatic timing detection could not confirm a single, clean leg-lift-to-stride sequence in this clip. This usually means the video shows more than one motion (for example, walking, warming up, or several pitches) rather than one continuous delivery. A coach must watch the source video and confirm it shows one complete pitch before trusting any score below.'
+        : sequenceGap !== null && sequenceGap > 0
+          ? 'The order is good, but you still need to prove that it stays the same at higher effort. On the next check, compare the time from peak leg lift to foot contact on several pitches. If that time changes a lot, slow the drill down and make the move repeatable before adding intent.'
+          : 'The video did not give us two clear timing points, so we cannot tell whether your lower half starts in the right order. Record your full body in brighter light and keep both feet in the frame. We need to see peak leg lift and front-foot landing in the same pitch before changing your sequence.',
+      evidence: !summary.deliveryShapeValid
+        ? `The detected peak leg-lift moment (${formatTime(peak)}) and widest-stride moment (${formatTime(stride)}) do not fall in a plausible single-delivery order and position within this clip. Treat every score in this report as unverified until a coach confirms the source video shows one complete pitch.`
+        : sequenceGap === null
+          ? 'Peak leg lift or the widest part of the stride could not be found clearly. Without both moments, the timing gap cannot be measured honestly.'
+          : `The video shows ${sequenceGap.toFixed(2)} seconds from peak leg lift to the widest part of the stride. Use the same camera angle and effort at each two-week check so that number can be compared fairly.`,
     },
     {
       category: 'Upper-Half Timing',
@@ -1151,6 +1171,18 @@ export function MotionAnalysisStudio({
     }
     const peakLegLift = [...frames].sort((a, b) => (b.legLift ?? -1) - (a.legLift ?? -1))[0]
     const widestStride = [...frames].sort((a, b) => (b.strideWidth ?? -1) - (a.strideWidth ?? -1))[0]
+    const video = videoRef.current
+    const clipStart = analysisStartRef.current
+    const clipEnd = video ? Math.min(video.duration, analysisEndRef.current ?? video.duration) : null
+    const clipDuration = clipEnd !== null ? Math.max(0.01, clipEnd - clipStart) : null
+    const peakFraction = clipDuration !== null && peakLegLift ? (peakLegLift.time - clipStart) / clipDuration : null
+    const strideFraction = clipDuration !== null && widestStride ? (widestStride.time - clipStart) / clipDuration : null
+    // A real delivery's leg lift happens early-to-mid clip, well before the
+    // stride, which itself still needs room afterward for the arm action and
+    // finish. Peak leg-lift landing in the final third, or stride landing at
+    // the very end, means the clip almost certainly is not one clean pitch.
+    const deliveryShapeValid = peakFraction !== null && strideFraction !== null
+      && peakFraction <= 0.65 && strideFraction > peakFraction && strideFraction <= 0.92
     setSummary({
       frames: frames.length,
       averageConfidence: frames.reduce((sum, frame) => sum + frame.confidence, 0) / frames.length,
@@ -1159,6 +1191,7 @@ export function MotionAnalysisStudio({
       trunkTiltRange: range(frames.map((frame) => frame.trunkTilt)),
       peakLegLiftTime: peakLegLift?.time ?? null,
       widestStrideTime: widestStride?.time ?? null,
+      deliveryShapeValid,
     })
     analyzingRef.current = false
     setAnalyzing(false)
@@ -1942,6 +1975,14 @@ export function MotionAnalysisStudio({
               <Download className="h-4 w-4" /> {exporting ? `Rendering at ${playbackSpeed}×…` : `Download skeleton video (${playbackSpeed}×)`}
             </button>
           </div>
+          {!summary.deliveryShapeValid && (
+            <div className="mt-5 flex items-start gap-3 rounded-xl border border-yellow-500/30 bg-yellow-500/10 p-4">
+              <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-yellow-300" />
+              <p className="text-sm leading-relaxed text-yellow-200">
+                We could not confirm this clip shows one complete pitch from wind-up through release. This usually happens when the video contains other motion (like walking around) instead of a single delivery. Scores below are unverified — record one full pitch, from set position through follow-through, and try again.
+              </p>
+            </div>
+          )}
           <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
             <SummaryCard label="Elbow range" value={summary.elbowRange ? `${Math.round(summary.elbowRange[0])}–${Math.round(summary.elbowRange[1])}°` : '—'} />
             <SummaryCard label="Lead-knee range" value={summary.kneeRange ? `${Math.round(summary.kneeRange[0])}–${Math.round(summary.kneeRange[1])}°` : '—'} />
