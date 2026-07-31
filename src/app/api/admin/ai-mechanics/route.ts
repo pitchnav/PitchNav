@@ -5,6 +5,7 @@ import { buildEightWeekThrowingPlan } from '@/lib/throwing-plan'
 import { calculateDeliveryScore } from '@/lib/utils'
 import { summarizeScreenSession, type ScreenResult } from '@/lib/movement-screens'
 import { buildConvergenceReport, type DeliveryMetrics } from '@/lib/screen-mechanics-convergence'
+import { buildAthleteContext, type AthleteProfileInput } from '@/lib/athlete-context'
 
 export const runtime = 'nodejs'
 export const maxDuration = 300
@@ -122,6 +123,10 @@ export async function POST(request: Request) {
     const athlete = Array.isArray(analysis.athlete_profiles) ? analysis.athlete_profiles[0] : analysis.athlete_profiles
 
     const analysisUserId = analysis.user_id as string
+    // Intake data (age, height, weight, level, velocity) turned into computed
+    // values plus explicit guidance on how each should change a reading --
+    // rather than a raw JSON blob the model has to interpret unaided.
+    const athleteContext = buildAthleteContext(athlete as AthleteProfileInput | null)
 
     // Movement screens are measured physical capacity, captured separately
     // from the pitch. When present they replace guesswork about WHY a
@@ -217,7 +222,8 @@ Reflect that same reasoning in the category's development field using this shape
 1. Name the visible pattern and when in the delivery it happens (for example, a lead leg that keeps traveling forward instead of blocking at foot strike).
 2. Name the plausible physical reason in plain language (for example, tightness or a strength gap in the hamstrings, or limited hip mobility) — match this to the likely_cause you selected.
 3. Say what the plan does about it this week (for example, focusing on hip-hinge strength work and hamstring mobility) so the athlete understands why their specific plan looks the way it does.
-Athlete: ${JSON.stringify(athlete ?? {})}
+${athleteContext.promptBlock}
+
 Capture FPS: ${analysis.capture_fps ?? 'unknown'}
 Clip summary: ${JSON.stringify(analysis.clip_summary ?? {})}
 2D pose metrics: ${JSON.stringify(analysis.mechanics_metrics ?? {})}
