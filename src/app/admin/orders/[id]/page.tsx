@@ -27,6 +27,14 @@ type AutomatedCategory = {
   development: string
   evidence: string
   likely_cause?: string
+  physical_hypothesis?: {
+    limitation: string
+    mechanism: string
+    competing_explanations?: Array<{ explanation: string; why_less_likely: string }>
+    evidence_basis?: 'measured_screen' | 'video_inference'
+    confirming_screen?: string
+    confidence?: string
+  }
 }
 
 type AutomatedPhase = {
@@ -933,6 +941,35 @@ export default function AdminOrderDetailPage() {
                       }}
                       className="input text-sm"
                     />
+                    {automatic?.physical_hypothesis && (
+                      // Staff must be able to check the reasoning, not just the
+                      // conclusion, before this is released. The competing
+                      // explanation and the evidence basis are the two things
+                      // that reveal a confident-sounding but unsupported call.
+                      <div className="sm:col-span-3 sm:col-start-2 rounded-xl border border-electric-blue/20 bg-navy-950/60 p-3 space-y-2">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-xs font-bold uppercase tracking-wide text-electric-blue-light">Why the AI thinks this</span>
+                          {automatic.physical_hypothesis.evidence_basis === 'measured_screen' ? (
+                            <span className="status-badge bg-accent-green/10 text-accent-green">Backed by a measured screen</span>
+                          ) : (
+                            <span className="status-badge bg-yellow-500/10 text-yellow-300">Inferred from video only — not measured</span>
+                          )}
+                          {automatic.physical_hypothesis.confidence && (
+                            <span className="text-xs text-slate-500">Confidence: {automatic.physical_hypothesis.confidence}</span>
+                          )}
+                        </div>
+                        <p className="text-xs text-slate-300"><span className="text-slate-500">Limitation:</span> {automatic.physical_hypothesis.limitation}</p>
+                        <p className="text-xs text-slate-300"><span className="text-slate-500">Mechanism:</span> {automatic.physical_hypothesis.mechanism}</p>
+                        {automatic.physical_hypothesis.competing_explanations?.map((alt, index) => (
+                          <p key={index} className="text-xs text-slate-400">
+                            <span className="text-slate-500">Also considered:</span> {alt.explanation} — {alt.why_less_likely}
+                          </p>
+                        ))}
+                        {automatic.physical_hypothesis.confirming_screen && (
+                          <p className="text-xs text-slate-400"><span className="text-slate-500">To confirm:</span> {automatic.physical_hypothesis.confirming_screen}</p>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )
               })}
