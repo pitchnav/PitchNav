@@ -86,24 +86,51 @@ describe('buildCategoryFeedback Front-Side Stability scoring', () => {
     expect(frontSideStability?.score).toBeGreaterThanOrEqual(4)
   })
 
-  it('does not let outlier frames that pass the confidence filter tank the score', () => {
-    // Reproduces a real live result: MediaPipe can report a landmark as
-    // confidently tracked while still placing it at a physiologically
-    // impossible spot during brief self-occlusion (trail leg crossing in
-    // front of the lead knee). Confidence alone cannot catch that -- a
-    // handful of frames like this passed leadKneeConfidence >= 0.45 and
-    // still produced a 3-178 degree "range" on a real order. The score must
-    // be robust to a small number of such outliers among many good frames.
-    const goodValues = Array.from({ length: 20 }, (_, i) => 140 + (i % 5)) // clustered 140-144
-    const frames: FrameMetrics[] = [
-      ...goodValues.map((value, i) => goodFrame(0.2 + i * 0.05, value)),
-      goodFrame(1.5, 3), // confidently-wrong outlier, low end
-      goodFrame(1.6, 178), // confidently-wrong outlier, high end
-    ]
+  // Real measurements, not invented ones: MediaPipe heavy-model output for a
+  // minor-league pitcher's side-view delivery, frames from foot strike
+  // through the finish. The frame at 7.71s is the failure this whole fix
+  // exists for -- the lead leg was momentarily unreadable, MediaPipe
+  // correctly reported near-zero confidence for it (0.03), and the angle it
+  // produced (12.9 deg) is not a knee position that occurs in a delivery.
+  // Including it swings the spread to 166.5 deg and forces the worst score.
+  const realDelivery: Array<[number, number, number]> = [
+    // [time, leadKnee, leadKneeConfidence]
+    [7.34, 143.5, 0.95], [7.38, 133.3, 0.99], [7.42, 136.9, 1.0],
+    [7.46, 160.1, 0.74], [7.50, 152.1, 0.83], [7.54, 179.0, 0.87],
+    [7.58, 173.1, 0.94], [7.62, 175.1, 0.98], [7.66, 138.6, 0.60],
+    [7.71, 12.9, 0.03], // unreadable leg, correctly low confidence
+    [7.75, 178.8, 0.97], [7.83, 164.6, 0.29], [7.87, 155.7, 0.09],
+    [7.91, 178.6, 0.99], [7.95, 174.3, 0.98], [7.99, 179.4, 0.96],
+    [8.03, 178.4, 0.93], [8.07, 179.3, 0.77], [8.11, 174.7, 0.70],
+  ]
+
+  it('excludes the unreadable-leg frame from a real delivery instead of scoring 1', () => {
+    const frames: FrameMetrics[] = realDelivery.map(([time, knee, conf]) => ({
+      ...goodFrame(time, knee),
+      leadKneeConfidence: conf,
+    }))
 
     const feedback = buildCategoryFeedback(frames, summary)
     const frontSideStability = feedback.find((item) => item.category === 'Front-Side Stability')
 
-    expect(frontSideStability?.score).toBeGreaterThanOrEqual(4)
+    // Confidence-filtered spread is 179.4 - 133.3 = 46.1 deg -> score 3.
+    // Unfiltered it would be 166.5 deg -> score 1.
+    expect(frontSideStability?.score).toBe(3)
+  })
+
+  it('keeps the genuine deepest-flex frame, which is the signal for this category', () => {
+    // The deepest lead-knee flexion after landing is exactly what
+    // "front-side stability" is about, so a high-confidence extreme must
+    // survive into the reported evidence. Percentile trimming would discard
+    // 133.3 deg here even though MediaPipe reported it at 0.99 confidence.
+    const frames: FrameMetrics[] = realDelivery.map(([time, knee, conf]) => ({
+      ...goodFrame(time, knee),
+      leadKneeConfidence: conf,
+    }))
+
+    const feedback = buildCategoryFeedback(frames, summary)
+    const evidence = feedback.find((item) => item.category === 'Front-Side Stability')?.evidence ?? ''
+
+    expect(evidence).toContain('46 degrees')
   })
 })
