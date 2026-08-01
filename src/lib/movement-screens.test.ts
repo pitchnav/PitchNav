@@ -454,6 +454,31 @@ describe('screen catalogue integrity', () => {
     }
   })
 
+  it('keeps the athlete-facing battery to five screens', () => {
+    // Deliberate product constraint: a long screening session gets abandoned
+    // or rushed, and a rushed screen is worse than no screen.
+    expect(MOVEMENT_SCREENS.filter((item) => item.core)).toHaveLength(5)
+  })
+
+  it('spans the kinetic chain rather than clustering on one region', () => {
+    const core = MOVEMENT_SCREENS.filter((item) => item.core).map((item) => item.id)
+    expect(core).toEqual(
+      expect.arrayContaining([
+        'active_straight_leg_raise',
+        'ankle_dorsiflexion',
+        'seated_hip_rotation',
+        'seated_trunk_rotation',
+        'shoulder_external_rotation',
+      ]),
+    )
+  })
+
+  it('gives every core screen a prediction to cross-check against the delivery', () => {
+    for (const item of MOVEMENT_SCREENS.filter((entry) => entry.core)) {
+      expect(item.predictsMechanics).toBe(true)
+    }
+  })
+
   it('uses unique ids', () => {
     const ids = MOVEMENT_SCREENS.map((item) => item.id)
     expect(new Set(ids).size).toBe(ids.length)

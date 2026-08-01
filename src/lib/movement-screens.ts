@@ -54,6 +54,15 @@ export type MovementScreen = {
   /** Measured separately per side, or a single whole-body value. */
   bilateral: boolean
   /**
+   * Part of the standard athlete battery. Kept deliberately small: a long
+   * screening session gets abandoned or rushed, and a rushed screen produces
+   * a worse number than no screen at all. The five core screens are chosen to
+   * span the kinetic chain and to cover all three delivery signals the
+   * cross-check can test against. The rest remain defined and tested so staff
+   * can request one when a specific question comes up.
+   */
+  core: boolean
+  /**
    * True when a limitation on this screen should produce a signature visible
    * in the delivery, so it can be cross-checked against the pitch. Capacity
    * screens that do not predict one specific mechanical fault set this false
@@ -137,6 +146,7 @@ export const MOVEMENT_SCREENS: MovementScreen[] = [
     position: 'Lie flat on your back with both legs straight and both arms at your sides.',
     action: 'Keeping both knees straight and the down leg flat on the floor, raise one leg as high as you can without pain. Hold it at the top for 3 seconds.',
     bilateral: true,
+    core: true,
     predictsMechanics: true,
     reliability: 'High',
     reliabilityNote: 'This movement happens in a flat plane facing the camera, so the 2D measurement is dependable.',
@@ -165,6 +175,7 @@ export const MOVEMENT_SCREENS: MovementScreen[] = [
     position: 'Stand with your back against a wall, feet a few inches out, and your low back flat against the wall.',
     action: 'Keeping your low back flat on the wall and your elbow straight, raise one arm overhead as far as it goes. Hold for 3 seconds.',
     bilateral: true,
+    core: false,
     predictsMechanics: true,
     reliability: 'High',
     reliabilityNote: 'Filmed from the side, the arm swings straight across the camera view, which 2D measurement handles well.',
@@ -189,6 +200,7 @@ export const MOVEMENT_SCREENS: MovementScreen[] = [
     position: 'Stand facing a wall in a short split stance with the front toe a few inches from the wall.',
     action: 'Keeping your front heel flat on the ground, drive your front knee forward toward the wall as far as it goes. Hold for 3 seconds.',
     bilateral: true,
+    core: true,
     predictsMechanics: true,
     reliability: 'High',
     reliabilityNote: 'The shin travels straight across the camera view, so this is a dependable 2D measurement.',
@@ -214,6 +226,7 @@ export const MOVEMENT_SCREENS: MovementScreen[] = [
     position: 'Sit tall with your knees bent 90 degrees and your thighs together, shins hanging straight down.',
     action: 'Keeping your thigh still and your hips level on the bench, swing one shin outward as far as it goes. Hold for 3 seconds. This measures inward rotation of that hip.',
     bilateral: true,
+    core: true,
     predictsMechanics: true,
     reliability: 'Moderate',
     reliabilityNote:
@@ -239,6 +252,7 @@ export const MOVEMENT_SCREENS: MovementScreen[] = [
     position: 'Sit tall with your arms crossed over your chest and a ball or rolled towel squeezed between your knees to keep your hips square.',
     action: 'Keeping your hips square and the ball squeezed, rotate your shoulders as far as you can to one side. Hold for 3 seconds.',
     bilateral: true,
+    core: true,
     predictsMechanics: true,
     reliability: 'Moderate',
     reliabilityNote:
@@ -278,6 +292,7 @@ export const MOVEMENT_SCREENS: MovementScreen[] = [
     position: 'Stand tall on one leg with your hands on your hips and the other knee lifted to about hip height.',
     action: 'Hold as still as you can for 10 seconds. Do not let your standing-side hip drop.',
     bilateral: true,
+    core: false,
     predictsMechanics: true,
     reliability: 'High',
     reliabilityNote: 'Pelvic drop happens side-to-side across the camera view, which 2D measurement reads well from the front.',
@@ -304,6 +319,7 @@ MOVEMENT_SCREENS.push(
     position: 'Stand tall with your upper arm out to the side at shoulder height and your elbow bent 90 degrees, forearm pointing straight forward.',
     action: 'Keeping your upper arm level and your back flat, rotate your hand back and up as far as it goes without pain. Hold for 3 seconds.',
     bilateral: true,
+    core: true,
     predictsMechanics: true,
     reliability: 'Moderate',
     reliabilityNote:
@@ -331,6 +347,7 @@ MOVEMENT_SCREENS.push(
     position: 'Stand tall facing the camera with your throwing arm straight out in front at shoulder height.',
     action: 'Keeping your shoulders square to the camera and your chest still, pull your straight arm across your body as far as it goes. Hold for 3 seconds.',
     bilateral: true,
+    core: false,
     predictsMechanics: true,
     reliability: 'Moderate',
     reliabilityNote:
@@ -360,6 +377,7 @@ MOVEMENT_SCREENS.push(
     position: 'Lie on your back at the very end of a bed or bench so that one leg can hang freely off the edge from the hip down.',
     action: 'Pull one knee to your chest and hold it there. Let the other leg relax and hang down as far as it goes. Hold for 3 seconds.',
     bilateral: true,
+    core: false,
     predictsMechanics: true,
     reliability: 'High',
     reliabilityNote: 'The hanging thigh moves straight across the camera view, so this is a dependable 2D measurement.',
@@ -386,6 +404,7 @@ MOVEMENT_SCREENS.push(
     position: 'Stand with your feet about shoulder-width apart and your arms out in front for balance.',
     action: 'Squat down as far as you comfortably can while keeping your heels on the floor. Hold the bottom for 3 seconds.',
     bilateral: false,
+    core: false,
     // A shallow squat is a combined result of several joints, so on its own it
     // does not predict one specific fault in the delivery. It is used as
     // supporting evidence for the joint-specific screens instead.

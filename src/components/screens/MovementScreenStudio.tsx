@@ -21,7 +21,9 @@ const MODEL_URL =
 type CaptureStep = { screen: MovementScreen; side: ScreenSide }
 
 function buildSteps(): CaptureStep[] {
-  return MOVEMENT_SCREENS.flatMap((screen) =>
+  // Core screens only. A long screening session gets abandoned or rushed, and
+  // a rushed screen produces a worse number than no screen at all.
+  return MOVEMENT_SCREENS.filter((screen) => screen.core).flatMap((screen) =>
     screen.bilateral
       ? [
           { screen, side: 'left' as ScreenSide },
