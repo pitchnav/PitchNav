@@ -1,5 +1,6 @@
 import {
   MOVEMENT_SCREENS,
+  aggregateScreenSamples,
   getMovementScreen,
   classifyScreenValue,
   asymmetryDegrees,
@@ -322,6 +323,46 @@ describe('squat depth', () => {
 
   it('is not cross-checked against the delivery, since several joints produce it', () => {
     expect(screen('squat_depth').predictsMechanics).toBe(false)
+  })
+})
+
+describe('aggregating a clip into one measurement', () => {
+  it('recovers a real rotation angle from the athlete own neutral and rotated frames', () => {
+    // Neutral shoulder:hip ratio 1.5; at 45 degrees of rotation the shoulders
+    // project to 1.5 * cos(45) = 1.0607.
+    const value = aggregateScreenSamples(screen('seated_trunk_rotation'), [1.5, 1.32, 1.18, 1.0607])
+    expect(value).toBeCloseTo(45, 0)
+  })
+
+  it('reports only a small rotation when the shoulders barely foreshorten', () => {
+    // acos is steep near 1, so tracking noise of well under one percent still
+    // reads as a few degrees. That floor is inherent to estimating rotation
+    // from projected width and is why this screen is a Moderate-reliability
+    // comparison against the athlete's own follow-ups, not an exact number.
+    const value = aggregateScreenSamples(screen('seated_trunk_rotation'), [1.5, 1.5, 1.49]) as number
+    expect(value).toBeLessThan(10)
+    expect(value).toBeGreaterThan(0)
+  })
+
+  // The bug this replaces: a raw width ratio of about 1.5 was being classified
+  // against degree bands, so every athlete was told they were clearly limited.
+  it('does not classify a broad-shouldered athlete as limited on ratio alone', () => {
+    const trunk = screen('seated_trunk_rotation')
+    const value = aggregateScreenSamples(trunk, [1.9, 1.6, 1.38]) as number
+    expect(classifyScreenValue(trunk, value)).not.toBe('limited')
+  })
+
+  it('takes the end position reached for a range-of-motion screen', () => {
+    expect(aggregateScreenSamples(screen('active_straight_leg_raise'), [40, 55, 72, 68])).toBe(72)
+  })
+
+  it('takes the median of a hold so one wobble cannot define a control screen', () => {
+    expect(aggregateScreenSamples(screen('single_leg_stance'), [2, 3, 3, 4, 19])).toBe(3)
+  })
+
+  it('returns null rather than a number when there is nothing usable', () => {
+    expect(aggregateScreenSamples(screen('overhead_reach'), [])).toBeNull()
+    expect(aggregateScreenSamples(screen('overhead_reach'), [Number.NaN])).toBeNull()
   })
 })
 

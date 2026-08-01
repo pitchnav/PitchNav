@@ -8,6 +8,7 @@ import {
   MOVEMENT_SCREENS,
   classifyScreenValue,
   summarizeScreenSession,
+  aggregateScreenSamples,
   type MovementScreen,
   type ScreenResult,
   type ScreenSide,
@@ -175,14 +176,23 @@ export function MovementScreenStudio() {
         return
       }
 
-      const values = samples.map((sample) => sample.value).sort((a, b) => a - b)
-      // For range-of-motion screens the held end position is the measurement,
-      // so take the best value reached. For control screens (where lower is
-      // better) a single wobble should not define the result, so take the
-      // median of the hold instead.
-      const value = step.screen.higherIsBetter
-        ? values[values.length - 1]
-        : values[Math.floor(values.length / 2)]
+      // Each screen declares how its frames collapse into one number: the end
+      // position reached, the steady value of a hold, or -- for trunk rotation
+      // -- the angle recovered from the athlete's own neutral and rotated
+      // frames within the same clip.
+      const value = aggregateScreenSamples(step.screen, samples.map((sample) => sample.value))
+      if (value === null) {
+        setResults((prior) => ({
+          ...prior,
+          [stepKey(step)]: {
+            screen_id: step.screen.id, side: step.side, value: null,
+            unit: step.screen.unit, confidence: 0, classification: 'unmeasured',
+            reliability: step.screen.reliability,
+            problem: 'We could not read this one clearly enough. Please record it again.',
+          },
+        }))
+        return
+      }
       const confidence = samples.reduce((sum, sample) => sum + sample.confidence, 0) / samples.length
 
       setResults((prior) => ({
@@ -227,8 +237,12 @@ export function MovementScreenStudio() {
   }
 
   const collected = useMemo(() => Object.values(results), [results])
-  const summary = useMemo(() => (collected.length ? summarizeScreenSession(collected) : null), [collected])
   const completedCount = collected.filter((item) => item.value !== null).length
+  // Only what the athlete can act on: which recordings need doing again.
+  const retakes = useMemo(() => steps
+    .filter((entry) => results[stepKey(entry)]?.value === null)
+    .map((entry) => `${entry.screen.name}${sideWord(entry.side) ? ` — ${sideWord(entry.side)} side` : ''}`),
+    [steps, results])
 
   async function saveSession() {
     setSaving(true)
@@ -245,7 +259,7 @@ export function MovementScreenStudio() {
         completed_at: new Date().toISOString(),
       })
       if (insertError) throw insertError
-      setSaveMessage('Your movement screens were saved. Your next report will use these measurements instead of estimating them from your pitching video.')
+      setSaveMessage('Saved. Your coach will review these along with your pitching video.')
     } catch (reason) {
       console.error(reason)
       setSaveMessage(reason instanceof Error ? reason.message : 'Could not save your movement screens. Please try again.')
@@ -279,18 +293,17 @@ export function MovementScreenStudio() {
               {step.screen.name}{sideWord(step.side) ? ` — ${sideWord(step.side)} side` : ''}
             </h2>
           </div>
-          <span className={`status-badge ${step.screen.reliability === 'High' ? 'bg-accent-green/10 text-accent-green' : 'bg-yellow-500/10 text-yellow-300'}`}>
-            {step.screen.reliability} reliability
-          </span>
         </div>
 
         <p className="text-sm text-slate-300">{step.screen.whyItMatters}</p>
 
-        {step.screen.reliability === 'Moderate' && (
-          <p className="rounded-xl border border-yellow-500/20 bg-yellow-500/5 p-3 text-xs text-yellow-200">
-            {step.screen.reliabilityNote}
-          </p>
-        )}
+        {/*
+          How much weight we place on a given screen, and the caveats attached
+          to it, are staff-side judgements. Showing an athlete a "moderate
+          reliability" badge invites them to discount their own result without
+          a coach there to interpret it, so the tier is stored and used behind
+          the scenes rather than displayed.
+        */}
 
         <div className="grid gap-3 md:grid-cols-3">
           <div className="rounded-xl bg-navy-950 p-4">
@@ -336,26 +349,21 @@ export function MovementScreenStudio() {
         {error && <p className="rounded-xl border border-red-500/30 bg-red-500/5 p-3 text-sm text-red-300">{error}</p>}
 
         {currentResult && (
+          // The athlete is shown only whether the recording was usable. The
+          // measurement, how it compares to a range, and how confident we are
+          // in it are all staff-side judgements -- surfacing them here would
+          // hand an athlete a number to worry about with no coach attached.
           <div className={`rounded-xl border p-4 ${
             currentResult.value === null
-              ? 'border-red-500/30 bg-red-500/5'
-              : currentResult.classification === 'limited'
-                ? 'border-yellow-500/30 bg-yellow-500/5'
-                : 'border-accent-green/30 bg-accent-green/5'
+              ? 'border-yellow-500/30 bg-yellow-500/5'
+              : 'border-accent-green/30 bg-accent-green/5'
           }`}>
             {currentResult.value === null ? (
-              <p className="text-sm text-red-200">{currentResult.problem}</p>
+              <p className="text-sm text-yellow-200">{currentResult.problem}</p>
             ) : (
-              <>
-                <p className="text-2xl font-black text-white">
-                  {step.screen.unit === 'degrees' ? `${Math.round(currentResult.value)}°` : currentResult.value.toFixed(2)}
-                </p>
-                <p className="mt-1 text-sm text-slate-300">
-                  {currentResult.classification === 'clear' && 'This is inside the range we would expect. Nothing to work around here.'}
-                  {currentResult.classification === 'watch' && 'This is a little below where we would like it. Worth including in your plan.'}
-                  {currentResult.classification === 'limited' && 'This is limited enough that it is likely affecting your delivery. Your plan will target it.'}
-                </p>
-              </>
+              <p className="text-sm text-accent-green">
+                <span className="font-semibold">Recorded.</span> This one came through clearly. Move on to the next screen.
+              </p>
             )}
           </div>
         )}
@@ -388,49 +396,31 @@ export function MovementScreenStudio() {
         </div>
       </div>
 
-      {summary && (
+      {collected.length > 0 && (
         <div className="card space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <h3 className="text-lg font-black text-white">What we have measured so far</h3>
-            <span className="text-sm text-slate-400">{completedCount} of {steps.length} measured</span>
+            <h3 className="text-lg font-black text-white">Your progress</h3>
+            <span className="text-sm text-slate-400">{completedCount} of {steps.length} recorded</span>
           </div>
 
-          {summary.insufficient ? (
-            <p className="rounded-xl border border-yellow-500/30 bg-yellow-500/5 p-3 text-sm text-yellow-200">
-              There are not enough measurements yet to explain anything about your delivery. Complete more screens so your
-              report uses real numbers instead of estimating from your pitching video.
-            </p>
-          ) : summary.findings.length === 0 ? (
-            <p className="text-sm text-accent-green">
-              Everything measured so far is inside the expected range with no notable side-to-side difference.
-            </p>
+          {retakes.length > 0 ? (
+            <div className="rounded-xl border border-yellow-500/30 bg-yellow-500/5 p-3">
+              <p className="text-sm font-semibold text-yellow-200">These need recording again:</p>
+              <ul className="mt-2 space-y-1">
+                {retakes.map((item, index) => (
+                  <li key={index} className="text-sm text-yellow-100/90">{item}</li>
+                ))}
+              </ul>
+            </div>
           ) : (
-            <ul className="space-y-2">
-              {summary.findings.map((finding, index) => (
-                <li key={index} className="flex gap-2 text-sm text-slate-300">
-                  <span className={
-                    finding.kind === 'limitation' ? 'text-yellow-400'
-                      : finding.kind === 'asymmetry' ? 'text-electric-blue-light'
-                        : 'text-slate-600'
-                  }>•</span>
-                  <span>
-                    {finding.detail}
-                    {finding.reliability === 'Moderate' && (
-                      <span className="ml-1 text-xs text-slate-500">(estimate — compare against your own follow-ups)</span>
-                    )}
-                  </span>
-                </li>
-              ))}
-            </ul>
+            <p className="text-sm text-accent-green">Everything you have recorded so far came through clearly.</p>
           )}
 
           <div className="flex flex-wrap items-center gap-3">
             <button type="button" className="btn-primary" onClick={saveSession} disabled={saving || completedCount === 0}>
               {saving ? 'Saving…' : <><Check className="h-4 w-4" /> Save my movement screens</>}
             </button>
-            <p className="text-xs text-slate-500">
-              You can save now and add the rest later. Saving replaces estimates with measurements in your next report.
-            </p>
+            <p className="text-xs text-slate-500">You can save now and add the rest later.</p>
           </div>
 
           {saveMessage && <p className="text-sm text-electric-blue-light">{saveMessage}</p>}

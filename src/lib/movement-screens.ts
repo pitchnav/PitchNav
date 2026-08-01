@@ -76,6 +76,16 @@ export type MovementScreen = {
   band: ScreenBand
   /** Higher is better for most screens; false where lower is better. */
   higherIsBetter: boolean
+  /**
+   * How the frames of one clip become a single measurement.
+   *  - 'best'    the end position reached, for range-of-motion screens.
+   *  - 'median'  the steady value of a hold, so one wobble cannot define a
+   *              control screen.
+   *  - 'rotationFromRange' the athlete's own neutral and rotated frames are
+   *              both inside the clip, so rotation is recovered from how much
+   *              the shoulders foreshorten between them.
+   */
+  aggregate: 'best' | 'median' | 'rotationFromRange'
   measure: (landmarks: LandmarkPoint[], side: ScreenSide) => ScreenMeasurement
 }
 
@@ -153,6 +163,7 @@ export const MOVEMENT_SCREENS: MovementScreen[] = [
     unit: 'degrees',
     band: { clear: 70, limited: 55 },
     higherIsBetter: true,
+    aggregate: 'best',
     measure(landmarks, side) {
       const joints = sideJoints(side)
       const down = side === 'left' ? RIGHT : LEFT
@@ -182,6 +193,7 @@ export const MOVEMENT_SCREENS: MovementScreen[] = [
     unit: 'degrees',
     band: { clear: 165, limited: 140 },
     higherIsBetter: true,
+    aggregate: 'best',
     measure(landmarks, side) {
       const joints = sideJoints(side)
       const needed = [joints.hip, joints.shoulder, joints.wrist]
@@ -207,6 +219,7 @@ export const MOVEMENT_SCREENS: MovementScreen[] = [
     unit: 'degrees',
     band: { clear: 35, limited: 25 },
     higherIsBetter: true,
+    aggregate: 'best',
     measure(landmarks, side) {
       const joints = sideJoints(side)
       const needed = [joints.knee, joints.ankle]
@@ -234,6 +247,7 @@ export const MOVEMENT_SCREENS: MovementScreen[] = [
     unit: 'degrees',
     band: { clear: 35, limited: 22 },
     higherIsBetter: true,
+    aggregate: 'best',
     measure(landmarks, side) {
       const joints = sideJoints(side)
       const needed = [joints.knee, joints.ankle]
@@ -258,8 +272,9 @@ export const MOVEMENT_SCREENS: MovementScreen[] = [
     reliabilityNote:
       'Rotation toward or away from a single camera is the hardest thing for 2D video to see. This estimates rotation from how much narrower your shoulders become versus your hips, so it is useful for tracking your own change over time and side-to-side differences, but it is not an exact rotation measurement.',
     unit: 'degrees',
-    band: { clear: 45, limited: 30 },
+    band: { clear: 40, limited: 25 },
     higherIsBetter: true,
+    aggregate: 'rotationFromRange',
     measure(landmarks, side) {
       const needed = [LEFT.shoulder, RIGHT.shoulder, LEFT.hip, RIGHT.hip]
       const confidence = visibilityOf(landmarks, needed)
@@ -299,6 +314,7 @@ export const MOVEMENT_SCREENS: MovementScreen[] = [
     unit: 'degrees',
     band: { clear: 3, limited: 6 },
     higherIsBetter: false,
+    aggregate: 'median',
     measure(landmarks) {
       const needed = [LEFT.hip, RIGHT.hip]
       const confidence = visibilityOf(landmarks, needed)
@@ -327,6 +343,7 @@ MOVEMENT_SCREENS.push(
     unit: 'degrees',
     band: { clear: 85, limited: 60 },
     higherIsBetter: true,
+    aggregate: 'best',
     measure(landmarks, side) {
       const joints = sideJoints(side)
       const needed = [joints.elbow, joints.wrist]
@@ -355,6 +372,7 @@ MOVEMENT_SCREENS.push(
     unit: 'degrees',
     band: { clear: 40, limited: 60 },
     higherIsBetter: false,
+    aggregate: 'median',
     measure(landmarks, side) {
       const joints = sideJoints(side)
       const opposite = side === 'left' ? RIGHT : LEFT
@@ -384,6 +402,7 @@ MOVEMENT_SCREENS.push(
     unit: 'degrees',
     band: { clear: 0, limited: -10 },
     higherIsBetter: true,
+    aggregate: 'best',
     measure(landmarks, side) {
       const joints = sideJoints(side)
       const needed = [joints.hip, joints.knee]
@@ -414,6 +433,7 @@ MOVEMENT_SCREENS.push(
     unit: 'degrees',
     band: { clear: 110, limited: 80 },
     higherIsBetter: true,
+    aggregate: 'best',
     measure(landmarks) {
       // Use whichever leg is tracked more clearly; from a side view the near
       // leg is usually far more visible than the far one.
@@ -467,6 +487,36 @@ export function asymmetryDegrees(left: number | null, right: number | null): num
 
 /** Above this side-to-side gap, the asymmetry itself is the finding. */
 export const NOTABLE_ASYMMETRY_DEGREES = 12
+
+/**
+ * Collapses one clip's per-frame values into the single measurement for that
+ * screen. Kept here beside the screen definitions so the capture UI cannot
+ * drift from what each screen actually means.
+ */
+export function aggregateScreenSamples(screen: MovementScreen, samples: number[]): number | null {
+  const values = samples.filter((value) => Number.isFinite(value)).sort((a, b) => a - b)
+  if (!values.length) return null
+
+  if (screen.aggregate === 'rotationFromRange') {
+    // The clip contains the athlete's own neutral (shoulders square to the
+    // camera, widest projection) and their rotated end position (narrowest).
+    // Rotation is recovered from how far the shoulders foreshorten between
+    // the two, which makes this the athlete's own baseline rather than an
+    // assumed one -- a naturally broad-shouldered athlete is not penalised.
+    const widest = values[values.length - 1]
+    const narrowest = values[0]
+    if (!widest || widest <= 0) return null
+    const cosine = Math.max(-1, Math.min(1, narrowest / widest))
+    return (Math.acos(cosine) * 180) / Math.PI
+  }
+
+  if (screen.aggregate === 'median') {
+    return values[Math.floor(values.length / 2)]
+  }
+
+  // 'best': the end position reached, which depends on which way is better.
+  return screen.higherIsBetter ? values[values.length - 1] : values[0]
+}
 
 /** One measured screen, as stored in movement_screen_sessions.results. */
 export type ScreenResult = {
