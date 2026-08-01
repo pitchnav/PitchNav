@@ -11,7 +11,7 @@ import { probeVideoFile, ACCEPTED_VIDEO_TYPES } from '@/lib/video-support'
 type Handedness = 'right' | 'left'
 type VideoPoint = { x: number; y: number; time: number }
 
-type FrameMetrics = {
+export type FrameMetrics = {
   time: number
   confidence: number
   throwingElbow: number | null
@@ -20,9 +20,18 @@ type FrameMetrics = {
   hipShoulderSeparation: number | null
   strideWidth: number | null
   legLift: number | null
+  // The blended `confidence` above averages 12 landmarks, so a frame can
+  // score well overall while the one or two landmarks a specific angle
+  // depends on were briefly misplaced (occluded by the trail leg, the mound,
+  // motion blur). These track visibility for only the landmarks that feed
+  // each angle, so a spread calculation can exclude a frame whose knee (say)
+  // was garbage without needing every other landmark to also be bad.
+  leadKneeConfidence: number
+  throwingElbowConfidence: number
+  trunkConfidence: number
 }
 
-type ClipSummary = {
+export type ClipSummary = {
   frames: number
   averageConfidence: number
   elbowRange: [number, number] | null
@@ -101,7 +110,7 @@ function range(values: Array<number | null>): [number, number] | null {
   return [Math.min(...valid), Math.max(...valid)]
 }
 
-function buildCategoryFeedback(frames: FrameMetrics[], summary: ClipSummary): CategoryFeedback[] {
+export function buildCategoryFeedback(frames: FrameMetrics[], summary: ClipSummary): CategoryFeedback[] {
   const spread = (values: Array<number | null>) => {
     const valid = values.filter((value): value is number => value !== null && Number.isFinite(value))
     if (valid.length < 2) return 0
@@ -111,9 +120,11 @@ function buildCategoryFeedback(frames: FrameMetrics[], summary: ClipSummary): Ca
   // real phone video) can misplace a joint and swing its angle estimate to
   // an extreme. Spread is just max-min, so one bad frame among many good
   // ones would otherwise tank a score that should reflect the real pitch.
-  // The displayed elbow/knee/trunk ranges elsewhere already filter on this
-  // same confidence threshold; the scorecard needs the same filter.
-  const reliableFrames = frames.filter((frame) => frame.confidence >= 0.45)
+  // The overall blended confidence (12-landmark average) is not enough to
+  // catch this: a frame can average well while the one or two landmarks a
+  // specific angle depends on were briefly wrong (trail leg blocking the
+  // lead knee, for example). Each spread below filters on the confidence of
+  // only the landmarks that angle actually uses.
   // Pose-tracking confidence only measures whether a body was visible and
   // trackable -- it says nothing about whether the clip actually shows one
   // complete pitching delivery. A clear walking video scores High confidence
@@ -125,9 +136,13 @@ function buildCategoryFeedback(frames: FrameMetrics[], summary: ClipSummary): Ca
   const peak = summary.peakLegLiftTime
   const stride = summary.widestStrideTime
   const sequenceGap = peak !== null && stride !== null ? stride - peak : null
-  const trunkSpread = spread(reliableFrames.map((frame) => frame.trunkTilt))
-  const kneeSpread = spread(reliableFrames.filter((frame) => stride === null || frame.time >= stride).map((frame) => frame.leadKnee))
-  const elbowSpread = spread(reliableFrames.map((frame) => frame.throwingElbow))
+  const trunkSpread = spread(frames.filter((frame) => frame.trunkConfidence >= 0.45).map((frame) => frame.trunkTilt))
+  const kneeSpread = spread(
+    frames
+      .filter((frame) => frame.leadKneeConfidence >= 0.45 && (stride === null || frame.time >= stride))
+      .map((frame) => frame.leadKnee)
+  )
+  const elbowSpread = spread(frames.filter((frame) => frame.throwingElbowConfidence >= 0.45).map((frame) => frame.throwingElbow))
   const score = (value: number, good: number, fair: number) =>
     value <= good ? 5 : value <= fair ? 4 : value <= fair * 1.5 ? 3 : value <= fair * 2 ? 2 : 1
 
@@ -240,7 +255,7 @@ function isMissingRpcError(reason: unknown): boolean {
     || error.message?.includes('Could not find the function') === true
 }
 
-function calculateMetrics(
+export function calculateMetrics(
   landmarks: NormalizedLandmark[],
   time: number,
   handedness: Handedness
@@ -254,6 +269,10 @@ function calculateMetrics(
 
   const tracked = [11, 12, 13, 14, 15, 16, 23, 24, 25, 26, 27, 28]
   const confidence = tracked.reduce((sum, index) => sum + (landmarks[index]?.visibility ?? 0), 0) / tracked.length
+  const visibilityOf = (index: number) => landmarks[index]?.visibility ?? 0
+  const leadKneeConfidence = Math.min(visibilityOf(lead.hip), visibilityOf(lead.knee), visibilityOf(lead.ankle))
+  const throwingElbowConfidence = Math.min(visibilityOf(throwing.shoulder), visibilityOf(throwing.elbow), visibilityOf(throwing.wrist))
+  const trunkConfidence = Math.min(visibilityOf(11), visibilityOf(12), visibilityOf(23), visibilityOf(24))
   const shoulderMid = {
     x: (landmarks[11].x + landmarks[12].x) / 2,
     y: (landmarks[11].y + landmarks[12].y) / 2,
@@ -283,6 +302,9 @@ function calculateMetrics(
     hipShoulderSeparation: separation,
     strideWidth: ankleDistance,
     legLift: hipHeight - elevatedKnee,
+    leadKneeConfidence,
+    throwingElbowConfidence,
+    trunkConfidence,
   }
 }
 
@@ -1225,9 +1247,14 @@ export function MotionAnalysisStudio({
     setSummary({
       frames: frames.length,
       averageConfidence: frames.reduce((sum, frame) => sum + frame.confidence, 0) / frames.length,
-      elbowRange: range(frames.map((frame) => frame.throwingElbow)),
-      kneeRange: range(frames.map((frame) => frame.leadKnee)),
-      trunkTiltRange: range(frames.map((frame) => frame.trunkTilt)),
+      // Filtered on the confidence of the specific landmarks each angle
+      // depends on, not just the whole-body blended average -- a frame can
+      // average well while the lead knee alone was briefly occluded by the
+      // trail leg or the mound, which otherwise lets one bad frame swing
+      // this range by well over a hundred degrees.
+      elbowRange: range(frames.filter((frame) => frame.throwingElbowConfidence >= 0.45).map((frame) => frame.throwingElbow)),
+      kneeRange: range(frames.filter((frame) => frame.leadKneeConfidence >= 0.45).map((frame) => frame.leadKnee)),
+      trunkTiltRange: range(frames.filter((frame) => frame.trunkConfidence >= 0.45).map((frame) => frame.trunkTilt)),
       peakLegLiftTime: peakLegLift?.time ?? null,
       widestStrideTime: widestStride?.time ?? null,
       maxExternalRotationTime: maxExternalRotation?.time ?? null,
@@ -1237,7 +1264,7 @@ export function MotionAnalysisStudio({
       leadKneeChangeAfterStride: (() => {
         if (!widestStride) return null
         const after = frames
-          .filter((frame) => frame.time >= widestStride.time)
+          .filter((frame) => frame.time >= widestStride.time && frame.leadKneeConfidence >= 0.45)
           .map((frame) => frame.leadKnee)
           .filter((value): value is number => value !== null && Number.isFinite(value))
         if (after.length < 2) return null
