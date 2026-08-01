@@ -15,9 +15,8 @@ import type {
   AssignedDrill, ScorecardCategory, PositionScreenshot, OrderStatus,
   PlayingLevel,
   DrillCategory,
-  AutomaticVelocityJob,
 } from '@/types/database'
-import { Video, CheckCircle, XCircle, Upload, Plus, Trash2, Save, Send, Gauge, RefreshCw, Download } from 'lucide-react'
+import { Video, CheckCircle, XCircle, Upload, Plus, Trash2, Save, Send, RefreshCw, Download } from 'lucide-react'
 
 type AutomatedCategory = {
   category: string
@@ -105,9 +104,6 @@ export default function AdminOrderDetailPage() {
   const [skeletonVideoUrl, setSkeletonVideoUrl] = useState<string | null>(null)
   const [trackedVideoUrl, setTrackedVideoUrl] = useState<string | null>(null)
   const [originalVideoDownloadUrl, setOriginalVideoDownloadUrl] = useState<string | null>(null)
-  const [velocityJob, setVelocityJob] = useState<AutomaticVelocityJob | null>(null)
-  const [velocityBusy, setVelocityBusy] = useState(false)
-  const [velocityMessage, setVelocityMessage] = useState('')
   const [draftMessage, setDraftMessage] = useState('')
   const [generatingAi, setGeneratingAi] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -137,15 +133,6 @@ export default function AdminOrderDetailPage() {
     setProfile(orderData.athlete_profiles as AthleteProfile)
     setVideos((orderData.video_submissions as VideoSubmission[]) ?? [])
     setNewStatus(orderData.status as OrderStatus)
-
-    const { data: latestVelocityJob } = await supabase
-      .from('automatic_velocity_jobs')
-      .select('*')
-      .eq('order_id', id)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle()
-    setVelocityJob((latestVelocityJob as AutomaticVelocityJob | null) ?? null)
 
     const athleteProfileId = orderData.athlete_profiles?.id
     const automatedSelect = 'id,order_id,delivery_score,category_scores,phase_snapshots,strengths,development_priorities,coach_feedback,velocity_estimate_low,velocity_estimate_high,velocity_confidence,ai_draft_status,ai_generated_at,ai_model,source_video_storage_path,tracked_video_storage_path,rendered_video_storage_path'
@@ -260,51 +247,6 @@ export default function AdminOrderDetailPage() {
     }
     if (!approved) alert(result.message || 'Replacement upload opened with no cooldown.')
     await loadData()
-  }
-
-  async function runAutomaticVelocity(videoId: string) {
-    setVelocityBusy(true)
-    setVelocityMessage('Sending the paid side-view clip to the secure velocity worker…')
-    try {
-      const response = await fetch('/api/admin/velocity', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderId: id, videoSubmissionId: videoId }),
-      })
-      const result = await response.json() as { error?: string; configured?: boolean; reason?: string }
-      if (!response.ok) throw new Error(result.error || 'The automatic velocity job could not be started.')
-      if (result.configured === false) {
-        setVelocityMessage('The job is saved, but the external video worker is not configured in Vercel yet.')
-      } else {
-        setVelocityMessage('Automatic processing started. Refresh this panel in a few minutes to view the result.')
-      }
-      await loadData()
-    } catch (reason) {
-      setVelocityMessage(reason instanceof Error ? reason.message : 'The automatic velocity job could not be started.')
-    } finally {
-      setVelocityBusy(false)
-    }
-  }
-
-  async function approveAutomaticVelocity() {
-    if (!velocityJob) return
-    setVelocityBusy(true)
-    setVelocityMessage('Attaching the staff-approved video estimate to the athlete report…')
-    try {
-      const response = await fetch('/api/admin/velocity/approve', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ jobId: velocityJob.id }),
-      })
-      const result = await response.json() as { error?: string }
-      if (!response.ok) throw new Error(result.error || 'The estimate could not be approved.')
-      setVelocityMessage('Approved. The video-estimated range is now attached to this analysis as staff-reviewed—not radar verified.')
-      await loadData()
-    } catch (reason) {
-      setVelocityMessage(reason instanceof Error ? reason.message : 'The estimate could not be approved.')
-    } finally {
-      setVelocityBusy(false)
-    }
   }
 
   async function changeStatus() {
@@ -744,81 +686,6 @@ export default function AdminOrderDetailPage() {
 
               {video.angle === 'open_side' && (
                 <div className="mb-4 space-y-4">
-                  <div className="rounded-xl border border-electric-blue/25 bg-electric-blue/5 p-4">
-                    <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <Gauge className="h-5 w-5 text-electric-blue-light" />
-                          <h4 className="font-semibold text-white">Automatic calibrated velocity</h4>
-                        </div>
-                        <p className="mt-1 max-w-2xl text-xs leading-5 text-slate-400">
-                          The secure worker checks the saved trim range, frame rate, printed 8-inch marker, and baseball track. It returns unavailable instead of inventing a number. Every result is a video-estimated range and requires staff approval.
-                        </p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => runAutomaticVelocity(video.id)}
-                        disabled={velocityBusy || !order.payment_confirmed_at}
-                        className="btn-secondary shrink-0"
-                      >
-                        <RefreshCw className={`h-4 w-4 ${velocityBusy ? 'animate-spin' : ''}`} />
-                        {velocityJob ? 'Run again' : 'Start automatically'}
-                      </button>
-                    </div>
-
-                    {velocityJob ? (
-                      <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                        <div className="rounded-lg bg-navy-950 p-3">
-                          <p className="text-xs uppercase tracking-wide text-slate-500">Worker status</p>
-                          <p className="mt-1 font-semibold capitalize text-white">{velocityJob.status.replace('_', ' ')}</p>
-                        </div>
-                        <div className="rounded-lg bg-navy-950 p-3">
-                          <p className="text-xs uppercase tracking-wide text-slate-500">Frame rate</p>
-                          <p className="mt-1 font-semibold text-white">
-                            {velocityJob.effective_capture_fps ? `${Number(velocityJob.effective_capture_fps).toFixed(0)} FPS` : 'Not verified'}
-                          </p>
-                          {velocityJob.detected_playback_fps && (
-                            <p className="mt-1 text-[11px] text-slate-500">File playback: {Number(velocityJob.detected_playback_fps).toFixed(1)} FPS</p>
-                          )}
-                        </div>
-                        <div className="rounded-lg bg-navy-950 p-3">
-                          <p className="text-xs uppercase tracking-wide text-slate-500">Calibration and track</p>
-                          <p className="mt-1 font-semibold text-white">{velocityJob.calibration_detected ? 'Marker found' : 'Marker not confirmed'}</p>
-                          <p className="mt-1 text-[11px] text-slate-500">{velocityJob.ball_track_frames} ball frames accepted</p>
-                        </div>
-                        <div className="rounded-lg bg-navy-950 p-3">
-                          <p className="text-xs uppercase tracking-wide text-slate-500">Video estimate</p>
-                          <p className="mt-1 font-semibold text-white">
-                            {velocityJob.estimate_low_mph != null && velocityJob.estimate_high_mph != null
-                              ? `${Number(velocityJob.estimate_low_mph).toFixed(1)}–${Number(velocityJob.estimate_high_mph).toFixed(1)} mph`
-                              : 'Unavailable'}
-                          </p>
-                          <p className="mt-1 text-[11px] text-slate-500">{velocityJob.confidence ?? 'No'} confidence · not radar verified</p>
-                        </div>
-                      </div>
-                    ) : (
-                      <p className="mt-4 rounded-lg bg-navy-950 p-3 text-sm text-slate-400">No automatic velocity job has been created for this side-view clip.</p>
-                    )}
-
-                    {velocityJob?.rejection_reason && (
-                      <p className="mt-3 rounded-lg border border-yellow-500/20 bg-yellow-500/5 p-3 text-sm text-yellow-300">
-                        {velocityJob.rejection_reason}
-                      </p>
-                    )}
-                    {velocityMessage && <p className="mt-3 text-sm text-electric-blue-light">{velocityMessage}</p>}
-
-                    {velocityJob?.status === 'completed' && (
-                      <button
-                        type="button"
-                        onClick={approveAutomaticVelocity}
-                        disabled={velocityBusy || velocityJob.staff_approved}
-                        className="btn-accent mt-4 w-full justify-center"
-                      >
-                        <CheckCircle className="h-4 w-4" />
-                        {velocityJob.staff_approved ? 'Staff-approved estimate attached' : 'Approve video-estimated range'}
-                      </button>
-                    )}
-                  </div>
 
                   <a href={`/admin/orders/${id}/motion-lab?videoId=${video.id}&auto=1`} className="btn-primary w-full justify-center">
                     Retry automatic processing (only if needed) →

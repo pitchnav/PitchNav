@@ -18,7 +18,6 @@ type UploadedVideo = {
   checklistConfirmed: boolean
   quality: VideoQuality | null
   captureFps: 60 | 120 | 240
-  velocityOptIn: boolean
 }
 
 type VideoQuality = {
@@ -70,7 +69,6 @@ function UploadContent() {
   const [preflightAngle, setPreflightAngle] = useState<'open_side' | null>(null)
   const [preflightChecks, setPreflightChecks] = useState<Record<string, boolean>>({})
   const [captureFps, setCaptureFps] = useState<60 | 120 | 240>(240)
-  const [velocityOptIn, setVelocityOptIn] = useState(false)
   const [pendingDrop, setPendingDrop] = useState<File | null>(null)
 
   const REQUIRED_ANGLES = ['open_side'] as const
@@ -154,7 +152,7 @@ function UploadContent() {
   function beginVideoSelection(file: File | null = null) {
     setPendingDrop(file)
     setPreflightChecks({})
-    setVelocityOptIn(false)
+
     setPreflightAngle('open_side')
   }
 
@@ -167,11 +165,11 @@ function UploadContent() {
     const dropped = pendingDrop
     setPreflightAngle(null)
     setPendingDrop(null)
-    if (dropped) await handleFileSelect('open_side', dropped, captureFps, velocityOptIn)
+    if (dropped) await handleFileSelect('open_side', dropped, captureFps)
     else window.setTimeout(() => document.getElementById('video-file-open_side')?.click(), 0)
   }
 
-  async function handleFileSelect(angle: 'open_side', file: File, confirmedCaptureFps: 60 | 120 | 240, optedIntoVelocity: boolean) {
+  async function handleFileSelect(angle: 'open_side', file: File, confirmedCaptureFps: 60 | 120 | 240) {
     // Validate type
     if (!ACCEPTED_VIDEO_TYPES.includes(file.type)) {
       alert('Unsupported video format. Please use MP4, MOV, or WebM.')
@@ -196,7 +194,6 @@ function UploadContent() {
         checklistConfirmed: false,
         quality: null,
         captureFps: confirmedCaptureFps,
-        velocityOptIn: optedIntoVelocity,
       },
     }))
     const quality = await inspectVideo(file, url)
@@ -259,7 +256,6 @@ function UploadContent() {
           frame_rate: video.captureFps,
           orientation: video.quality?.orientation.toLowerCase() ?? null,
           checklist_confirmed: true,
-          velocity_opt_in: video.velocityOptIn,
         })
         .select()
         .single()
@@ -267,26 +263,6 @@ function UploadContent() {
       if (dbError) throw dbError
 
       // Automatic velocity processing only runs when the athlete explicitly
-      // opted in and confirmed they placed the calibration marker. Skipping
-      // the enqueue entirely (rather than queuing and reporting "marker not
-      // confirmed") avoids running the worker for athletes who never
-      // intended to use it. Automatic processing is server-side and only
-      // starts after payment has been confirmed; upload success is not
-      // rolled back if the optional worker is temporarily unavailable.
-      if (video.velocityOptIn) {
-        try {
-          const enqueueResponse = await fetch('/api/velocity/enqueue', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ orderId, videoSubmissionId: submission.id }),
-          })
-          if (!enqueueResponse.ok) {
-            console.warn('[Automatic velocity] Staff will need to retry this video from the order.')
-          }
-        } catch (reason) {
-          console.warn('[Automatic velocity] Enqueue deferred', reason)
-        }
-      }
 
       setVideos((prev) => ({
         ...prev,
@@ -418,7 +394,7 @@ function UploadContent() {
                       onClick={(event) => event.stopPropagation()}
                       onChange={(e) => {
                         const file = e.target.files?.[0]
-                        if (file) handleFileSelect(angle, file, captureFps, velocityOptIn)
+                        if (file) handleFileSelect(angle, file, captureFps)
                         e.target.value = ''
                       }}
                     />
@@ -528,28 +504,7 @@ function UploadContent() {
                 {RECORDING_REQUIREMENTS.map((item) => <label key={item} className="flex cursor-pointer items-start gap-3 rounded-lg bg-navy-950 p-3"><input type="checkbox" checked={!!preflightChecks[item]} onChange={(event) => setPreflightChecks((current) => ({ ...current, [item]: event.target.checked }))} className="mt-0.5 h-5 w-5 accent-electric-blue" /><span className="text-sm text-slate-300">{item}</span></label>)}
               </div>
 
-              {captureFps === 60 && <p className="mt-4 rounded-lg border border-yellow-400/25 bg-yellow-400/10 p-3 text-xs text-yellow-200">This clip may still receive mechanics feedback, but Pitch Nav will not calculate video-estimated velocity from 60 FPS.</p>}
 
-              <div className="mt-5 rounded-lg border border-surface-border bg-navy-950 p-3">
-                <label className="flex cursor-pointer items-start gap-3">
-                  <input
-                    type="checkbox"
-                    checked={velocityOptIn}
-                    onChange={(event) => setVelocityOptIn(event.target.checked)}
-                    className="mt-0.5 h-5 w-5 accent-electric-blue"
-                    disabled={captureFps === 60}
-                  />
-                  <span className="text-sm text-slate-300">
-                    <span className="font-semibold text-white">Optional: try an automatic velocity estimate.</span> I printed and placed the 8×8 inch Pitch Nav calibration marker somewhere visible in this video. If unchecked, no velocity estimate will be attempted — mechanics feedback is unaffected either way.
-                  </span>
-                </label>
-                {velocityOptIn && (
-                  <p className="mt-2 pl-8 text-xs text-slate-500">If the marker is missing, obscured, or unreliable in the footage, the estimate will be reported as unavailable rather than guessed.</p>
-                )}
-                {captureFps === 60 && (
-                  <p className="mt-2 pl-8 text-xs text-yellow-300">Not available at 60 FPS.</p>
-                )}
-              </div>
 
               <div className="mt-6 flex gap-3">
                 <button type="button" className="btn-secondary flex-1 justify-center" onClick={() => { setPreflightAngle(null); setPendingDrop(null) }}>Cancel</button>

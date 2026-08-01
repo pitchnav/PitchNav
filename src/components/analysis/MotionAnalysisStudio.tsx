@@ -8,7 +8,6 @@ import { buildBaseballPerformancePlan } from '@/lib/performance-plan'
 import { buildEightWeekThrowingPlan } from '@/lib/throwing-plan'
 
 type Handedness = 'right' | 'left'
-type SelectionMode = 'calibrationA' | 'calibrationB' | 'ballStart' | 'ballEnd' | null
 type VideoPoint = { x: number; y: number; time: number }
 
 type FrameMetrics = {
@@ -774,12 +773,6 @@ export function MotionAnalysisStudio({
   const [summary, setSummary] = useState<ClipSummary | null>(null)
   const [progress, setProgress] = useState(0)
   const [error, setError] = useState('')
-  const [selectionMode, setSelectionMode] = useState<SelectionMode>(null)
-  const [calibrationA, setCalibrationA] = useState<VideoPoint | null>(null)
-  const [calibrationB, setCalibrationB] = useState<VideoPoint | null>(null)
-  const [ballStart, setBallStart] = useState<VideoPoint | null>(null)
-  const [ballEnd, setBallEnd] = useState<VideoPoint | null>(null)
-  const [calibrationFeet, setCalibrationFeet] = useState(6)
   const [captureFps, setCaptureFps] = useState(() =>
     initialVideo?.captureFps && [60, 120, 240].includes(initialVideo.captureFps)
       ? initialVideo.captureFps
@@ -961,30 +954,11 @@ export function MotionAnalysisStudio({
       context.shadowBlur = 0
     }
 
-    const markers: Array<{ point: VideoPoint | null; color: string; label: string }> = [
-      { point: calibrationA, color: '#22c55e', label: 'CAL A' },
-      { point: calibrationB, color: '#22c55e', label: 'CAL B' },
-      { point: ballStart, color: '#f97316', label: 'BALL 1' },
-      { point: ballEnd, color: '#ef4444', label: 'BALL 2' },
-    ]
-    for (const marker of markers) {
-      if (!marker.point || exportStyleRef.current || plainCaptureRef.current) continue
-      context.save()
-      context.strokeStyle = marker.color
-      context.fillStyle = marker.color
-      context.lineWidth = Math.max(2, width / 500)
-      context.beginPath()
-      context.arc(marker.point.x, marker.point.y, Math.max(8, width / 100), 0, Math.PI * 2)
-      context.stroke()
-      context.font = `700 ${Math.max(12, width / 70)}px sans-serif`
-      context.fillText(marker.label, marker.point.x + 12, marker.point.y - 12)
-      context.restore()
-    }
 
     const start = analysisStartRef.current
     const end = Math.min(video.duration, analysisEndRef.current ?? video.duration)
     setProgress(end > start ? Math.max(0, Math.min(1, (video.currentTime - start) / (end - start))) : 0)
-  }, [handedness, calibrationA, calibrationB, ballStart, ballEnd])
+  }, [handedness])
 
   const renderLoop = useCallback(() => {
     drawFrame()
@@ -1056,11 +1030,6 @@ export function MotionAnalysisStudio({
     setSummary(null)
     setMetrics(null)
     setProgress(0)
-    setSelectionMode(null)
-    setCalibrationA(null)
-    setCalibrationB(null)
-    setBallStart(null)
-    setBallEnd(null)
     setError('')
     await initializeModel()
   }
@@ -1475,41 +1444,7 @@ export function MotionAnalysisStudio({
     setTimeout(() => URL.revokeObjectURL(url), 1000)
   }
 
-  function selectVideoPoint(event: React.MouseEvent<HTMLCanvasElement>) {
-    if (!selectionMode || !canvasRef.current || !videoRef.current) return
-    const canvas = canvasRef.current
-    const bounds = canvas.getBoundingClientRect()
-    const x = ((event.clientX - bounds.left) / bounds.width) * canvas.width
-    const y = ((event.clientY - bounds.top) / bounds.height) * canvas.height
-    const selected = { x, y, time: videoRef.current.currentTime }
-    if (selectionMode === 'calibrationA') setCalibrationA(selected)
-    if (selectionMode === 'calibrationB') setCalibrationB(selected)
-    if (selectionMode === 'ballStart') setBallStart(selected)
-    if (selectionMode === 'ballEnd') setBallEnd(selected)
-    setSelectionMode(null)
-    requestAnimationFrame(drawFrame)
-  }
 
-  const velocityEstimate = useMemo(() => {
-    if (captureFps < 120) return null
-    if (!calibrationA || !calibrationB || !ballStart || !ballEnd || calibrationFeet <= 0) return null
-    const calibrationPixels = Math.hypot(calibrationB.x - calibrationA.x, calibrationB.y - calibrationA.y)
-    const ballPixels = Math.hypot(ballEnd.x - ballStart.x, ballEnd.y - ballStart.y)
-    const measuredFrames = Math.max(1, Math.round(Math.abs(ballEnd.time - ballStart.time) * captureFps))
-    if (calibrationPixels < 10 || ballPixels < 2) return null
-    const feetTravelled = (ballPixels / calibrationPixels) * calibrationFeet
-    const seconds = measuredFrames / captureFps
-    const mph = (feetTravelled / seconds) * 0.681818
-    if (!Number.isFinite(mph) || mph < 20 || mph > 130) return null
-    const margin = Math.max(2, mph * (setupConfirmed ? 0.05 : 0.1))
-    return {
-      mph,
-      low: Math.max(0, mph - margin),
-      high: mph + margin,
-      frames: measuredFrames,
-      confidence: setupConfirmed && measuredFrames >= 4 ? 'Moderate' : 'Low',
-    }
-  }, [calibrationA, calibrationB, ballStart, ballEnd, calibrationFeet, captureFps, setupConfirmed])
 
   async function capturePhaseScreenshots(userId: string, analysisId: string) {
     const video = videoRef.current
@@ -1754,10 +1689,6 @@ export function MotionAnalysisStudio({
           rendered_video_storage_path: renderedPath,
           capture_fps: captureFps,
           calibration_passed: setupConfirmed,
-          velocity_estimate_low: velocityEstimate?.low ?? null,
-          velocity_estimate_high: velocityEstimate?.high ?? null,
-          velocity_confidence: velocityEstimate?.confidence ?? null,
-          velocity_assumptions: velocityEstimate ? `${captureFps} FPS; fixed side view; ${calibrationFeet} ft calibration marker; video-based estimate` : null,
           mechanics_metrics: metrics ?? {},
           clip_summary: summary,
           delivery_score: overallScore,
@@ -2007,8 +1938,7 @@ export function MotionAnalysisStudio({
               />
               <canvas
                 ref={canvasRef}
-                onClick={selectVideoPoint}
-                className={`h-full w-full object-contain ${selectionMode ? 'cursor-crosshair' : ''}`}
+                className="h-full w-full object-contain"
                 aria-label="Video analysis canvas"
               />
               {modelStatus === 'loading' && (
