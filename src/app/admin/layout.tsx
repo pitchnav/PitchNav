@@ -2,8 +2,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import {
-  LayoutDashboard, ClipboardList, Users, Dumbbell, Settings, AlertTriangle, Activity
-} from 'lucide-react'
+  LayoutDashboard, ClipboardList, Users, Dumbbell, Settings, AlertTriangle, Activity, Film } from 'lucide-react'
 
 const ADMIN_NAV = [
   { href: '/admin', label: 'Overview', icon: LayoutDashboard },
@@ -11,6 +10,7 @@ const ADMIN_NAV = [
   { href: '/admin/athletes', label: 'Athletes', icon: Users },
   { href: '/admin/drills', label: 'Drill Library', icon: Dumbbell },
   { href: '/admin/motion-lab', label: 'Motion Reviews', icon: Activity },
+  { href: '/admin/tracker-studio', label: 'Tracker Studio', icon: Film },
   { href: '/admin/settings', label: 'Settings', icon: Settings },
 ]
 
