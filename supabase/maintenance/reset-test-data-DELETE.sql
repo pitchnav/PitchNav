@@ -1,35 +1,30 @@
 -- STEP 2 OF 2 — DESTRUCTIVE. THIS PERMANENTLY DELETES DATA.
 --
--- Run the PREVIEW script first and read its output. Once this runs, the
--- athlete records, orders, videos, analyses, reports and training plans are
--- gone and cannot be recovered from inside the app.
+-- Full reset for a clean start. Run the PREVIEW script first.
 --
 -- WHAT IS KEPT
---   - Any account with admin rights (so you do not lose your own login).
---   - Your drill library.
---   - Everything about how the product works. This only clears data.
+--   - Admin accounts, so you keep your own login and dashboard access.
+--   - The drill library.
+--   - Scorecard categories and admin settings.
+--   - All product configuration. This clears data only.
 --
 -- WHAT IS REMOVED
---   - Every non-admin athlete account and profile.
---   - Every order, video submission, motion analysis, movement screen,
---     training plan and report attached to them.
+--   - ALL athlete data, including any attached to your own admin account.
+--     Keeping the login but leaving its old test orders behind would not be
+--     the clean slate this is for.
+--   - Every non-admin account.
 --
 -- BEFORE YOU RUN THIS
---   Take a backup. In Supabase: Database → Backups. If anything on the
---   preview list turns out to have been a real paying customer, a backup is
---   the only way to get it back.
+--   Take a backup: Supabase → Database → Backups. Nothing here is
+--   recoverable from inside the app afterwards.
 --
--- Everything runs inside one transaction. If any statement fails, nothing is
--- deleted and you can re-run after fixing the problem.
+-- Everything runs in one transaction. If any statement fails, nothing is
+-- deleted and you can safely re-run once the problem is fixed.
 
 begin;
 
--- Work out which accounts are being cleared, once, and reuse it throughout.
-create temporary table _doomed_users on commit drop as
-select id from public.profiles where coalesce(is_admin, false) = false;
-
--- Safety brake: refuse to run if this would somehow remove every account,
--- which would mean no admin was detected and you would be locked out.
+-- Safety brake: refuse to proceed if no admin exists, which would delete
+-- every account and lock you out of your own product.
 do $$
 begin
   if (select count(*) from public.profiles where is_admin = true) = 0 then
@@ -37,47 +32,56 @@ begin
   end if;
 end $$;
 
--- Child records first, so nothing is orphaned if a cascade is missing.
-delete from public.position_screenshots
-  where report_id in (
-    select ar.id from public.analysis_reports ar
-    join public.orders o on o.id = ar.order_id
-    where o.user_id in (select id from _doomed_users)
-  );
-
-delete from public.order_status_history
-  where order_id in (select id from public.orders where user_id in (select id from _doomed_users));
-
-delete from public.analysis_reports
-  where order_id in (select id from public.orders where user_id in (select id from _doomed_users));
-
-delete from public.training_plans where user_id in (select id from _doomed_users);
-delete from public.motion_analyses where user_id in (select id from _doomed_users);
-
-delete from public.video_submissions
-  where order_id in (select id from public.orders where user_id in (select id from _doomed_users));
-
-delete from public.orders where user_id in (select id from _doomed_users);
-delete from public.athlete_profiles where user_id in (select id from _doomed_users);
-
--- Movement screens only exist once migration 030 has been applied.
+-- Clear every athlete-data table that exists, regardless of which account it
+-- belongs to. Skipping tables that are not present keeps this safe to run on
+-- a database where some migrations have not been applied.
 do $$
+declare
+  data_tables text[] := array[
+    'orders',
+    'athlete_profiles',
+    'video_submissions',
+    'motion_analyses',
+    'training_plans',
+    'analysis_reports',
+    'position_screenshots',
+    'order_status_history',
+    'movement_screen_sessions',
+    'velocity_evidence',
+    'velocity_history',
+    'assigned_drills',
+    'analysis_questions',
+    'automatic_velocity_jobs',
+    'messages',
+    'deletion_requests',
+    'email_log'
+  ];
+  present_tables text[] := '{}';
+  table_name text;
 begin
-  if to_regclass('public.movement_screen_sessions') is not null then
-    delete from public.movement_screen_sessions
-      where user_id in (select id from _doomed_users);
+  foreach table_name in array data_tables loop
+    if to_regclass('public.' || table_name) is not null then
+      present_tables := present_tables || ('public.' || table_name);
+    end if;
+  end loop;
+
+  if array_length(present_tables, 1) > 0 then
+    -- CASCADE covers any child table not listed above; RESTART IDENTITY
+    -- resets sequences so the fresh start really starts fresh.
+    execute 'truncate table ' || array_to_string(present_tables, ', ') || ' restart identity cascade';
   end if;
 end $$;
 
--- Finally the accounts themselves. Deleting the auth user cascades to the
--- matching profile row.
-delete from auth.users where id in (select id from _doomed_users);
+-- Remove every non-admin account. Deleting the auth user cascades to its
+-- profile row.
+delete from auth.users
+where id in (select id from public.profiles where coalesce(is_admin, false) = false);
 
 commit;
 
--- Confirm the result. Expect only your admin account to remain, and zeros
--- across the board.
-select 'remaining profiles' as check, count(*) from public.profiles
+-- Confirm. Expect only your admin profile to remain and zeros everywhere else.
+select 'remaining profiles (should be your admins only)' as check, count(*) from public.profiles
 union all select 'remaining orders', count(*) from public.orders
 union all select 'remaining athlete_profiles', count(*) from public.athlete_profiles
-union all select 'remaining motion_analyses', count(*) from public.motion_analyses;
+union all select 'remaining motion_analyses', count(*) from public.motion_analyses
+union all select 'drills kept (should be unchanged)', count(*) from public.drills;
