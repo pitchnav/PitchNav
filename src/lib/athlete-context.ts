@@ -26,8 +26,28 @@
  * about maturity status. It supplies context and asks for appropriate caution.
  */
 
+/**
+ * Velocity sources that represent an actual measuring device or a coach's
+ * reading. Anything outside this list -- including 'estimated' and 'other' --
+ * is the athlete's own guess and must not be used to soften scoring, or an
+ * athlete could simply claim a higher number to get an easier assessment.
+ */
+const MEASURED_VELOCITY_SOURCES = new Set([
+  'pocket_radar',
+  'stalker',
+  'rapsodo',
+  'trackman',
+  'stadium_radar',
+  'coach_provided',
+])
+
+/** Beyond this, a velocity reading is too old to describe as current. */
+const VELOCITY_STALE_AFTER_DAYS = 240
+
 export type AthleteProfileInput = {
   date_of_birth?: string | null
+  velocity_source?: string | null
+  velocity_measured_at?: string | null
   height_feet?: number | null
   height_inches?: number | null
   weight_lbs?: number | null
@@ -57,6 +77,10 @@ export type AthleteContext = {
   maturationCaution: boolean
   /** True when demonstrated velocity is high enough to question very low scores. */
   performsAtHighLevel: boolean
+  /** True when the velocity came from a measuring device or a coach, not a guess. */
+  velocityIsMeasured: boolean
+  /** Days since the velocity reading, when a date was recorded. */
+  velocityAgeDays: number | null
   /** Assembled guidance for the assessment prompt. */
   promptBlock: string
 }
@@ -116,7 +140,20 @@ export function buildAthleteContext(
 
   const maturationCaution = ageYears !== null && ageYears <= MATURATION_CAUTION_AGE
   const bestVelocity = Math.max(avgVelocity ?? 0, maxVelocity ?? 0)
-  const performsAtHighLevel = bestVelocity >= HIGH_PERFORMANCE_VELOCITY
+
+  const velocityIsMeasured = MEASURED_VELOCITY_SOURCES.has((source.velocity_source ?? '').toLowerCase())
+  const velocityAgeDays = (() => {
+    if (!source.velocity_measured_at) return null
+    const measured = new Date(source.velocity_measured_at)
+    if (Number.isNaN(measured.getTime())) return null
+    return Math.max(0, Math.round((asOf.getTime() - measured.getTime()) / 86_400_000))
+  })()
+  const velocityIsStale = velocityAgeDays !== null && velocityAgeDays > VELOCITY_STALE_AFTER_DAYS
+
+  // Benefit of the doubt is only extended for a velocity that was actually
+  // measured and is still current. Otherwise an athlete could type a higher
+  // number into intake and receive a softer assessment for it.
+  const performsAtHighLevel = bestVelocity >= HIGH_PERFORMANCE_VELOCITY && velocityIsMeasured && !velocityIsStale
 
   const lines: string[] = [
     'ATHLETE CONTEXT. Use these to interpret the findings. They change how a measurement should be read, not what the measurement is.',
@@ -126,6 +163,7 @@ export function buildAthleteContext(
     `- Playing level: ${source.playing_level ?? 'not provided'}`,
     `- Throws: ${source.throwing_hand ?? 'not provided'}`,
     `- Velocity: typical ${avgVelocity ?? 'not provided'} mph, best ${maxVelocity ?? 'not provided'} mph, goal ${goalVelocity ?? 'not provided'} mph`,
+    `- How that velocity was obtained: ${source.velocity_source ? `${source.velocity_source.replaceAll('_', ' ')}${velocityIsMeasured ? ' (a measuring device or coach reading)' : ' (the athlete\'s own estimate, not measured)'}` : 'not provided'}${velocityAgeDays !== null ? `, recorded ${velocityAgeDays} days ago` : ''}`,
     `- Current throwing program: ${source.throwing_program ?? 'not provided'}`,
     `- Current strength program: ${source.strength_program ?? 'not provided'}`,
     `- Bullpen intensity: ${source.bullpen_intensity ?? 'not provided'}; pitches per week: ${source.pitches_per_week ?? 'not provided'}`,
@@ -138,6 +176,14 @@ export function buildAthleteContext(
   if (performsAtHighLevel) {
     lines.push(
       `- This athlete demonstrably throws ${bestVelocity} mph. A delivery producing that velocity is transferring force effectively, whatever its flaws. Treat a very low score (1 or 2) with real suspicion: check whether the measurement actually supports it, and if the evidence is thin, raise the score and say the video could not support a confident judgement. Do not hand a hard-throwing pitcher a wall of 1s and 2s built on weak evidence. If a low score IS well supported, keep it and state the specific measurement behind it.`,
+    )
+  } else if (bestVelocity >= HIGH_PERFORMANCE_VELOCITY && !velocityIsMeasured) {
+    lines.push(
+      `- The athlete reports ${bestVelocity} mph, but that figure was not measured with a radar or reported by a coach, so treat it as a claim rather than evidence. Score the delivery on what the video and screens actually show. Do not soften a well-supported finding on the strength of an unverified number, and suggest bringing a radar-verified reading to the next check.`,
+    )
+  } else if (bestVelocity >= HIGH_PERFORMANCE_VELOCITY && velocityIsStale) {
+    lines.push(
+      `- The ${bestVelocity} mph reading was measured ${velocityAgeDays} days ago, which is too long to treat as current, especially for a developing athlete. Score on what the video and screens show and ask for a fresh reading.`,
     )
   } else if (avgVelocity !== null) {
     lines.push(
@@ -183,6 +229,8 @@ export function buildAthleteContext(
     velocitySpread,
     maturationCaution,
     performsAtHighLevel,
+    velocityIsMeasured,
+    velocityAgeDays,
     promptBlock: lines.join('\n'),
   }
 }

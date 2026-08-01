@@ -103,7 +103,7 @@ export async function POST(request: Request) {
 
     const admin = createAdminClient()
     const { data: analysis, error: analysisError } = await admin.from('motion_analyses')
-      .select('id,user_id,mechanics_metrics,clip_summary,category_scores,phase_snapshots,capture_fps,athlete_profiles(date_of_birth,height_feet,height_inches,weight_lbs,throwing_hand,playing_level,current_avg_velocity,current_max_velocity,goal_velocity,main_goal,mechanical_concern,throwing_program,strength_program,upcoming_deadline,bullpen_intensity,pitches_per_week)')
+      .select('id,user_id,mechanics_metrics,clip_summary,category_scores,phase_snapshots,capture_fps,athlete_profiles(date_of_birth,height_feet,height_inches,weight_lbs,throwing_hand,playing_level,current_avg_velocity,current_max_velocity,goal_velocity,velocity_source,velocity_measured_at,main_goal,mechanical_concern,throwing_program,strength_program,upcoming_deadline,bullpen_intensity,pitches_per_week)')
       .eq('id', analysisId).single()
     if (analysisError) return NextResponse.json({ error: `Could not load the saved Motion Lab result: ${analysisError.message}` }, { status: 500 })
     if (!analysis) return NextResponse.json({ error: 'Motion analysis not found.' }, { status: 404 })

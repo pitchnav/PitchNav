@@ -37,8 +37,10 @@ describe('totalHeightInches', () => {
 })
 
 describe('velocity context', () => {
-  it('tells the assessment to distrust very low scores for a hard thrower', () => {
-    const context = buildAthleteContext({ current_avg_velocity: 90, current_max_velocity: 93 }, NOW)
+  const RADAR = { velocity_source: 'pocket_radar', velocity_measured_at: '2026-07-01' }
+
+  it('tells the assessment to distrust very low scores for a measured hard thrower', () => {
+    const context = buildAthleteContext({ ...RADAR, current_avg_velocity: 90, current_max_velocity: 93 }, NOW)
     expect(context.performsAtHighLevel).toBe(true)
     expect(context.promptBlock).toContain('93 mph')
     expect(context.promptBlock).toContain('suspicion')
@@ -46,8 +48,53 @@ describe('velocity context', () => {
   })
 
   it('still allows a well-supported low score to stand', () => {
-    const context = buildAthleteContext({ current_avg_velocity: 92 }, NOW)
+    const context = buildAthleteContext({ ...RADAR, current_avg_velocity: 92 }, NOW)
     expect(context.promptBlock).toContain('If a low score IS well supported, keep it')
+  })
+
+  // An athlete must not be able to type a bigger number into intake and
+  // receive an easier assessment for it.
+  it('refuses to soften scoring for a high velocity the athlete only estimated', () => {
+    const context = buildAthleteContext(
+      { current_avg_velocity: 93, velocity_source: 'estimated' },
+      NOW,
+    )
+    expect(context.velocityIsMeasured).toBe(false)
+    expect(context.performsAtHighLevel).toBe(false)
+    expect(context.promptBlock).not.toContain('wall of 1s and 2s')
+    expect(context.promptBlock).toContain('treat it as a claim rather than evidence')
+  })
+
+  it('refuses to soften scoring when no velocity source was recorded at all', () => {
+    const context = buildAthleteContext({ current_avg_velocity: 93 }, NOW)
+    expect(context.performsAtHighLevel).toBe(false)
+    expect(context.promptBlock).toContain('treat it as a claim rather than evidence')
+  })
+
+  it('accepts a coach-reported reading as measured', () => {
+    const context = buildAthleteContext(
+      { current_avg_velocity: 90, velocity_source: 'coach_provided', velocity_measured_at: '2026-07-01' },
+      NOW,
+    )
+    expect(context.velocityIsMeasured).toBe(true)
+    expect(context.performsAtHighLevel).toBe(true)
+  })
+
+  it('will not treat a long-stale radar reading as current', () => {
+    const context = buildAthleteContext(
+      { current_avg_velocity: 92, velocity_source: 'trackman', velocity_measured_at: '2024-01-01' },
+      NOW,
+    )
+    expect(context.velocityIsMeasured).toBe(true)
+    expect(context.performsAtHighLevel).toBe(false)
+    expect(context.promptBlock).toContain('too long to treat as current')
+  })
+
+  it('records how the velocity was obtained so staff can see it', () => {
+    const measured = buildAthleteContext({ current_avg_velocity: 90, ...RADAR }, NOW)
+    expect(measured.promptBlock).toContain('a measuring device or coach reading')
+    const guessed = buildAthleteContext({ current_avg_velocity: 90, velocity_source: 'estimated' }, NOW)
+    expect(guessed.promptBlock).toContain('not measured')
   })
 
   it('does not apply the high-performer caution to a developing athlete', () => {
