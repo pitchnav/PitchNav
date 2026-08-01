@@ -121,13 +121,26 @@ export default function AdminOrderDetailPage() {
   const [emailSent, setEmailSent] = useState(false)
 
   const loadData = useCallback(async () => {
-    const { data: orderData } = await supabase
+    // Everything below runs inside one try/catch. Without it, any throw left
+    // this page on its loading skeleton forever with nothing in the console
+    // and no way for staff to tell what went wrong -- which is exactly how a
+    // broken order page went unnoticed.
+    try {
+    const { data: orderData, error: orderError } = await supabase
       .from('orders')
       .select('*, athlete_profiles(*), video_submissions(*)')
       .eq('id', id)
       .single()
 
-    if (!orderData) { setLoadError('This order could not be loaded. Confirm it still exists and that your account is an administrator.'); return }
+    if (orderError || !orderData) {
+      console.error('Admin order page failed to load the order', orderError)
+      setLoadError(
+        orderError
+          ? `This order could not be loaded: ${orderError.message}${orderError.code ? ` (${orderError.code})` : ''}`
+          : 'This order could not be loaded. Confirm it still exists and that your account is an administrator.',
+      )
+      return
+    }
 
     setOrder(orderData as Order)
     setProfile(orderData.athlete_profiles as AthleteProfile)
@@ -220,6 +233,10 @@ export default function AdminOrderDetailPage() {
       if (data?.signedUrl) urls[v.id] = data.signedUrl
     }
     setVideoUrls(urls)
+    } catch (reason) {
+      console.error('Admin order page failed to load', reason)
+      setLoadError(reason instanceof Error ? reason.message : 'This order could not be loaded.')
+    }
   }, [id, supabase])
 
   useEffect(() => { loadData() }, [loadData])
