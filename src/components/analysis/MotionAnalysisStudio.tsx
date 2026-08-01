@@ -6,6 +6,7 @@ import type { NormalizedLandmark, PoseLandmarker } from '@mediapipe/tasks-vision
 import { createClient } from '@/lib/supabase/client'
 import { buildBaseballPerformancePlan } from '@/lib/performance-plan'
 import { buildEightWeekThrowingPlan } from '@/lib/throwing-plan'
+import { probeVideoFile, ACCEPTED_VIDEO_TYPES } from '@/lib/video-support'
 
 type Handedness = 'right' | 'left'
 type VideoPoint = { x: number; y: number; time: number }
@@ -1005,13 +1006,13 @@ export function MotionAnalysisStudio({
       return
     }
     // Chrome (unlike Safari) cannot decode the QuickTime/.mov container at
-    // all in an HTML5 <video> element, regardless of the codec inside. An
-    // iPhone recording an unconverted .mov silently hangs every downstream
-    // step (pose model, skeleton export, staff review) with no error,
-    // because the "loaded" events this whole pipeline waits on simply never
-    // fire. Catch it here instead of hanging later.
-    if (file.type === 'video/quicktime' || /\.mov$/i.test(file.name)) {
-      setError('This video is a QuickTime (.mov) file, which cannot be automatically processed in this browser. On iPhone, go to Settings → Camera → Formats and choose "Most Compatible" (this saves as .mp4), then re-record or export and upload again.')
+    // A QuickTime container is fine when it holds H.264; what Chrome cannot
+    // decode is HEVC. Probe the actual file rather than judging by extension,
+    // because an undecodable file never fires the events this pipeline waits
+    // on and would otherwise hang with nothing to report.
+    const probe = await probeVideoFile(file)
+    if (!probe.ok) {
+      setError(probe.problem ?? 'This video could not be read in this browser.')
       if (autoProcess) setAutomaticStage('error')
       return
     }
@@ -1893,7 +1894,7 @@ export function MotionAnalysisStudio({
           <span className="mt-4 text-xs text-slate-500">MP4, MOV or WebM · maximum 500 MB</span>
           {!loadingInitialVideo && <input
             type="file"
-            accept="video/mp4,video/quicktime,video/webm"
+            accept={ACCEPTED_VIDEO_TYPES}
             className="sr-only"
             onChange={(event) => event.target.files?.[0] && handleFile(event.target.files[0])}
           />}
@@ -1984,7 +1985,7 @@ export function MotionAnalysisStudio({
                 </button>
                 <label className="btn-secondary cursor-pointer px-4 py-2">
                   <RotateCcw className="h-4 w-4" /> Replace
-                  <input type="file" accept="video/mp4,video/quicktime,video/webm" className="sr-only" onChange={(event) => event.target.files?.[0] && handleFile(event.target.files[0])} />
+                  <input type="file" accept={ACCEPTED_VIDEO_TYPES} className="sr-only" onChange={(event) => event.target.files?.[0] && handleFile(event.target.files[0])} />
                 </label>
                 <label className="flex items-center gap-2 rounded-lg border border-surface-border bg-navy-950 px-3 py-2 text-sm text-slate-300">
                   Playback

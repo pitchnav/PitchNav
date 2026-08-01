@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Download, Film, Upload } from 'lucide-react'
 import type { NormalizedLandmark, PoseLandmarker } from '@mediapipe/tasks-vision'
+import { probeVideoFile, ACCEPTED_VIDEO_TYPES } from '@/lib/video-support'
 
 const MODEL_URL =
   'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_heavy/float16/1/pose_landmarker_heavy.task'
@@ -118,12 +119,17 @@ export function TrackerStudio() {
     context.shadowBlur = 0
   }, [lineWidth, showDots])
 
-  function handleFile(file: File) {
-    if (/\.mov$/i.test(file.name) || file.type === 'video/quicktime') {
-      setError('Chrome cannot reliably decode .mov. On iPhone set Settings → Camera → Formats to "Most Compatible", or export as MP4.')
+  async function handleFile(file: File) {
+    // A QuickTime container is fine when it holds H.264; only HEVC is the
+    // problem, so probe the file rather than judging it by extension.
+    setError('')
+    setStatus('Checking the video…')
+    const probe = await probeVideoFile(file)
+    setStatus('')
+    if (!probe.ok) {
+      setError(probe.problem ?? 'This video could not be read in this browser.')
       return
     }
-    setError('')
     setStatus('')
     if (downloadUrl) URL.revokeObjectURL(downloadUrl)
     setDownloadUrl('')
@@ -233,10 +239,10 @@ export function TrackerStudio() {
         <label className="flex cursor-pointer flex-col items-center gap-2 rounded-2xl border-2 border-dashed border-slate-700 p-8 text-center transition hover:border-electric-blue/50">
           <Upload className="h-7 w-7 text-electric-blue-light" />
           <span className="font-semibold text-white">{fileUrl ? 'Choose a different video' : 'Choose a video'}</span>
-          <span className="text-xs text-slate-500">MP4 or WebM</span>
+          <span className="text-xs text-slate-500">MP4, MOV or WebM</span>
           <input
             type="file"
-            accept="video/mp4,video/webm"
+            accept={ACCEPTED_VIDEO_TYPES}
             className="hidden"
             onChange={(event) => {
               const file = event.target.files?.[0]

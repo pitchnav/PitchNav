@@ -13,6 +13,7 @@ import {
   type ScreenSide,
   type LandmarkPoint,
 } from '@/lib/movement-screens'
+import { probeVideoFile, ACCEPTED_VIDEO_TYPES } from '@/lib/video-support'
 
 const MODEL_URL =
   'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_heavy/float16/1/pose_landmarker_heavy.task'
@@ -203,9 +204,14 @@ export function MovementScreenStudio() {
     }
   }
 
-  function handleFile(file: File) {
-    if (/\.mov$/i.test(file.name) || file.type === 'video/quicktime') {
-      setError('This browser cannot reliably read .mov files. On iPhone, set Settings → Camera → Formats to "Most Compatible", or export the clip as MP4.')
+  async function handleFile(file: File) {
+    // Probe the real file instead of rejecting every QuickTime container: a
+    // .mov holding H.264 plays fine, and an undecodable one would otherwise
+    // hang silently rather than reporting anything.
+    setError('')
+    const probe = await probeVideoFile(file)
+    if (!probe.ok) {
+      setError(probe.problem ?? 'This video could not be read in this browser.')
       return
     }
     if (fileUrl) URL.revokeObjectURL(fileUrl)
@@ -309,7 +315,7 @@ export function MovementScreenStudio() {
           <span className="text-xs text-slate-500">MP4 or WebM · a few seconds is enough</span>
           <input
             type="file"
-            accept="video/mp4,video/webm"
+            accept={ACCEPTED_VIDEO_TYPES}
             className="hidden"
             onChange={(event) => {
               const file = event.target.files?.[0]
