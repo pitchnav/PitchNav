@@ -520,6 +520,23 @@ describe('screen catalogue integrity', () => {
     }
   })
 
+  // Pose estimation finds a PERSON, not a joint. Two screens shipped telling
+  // the athlete to film "your lower leg" and "your throwing arm"; both failed
+  // to measure on every attempt because a close-up gives the model no body to
+  // detect. Every screen must ask for the whole body, however small the joint
+  // it actually measures.
+  it('asks for the whole body in frame on every screen', () => {
+    for (const item of MOVEMENT_SCREENS) {
+      expect(item.cameraSetup.toLowerCase()).toContain('whole body')
+    }
+  })
+
+  it('never tells the athlete to frame a single body part', () => {
+    for (const item of MOVEMENT_SCREENS) {
+      expect(item.cameraSetup.toLowerCase()).not.toMatch(/filming your (lower leg|throwing arm|arm|leg|shin)\b/)
+    }
+  })
+
   it('uses unique ids', () => {
     const ids = MOVEMENT_SCREENS.map((item) => item.id)
     expect(new Set(ids).size).toBe(ids.length)

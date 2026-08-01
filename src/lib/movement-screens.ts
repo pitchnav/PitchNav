@@ -208,7 +208,7 @@ export const MOVEMENT_SCREENS: MovementScreen[] = [
     name: 'Ankle Bend (Knee-to-Wall)',
     whyItMatters:
       'This is how far your shin can travel over your foot. The lead ankle has to absorb landing. When this is limited, the landing force usually has to go somewhere less useful, and the front side can give way early.',
-    cameraSetup: 'Place the phone on the floor about 4 feet to the side of your front foot, filming your lower leg from the side.',
+    cameraSetup: 'Put the phone on the floor about 8 feet to your side, filming you from the side with your whole body in the shot from head to feet. Do not zoom in on your leg.',
     position: 'Stand facing a wall in a short split stance with the front toe a few inches from the wall.',
     action: 'Keeping your front heel flat on the ground, drive your front knee forward toward the wall as far as it goes. Hold for 3 seconds.',
     bilateral: true,
@@ -235,7 +235,7 @@ export const MOVEMENT_SCREENS: MovementScreen[] = [
     name: 'Seated Hip Rotation',
     whyItMatters:
       'Pitching asks both hips to rotate a long way in opposite directions. When one hip is short on rotation, that range is usually taken from the low back or the front leg instead, and it often shows up as a side-to-side difference.',
-    cameraSetup: 'Sit on a table or bench with your shins hanging free. Put the phone about 6 feet in front of you at knee height, filming you straight on.',
+    cameraSetup: 'Sit on a table or bench with your shins hanging free. Put the phone about 8 feet in front of you at knee height, filming you straight on with your whole body in the shot from head to feet.',
     position: 'Sit tall with your knees bent 90 degrees and your thighs together, shins hanging straight down.',
     action: 'Keeping your thigh still and your hips level on the bench, swing one shin outward as far as it goes. Hold for 3 seconds. This measures inward rotation of that hip.',
     bilateral: true,
@@ -262,7 +262,7 @@ export const MOVEMENT_SCREENS: MovementScreen[] = [
     name: 'Seated Trunk Rotation',
     whyItMatters:
       'This is how far your upper back rotates when your hips cannot help. Pitching separates the shoulders from the hips, so when upper-back rotation is short, the shoulder and elbow usually end up covering the difference.',
-    cameraSetup: 'Sit on a chair with the phone about 6 feet in front of you at chest height, filming you straight on.',
+    cameraSetup: 'Sit on a chair with the phone about 8 feet in front of you at chest height, filming you straight on with your whole body in the shot from head to feet.',
     position: 'Sit tall with your arms crossed over your chest and a ball or rolled towel squeezed between your knees to keep your hips square.',
     action: 'Keeping your hips square and the ball squeezed, rotate your shoulders as far as you can to one side. Hold for 3 seconds.',
     bilateral: true,
@@ -331,7 +331,7 @@ MOVEMENT_SCREENS.push(
     name: 'Shoulder Lay-Back',
     whyItMatters:
       'This is how far your throwing shoulder can rotate back into the cocked position. It is the single most throwing-specific thing on this list. When it is short, the trunk and elbow usually make up the difference, and that is a change you can see in the delivery.',
-    cameraSetup: 'Stand side-on to the phone, about 6 feet away, camera at shoulder height, filming your throwing arm.',
+    cameraSetup: 'Stand side-on to the phone, about 8 feet away, camera at chest height, with your whole body in the shot from head to feet. Do not zoom in on your arm.',
     position: 'Stand tall with your upper arm out to the side at shoulder height and your elbow bent 90 degrees, forearm pointing straight forward.',
     action: 'Keeping your upper arm level and your back flat, rotate your hand back and up as far as it goes without pain. Hold for 3 seconds.',
     bilateral: true,
@@ -360,7 +360,7 @@ MOVEMENT_SCREENS.push(
     name: 'Cross-Body Reach',
     whyItMatters:
       'This shows how freely your throwing arm can travel across your body. That is the range your arm has to give up after release while it slows down, so when it is tight the trunk usually has to move instead.',
-    cameraSetup: 'Face the phone from about 8 feet away, camera at chest height, with your head and both shoulders in frame.',
+    cameraSetup: 'Face the phone from about 8 feet away, camera at chest height, with your whole body in the shot from head to feet.',
     position: 'Stand tall facing the camera with your throwing arm straight out in front at shoulder height.',
     action: 'Keeping your shoulders square to the camera and your chest still, pull your straight arm across your body as far as it goes. Hold for 3 seconds.',
     bilateral: true,

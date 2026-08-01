@@ -170,7 +170,7 @@ export function MovementScreenStudio() {
             confidence: 0,
             classification: 'unmeasured',
             reliability: step.screen.reliability,
-            problem: 'We could not see the joints for this screen clearly enough. Re-record with your whole body in frame, better lighting, and the camera placed as described.',
+            problem: 'We could not read this one. The most common cause is standing too close or zooming in — your whole body needs to be in the shot from head to feet, even for a screen that only looks at one joint. Move the phone further back and record it again.',
           },
         }))
         return
