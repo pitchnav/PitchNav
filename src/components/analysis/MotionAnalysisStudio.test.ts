@@ -85,4 +85,25 @@ describe('buildCategoryFeedback Front-Side Stability scoring', () => {
 
     expect(frontSideStability?.score).toBeGreaterThanOrEqual(4)
   })
+
+  it('does not let outlier frames that pass the confidence filter tank the score', () => {
+    // Reproduces a real live result: MediaPipe can report a landmark as
+    // confidently tracked while still placing it at a physiologically
+    // impossible spot during brief self-occlusion (trail leg crossing in
+    // front of the lead knee). Confidence alone cannot catch that -- a
+    // handful of frames like this passed leadKneeConfidence >= 0.45 and
+    // still produced a 3-178 degree "range" on a real order. The score must
+    // be robust to a small number of such outliers among many good frames.
+    const goodValues = Array.from({ length: 20 }, (_, i) => 140 + (i % 5)) // clustered 140-144
+    const frames: FrameMetrics[] = [
+      ...goodValues.map((value, i) => goodFrame(0.2 + i * 0.05, value)),
+      goodFrame(1.5, 3), // confidently-wrong outlier, low end
+      goodFrame(1.6, 178), // confidently-wrong outlier, high end
+    ]
+
+    const feedback = buildCategoryFeedback(frames, summary)
+    const frontSideStability = feedback.find((item) => item.category === 'Front-Side Stability')
+
+    expect(frontSideStability?.score).toBeGreaterThanOrEqual(4)
+  })
 })

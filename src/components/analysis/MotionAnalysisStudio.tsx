@@ -104,17 +104,36 @@ function normalizeAcuteAngle(value: number) {
   return result
 }
 
-function range(values: Array<number | null>): [number, number] | null {
+// MediaPipe's per-landmark visibility score is its own confidence that a
+// point is trackable at all -- it is not a guarantee the point is in the
+// right place. During brief self-occlusion (the trail leg crossing in front
+// of the lead knee, for example) it can report a landmark as confidently
+// tracked while still placing it somewhere physiologically impossible. That
+// is a different failure than low confidence, and no confidence threshold
+// can catch it. A raw max-min "spread" or "range" is maximally exposed to
+// this: a single such frame among dozens of good ones sets the result.
+// Trimming the extreme ends before taking the range defends against a small
+// number of outliers (confidently wrong or not) without needing to guess a
+// hard-coded plausible angle for every joint.
+function trimOutliers(values: Array<number | null>, trimFraction = 0.1): number[] {
   const valid = values.filter((value): value is number => value !== null && Number.isFinite(value))
-  if (!valid.length) return null
-  return [Math.min(...valid), Math.max(...valid)]
+  const sorted = [...valid].sort((a, b) => a - b)
+  if (sorted.length < 5) return sorted
+  const trimCount = Math.floor(sorted.length * trimFraction)
+  return trimCount > 0 ? sorted.slice(trimCount, sorted.length - trimCount) : sorted
+}
+
+function range(values: Array<number | null>): [number, number] | null {
+  const trimmed = trimOutliers(values)
+  if (!trimmed.length) return null
+  return [trimmed[0], trimmed[trimmed.length - 1]]
 }
 
 export function buildCategoryFeedback(frames: FrameMetrics[], summary: ClipSummary): CategoryFeedback[] {
   const spread = (values: Array<number | null>) => {
-    const valid = values.filter((value): value is number => value !== null && Number.isFinite(value))
-    if (valid.length < 2) return 0
-    return Math.max(...valid) - Math.min(...valid)
+    const trimmed = trimOutliers(values)
+    if (trimmed.length < 2) return 0
+    return trimmed[trimmed.length - 1] - trimmed[0]
   }
   // A single low-confidence frame (motion blur, brief occlusion — common in
   // real phone video) can misplace a joint and swing its angle estimate to
@@ -1266,9 +1285,9 @@ export function MotionAnalysisStudio({
         const after = frames
           .filter((frame) => frame.time >= widestStride.time && frame.leadKneeConfidence >= 0.45)
           .map((frame) => frame.leadKnee)
-          .filter((value): value is number => value !== null && Number.isFinite(value))
-        if (after.length < 2) return null
-        return Math.max(...after) - Math.min(...after)
+        const trimmed = trimOutliers(after)
+        if (trimmed.length < 2) return null
+        return trimmed[trimmed.length - 1] - trimmed[0]
       })(),
       deliveryShapeValid,
     })
