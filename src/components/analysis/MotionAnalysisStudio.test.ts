@@ -119,9 +119,10 @@ describe('buildCategoryFeedback Front-Side Stability scoring', () => {
     const feedback = buildCategoryFeedback(frames, summary)
     const frontSideStability = feedback.find((item) => item.category === 'Front-Side Stability')
 
-    // Confidence-filtered spread is 179.4 - 133.3 = 46.1 deg -> score 3.
-    // Unfiltered it would be 166.5 deg -> score 1.
-    expect(frontSideStability?.score).toBe(3)
+    // Lands at 143.5 and folds no further than 133.3, so collapse is 10.2 deg
+    // -> score 4. If the 0.03-confidence frame were trusted the knee would
+    // read 12.9 deg, a collapse of 130.6 deg -> score 1.
+    expect(frontSideStability?.score).toBe(4)
   })
 
   it('does not score Upper-Half Timing from a whole-clip elbow range that every delivery saturates', () => {
@@ -149,7 +150,8 @@ describe('buildCategoryFeedback Front-Side Stability scoring', () => {
     // The deepest lead-knee flexion after landing is exactly what
     // "front-side stability" is about, so a high-confidence extreme must
     // survive into the reported evidence. Percentile trimming would discard
-    // 133.3 deg here even though MediaPipe reported it at 0.99 confidence.
+    // 133.3 deg here even though MediaPipe reported it at 0.99 confidence,
+    // and the collapse would be understated as 6.6 deg instead of 10.2.
     const frames: FrameMetrics[] = realDelivery.map(([time, knee, conf]) => ({
       ...goodFrame(time, knee),
       leadKneeConfidence: conf,
@@ -158,7 +160,7 @@ describe('buildCategoryFeedback Front-Side Stability scoring', () => {
     const feedback = buildCategoryFeedback(frames, summary)
     const evidence = feedback.find((item) => item.category === 'Front-Side Stability')?.evidence ?? ''
 
-    expect(evidence).toContain('46 degrees')
+    expect(evidence).toContain('10 more degrees')
   })
 })
 
@@ -189,5 +191,116 @@ describe('phase-peak trustworthiness', () => {
     const edge = [70, 12, 9, 8, 6, 5]
 
     expect(peakIsPhysicallySupported(edge, 0)).toBe(false)
+  })
+})
+
+describe('trunk tilt geometry', () => {
+  it('does not fold a trunk bent past horizontal back into a small angle', () => {
+    // Deep follow-through: the shoulders are forward of AND below the hips.
+    // Measured from vertical this is ~117 deg. Folding every angle into
+    // 0-90 reports it as ~63 deg, so the most extreme posture in the whole
+    // delivery reads as a moderate one.
+    const frame = calculateMetrics(
+      landmarks({
+        11: { x: 0.70, y: 0.60 }, 12: { x: 0.70, y: 0.60 }, // shoulders
+        23: { x: 0.50, y: 0.50 }, 24: { x: 0.50, y: 0.50 }, // hips
+      }),
+      1.0,
+      'right'
+    )
+    expect(frame.trunkTilt).toBeGreaterThan(90)
+  })
+
+  it('still reports an upright trunk as near zero', () => {
+    const frame = calculateMetrics(
+      landmarks({
+        11: { x: 0.50, y: 0.30 }, 12: { x: 0.50, y: 0.30 },
+        23: { x: 0.50, y: 0.50 }, 24: { x: 0.50, y: 0.50 },
+      }),
+      1.0,
+      'right'
+    )
+    expect(frame.trunkTilt).toBeLessThan(2)
+  })
+})
+
+describe('structurally predetermined categories', () => {
+  const base: ClipSummary = {
+    frames: 10, averageConfidence: 0.9,
+    elbowRange: null, kneeRange: null, trunkTiltRange: null,
+    peakLegLiftTime: 0.5, widestStrideTime: 1.0,
+    maxExternalRotationTime: null, ballReleaseTime: null,
+    peakSeparation: null, peakSeparationTime: null,
+    leadKneeChangeAfterStride: null, deliveryShapeValid: true,
+  }
+  function frame(time: number, over: Partial<FrameMetrics> = {}): FrameMetrics {
+    return {
+      time, confidence: 0.9, throwingElbow: 90, leadKnee: 150, trunkTilt: 20,
+      hipShoulderSeparation: 10, strideWidth: 0.3, legLift: 0.1,
+      leadKneeConfidence: 0.9, throwingElbowConfidence: 0.9, trunkConfidence: 0.9,
+      ...over,
+    }
+  }
+
+  it('does not hand out Lower-Half Sequencing 4 just because leg lift precedes the stride', () => {
+    // peakLegLift is only ever searched among frames at or before the widest
+    // stride, so the gap is >= 0 by construction and this category returned
+    // 4 for every delivery ever analysed. A score every athlete gets is not
+    // a measurement.
+    const frames = [frame(0.5), frame(1.0), frame(1.5)]
+    const lowerHalf = buildCategoryFeedback(frames, base)
+      .find((item) => item.category === 'Lower-Half Sequencing')
+
+    expect(lowerHalf?.confidence).toBe('Low')
+  })
+
+  it('does not score Posture from a whole-clip trunk range every delivery saturates', () => {
+    // Real trunk tilt from the minor-league clip: upright at the set
+    // position, tilted well over 40 deg through the finish. That span is
+    // inherent to pitching, so a whole-clip range scored against 12/25
+    // thresholds marks every athlete down.
+    const realTrunk = [0.6, 0.5, 0.4, 1.4, 3.7, 11.2, 15.7, 16.4, 21.6, 32.0, 42.1, 49.3]
+    const frames = realTrunk.map((trunkTilt, i) => frame(0.2 + i * 0.05, { trunkTilt }))
+    const posture = buildCategoryFeedback(frames, base).find((item) => item.category === 'Posture')
+
+    expect(posture?.score).not.toBe(1)
+    expect(posture?.score).not.toBe(2)
+    expect(posture?.confidence).toBe('Low')
+  })
+})
+
+describe('Front-Side Stability distinguishes blocking from collapsing', () => {
+  const base: ClipSummary = {
+    frames: 10, averageConfidence: 0.9,
+    elbowRange: null, kneeRange: null, trunkTiltRange: null,
+    peakLegLiftTime: 0.2, widestStrideTime: 1.0,
+    maxExternalRotationTime: null, ballReleaseTime: null,
+    peakSeparation: null, peakSeparationTime: null,
+    leadKneeChangeAfterStride: null, deliveryShapeValid: true,
+  }
+  function kneeFrames(values: number[]): FrameMetrics[] {
+    return values.map((leadKnee, i) => ({
+      time: 1.0 + i * 0.03, confidence: 0.9, throwingElbow: 90, leadKnee,
+      trunkTilt: 20, hipShoulderSeparation: 10, strideWidth: 0.3, legLift: 0.1,
+      leadKneeConfidence: 0.9, throwingElbowConfidence: 0.9, trunkConfidence: 0.9,
+    }))
+  }
+
+  it('rewards a front leg that extends into a firm block', () => {
+    // The real minor-league pitcher: lands at 143, gives 10 deg, then drives
+    // up to 179. That extension IS the block -- good mechanics -- but the
+    // old total-range metric charged him 46 deg for it.
+    const stability = buildCategoryFeedback(kneeFrames([143, 138, 133, 145, 160, 175, 179]), base)
+      .find((item) => item.category === 'Front-Side Stability')
+
+    expect(stability?.score).toBeGreaterThanOrEqual(4)
+  })
+
+  it('penalises a front knee that collapses after landing', () => {
+    // Lands at 165 and keeps folding to 110: the leg never becomes a post.
+    const stability = buildCategoryFeedback(kneeFrames([165, 158, 146, 132, 120, 114, 110]), base)
+      .find((item) => item.category === 'Front-Side Stability')
+
+    expect(stability?.score).toBeLessThanOrEqual(2)
   })
 })

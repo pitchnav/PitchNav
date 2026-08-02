@@ -98,10 +98,29 @@ function lineAngle(a: NormalizedLandmark, b: NormalizedLandmark) {
   return (Math.atan2(b.y - a.y, b.x - a.x) * 180) / Math.PI
 }
 
+/**
+ * Folds an angle into 0-90. Correct for hip-shoulder separation, where the
+ * two lines are interchangeable so 100 degrees apart and 80 degrees apart
+ * describe the same amount of coil.
+ */
 function normalizeAcuteAngle(value: number) {
   let result = Math.abs(value) % 180
   if (result > 90) result = 180 - result
   return result
+}
+
+/**
+ * Magnitude of a lean away from vertical, 0-180.
+ *
+ * Trunk tilt must NOT fold at 90 the way separation does: in a deep
+ * follow-through the shoulders finish forward of and below the hips, which
+ * is roughly 117 degrees from vertical, and folding turned that into 63 --
+ * reporting the most extreme posture in the delivery as a moderate one, and
+ * making the trunk appear to swing back and forth as it crossed horizontal.
+ */
+function normalizeTiltFromVertical(value: number) {
+  const wrapped = (((value + 180) % 360) + 360) % 360 - 180
+  return Math.abs(wrapped)
 }
 
 // Deliberately NOT outlier-trimmed. Percentile trimming was tried and
@@ -188,6 +207,21 @@ export function buildCategoryFeedback(frames: FrameMetrics[], summary: ClipSumma
       .map((frame) => frame.leadKnee)
   )
   const elbowSpread = spread(frames.filter((frame) => frame.throwingElbowConfidence >= 0.45).map((frame) => frame.throwingElbow))
+  // Front-side stability is about the lead leg becoming a firm post, so what
+  // matters is the knee FOLDING further after landing, not how much it moves
+  // in total. A leg that lands flexed and then drives toward straight is
+  // blocking — the thing good deliveries do — yet the old total-range metric
+  // charged a real minor-league pitcher 46 degrees for exactly that. Measure
+  // only the collapse: how far the knee bends past where it landed.
+  const kneeFramesAfterContact = frames
+    .filter((frame) => frame.leadKneeConfidence >= 0.45 && (stride === null || frame.time >= stride))
+    .sort((a, b) => a.time - b.time)
+    .map((frame) => frame.leadKnee)
+    .filter((value): value is number => value !== null && Number.isFinite(value))
+  const kneeAtContact = kneeFramesAfterContact[0] ?? null
+  const kneeCollapse = kneeAtContact !== null && kneeFramesAfterContact.length > 1
+    ? Math.max(0, kneeAtContact - Math.min(...kneeFramesAfterContact))
+    : 0
   const score = (value: number, good: number, fair: number) =>
     value <= good ? 5 : value <= fair ? 4 : value <= fair * 1.5 ? 3 : value <= fair * 2 ? 2 : 1
 
@@ -201,24 +235,23 @@ export function buildCategoryFeedback(frames: FrameMetrics[], summary: ClipSumma
       evidence: 'The lead foot is visible when it lands, but the target line is not marked in the video. That means we can see the stride happen without pretending we know the exact amount of side-to-side drift.',
     },
     {
+      // Not scored on the leg-lift-to-stride ordering. Peak leg lift is only
+      // ever searched among frames at or before the widest stride, so that
+      // ordering is guaranteed by construction and this category returned 4
+      // for every delivery ever analysed. The clip-shape check below is real
+      // and is kept, because it catches footage that is not one clean pitch.
       category: 'Lower-Half Sequencing',
-      score: !summary.deliveryShapeValid ? 3 : sequenceGap !== null && sequenceGap > 0 ? 4 : 2,
-      confidence: quality,
+      score: 3,
+      confidence: 'Low',
       strength: !summary.deliveryShapeValid
         ? 'A body stayed visible through the clip, so pose tracking had something to follow.'
-        : sequenceGap !== null && sequenceGap > 0
-          ? 'Your leg lift reached its highest point before your stride opened all the way. That order gives your lower body time to start moving before the rest of the pitch speeds up.'
-          : 'Your hips, knees, and feet stayed visible through most of the delivery. That makes it possible to find the timing problem once the key moments are clearer.',
+        : 'Your hips, knees, and feet stayed visible from the leg lift through the landing, so a coach can follow the order your lower half moves in.',
       development: !summary.deliveryShapeValid
         ? 'Automatic timing detection could not confirm a single, clean leg-lift-to-stride sequence in this clip. This usually means the video shows more than one motion (for example, walking, warming up, or several pitches) rather than one continuous delivery. A coach must watch the source video and confirm it shows one complete pitch before trusting any score below.'
-        : sequenceGap !== null && sequenceGap > 0
-          ? 'The order is good, but you still need to prove that it stays the same at higher effort. On the next check, compare the time from peak leg lift to foot contact on several pitches. If that time changes a lot, slow the drill down and make the move repeatable before adding intent.'
-          : 'The video did not give us two clear timing points, so we cannot tell whether your lower half starts in the right order. Record your full body in brighter light and keep both feet in the frame. We need to see peak leg lift and front-foot landing in the same pitch before changing your sequence.',
+        : 'Sequencing means whether your lower half starts the pitch before your upper half, and whether it does that the same way every time. One pitch cannot show whether it repeats, so this is not scored yet. At the two-week check, record three pitches from the same spot at the same effort.',
       evidence: !summary.deliveryShapeValid
         ? `The detected peak leg-lift moment (${formatTime(peak)}) and widest-stride moment (${formatTime(stride)}) do not fall in a plausible single-delivery order and position within this clip. Treat every score in this report as unverified until a coach confirms the source video shows one complete pitch.`
-        : sequenceGap === null
-          ? 'Peak leg lift or the widest part of the stride could not be found clearly. Without both moments, the timing gap cannot be measured honestly.'
-          : `The video shows ${sequenceGap.toFixed(2)} seconds from peak leg lift to the widest part of the stride. Use the same camera angle and effort at each two-week check so that number can be compared fairly.`,
+        : `This clip shows ${sequenceGap === null ? 'an unclear gap' : `${sequenceGap.toFixed(2)} seconds`} from peak leg lift to the widest part of the stride. That gap is recorded so it can be compared against your own later videos, but on its own it does not say whether the sequence is good, so it is not used as a score.`,
     },
     {
       // Deliberately not scored from elbowSpread. The throwing elbow is
@@ -240,28 +273,34 @@ export function buildCategoryFeedback(frames: FrameMetrics[], summary: ClipSumma
       evidence: `A coach reviews the arm position at front-foot landing in the saved phase images. The automatic measurement of arm range (${Math.round(elbowSpread)} degrees in this clip) covers the whole delivery, from the hands together at the start to the arm fully straight after release, so it is expected to be large for every pitcher and is not used as a score.`,
     },
     {
+      // Scored on collapse only -- how far the knee folds past where it
+      // landed. Thresholds are provisional coaching judgement, not derived
+      // from labelled deliveries, and need a calibration set before they can
+      // be called validated.
       category: 'Front-Side Stability',
-      score: score(kneeSpread, 18, 35),
+      score: score(kneeCollapse, 8, 18),
       confidence: quality,
-      strength: kneeSpread <= 35
-        ? 'Your front knee stayed fairly controlled after the stride opened. That gives your body a steadier base as the chest and throwing arm move forward.'
-        : 'Your front leg stayed visible from landing through the finish. We can see where the leg starts to give way instead of losing it outside the frame.',
-      development: kneeSpread > 35
-        ? 'Your front knee keeps changing after landing instead of giving you a steady base. That can make your chest move around the front leg instead of over it. Use controlled lead-leg holds and stop before the knee locks hard or causes pain.'
-        : 'Your front leg holds up well in this pitch, but it still needs to repeat when effort goes up. Keep a firm base without snapping the knee straight. Compare the knee from landing through release at the next two-week check.',
-      evidence: `The estimated front-knee change after the stride is ${Math.round(kneeSpread)} degrees. The important part is whether this range gets smaller and more repeatable in the same camera setup.`,
+      strength: kneeCollapse <= 18
+        ? 'Your front leg holds its shape after landing instead of folding under you. That firm front side is what the rest of your body turns around.'
+        : 'Your front leg stayed visible from landing through the finish, so a coach can see exactly where the leg starts to give way.',
+      development: kneeCollapse > 18
+        ? 'Your front knee keeps bending after your foot lands instead of holding firm, so your chest travels around the front leg rather than over it. Use controlled lead-leg holds and single-leg step-downs, and stop before the knee locks hard or hurts.'
+        : 'Your front leg holds up well in this pitch, but one pitch does not prove it repeats when the effort goes up. Keep the same firm base without snapping the knee straight, and compare the landing again at the two-week check.',
+      evidence: `After your front foot lands, your front knee bends about ${Math.round(kneeCollapse)} more degrees before it firms up. Straightening after landing is the front leg doing its job, so only the extra bending counts here.`,
     },
     {
+      // Not scored from the whole-clip trunk range. Every delivery starts
+      // near upright and finishes well past 40 degrees of lean -- measured
+      // at 49.3 on a minor-league pitcher -- so scoring that span against
+      // 12/25 thresholds marks down every athlete for doing something normal.
+      // Posture is about whether the head and chest stay stacked over the
+      // base at the key moments, which is a phase-image judgement.
       category: 'Posture',
-      score: score(trunkSpread, 12, 25),
-      confidence: quality,
-      strength: trunkSpread <= 25
-        ? 'Your head and chest stayed fairly controlled during this pitch. You did not make a large early lean just to create a lower arm slot.'
-        : 'Your head, shoulders, and hips stayed in the frame through the finish. That lets us see when the upper body begins to tip instead of guessing from one freeze-frame.',
-      development: trunkSpread > 25
-        ? 'Your upper body changes angle too much during the pitch, and the biggest lean needs to happen later and under control. Keep your head moving with your hips instead of falling away early. Use the wall posture drill at low speed, then test the same move in a bullpen.'
-        : 'Your posture is controlled in this clip, but the next job is keeping it at game speed. Do not try to stay stiff and upright. Let the chest move forward after the front foot lands while the head stays balanced over the base.',
-      evidence: `The estimated trunk-angle change in this clip is ${Math.round(trunkSpread)} degrees. Compare that range only against videos recorded from the same angle and at a similar effort.`,
+      score: 3,
+      confidence: 'Low',
+      strength: 'Your head, shoulders, and hips stayed in the frame through the finish, so a coach can see when your upper body starts to tip instead of guessing from one freeze-frame.',
+      development: 'Posture here means whether your head stays balanced over your base at landing and through release, which a coach reads from the saved phase images. Do not try to hold yourself stiff and upright from this score. At the two-week check, film from the same spot so the same moments can be compared.',
+      evidence: `Your trunk angle changes about ${Math.round(trunkSpread)} degrees across this clip, measured from standing upright at the start to your finish position. Every pitcher shows a large change there, so the number is recorded for comparison with your own later videos rather than used as a score.`,
     },
     {
       category: 'Release Consistency',
@@ -339,7 +378,7 @@ export function calculateMetrics(
     z: 0,
     visibility: Math.min(landmarks[23].visibility ?? 0, landmarks[24].visibility ?? 0),
   }
-  const trunkFromVertical = normalizeAcuteAngle(lineAngle(hipMid, shoulderMid) + 90)
+  const trunkFromVertical = normalizeTiltFromVertical(lineAngle(hipMid, shoulderMid) + 90)
   const shoulderLine = lineAngle(landmarks[11], landmarks[12])
   const hipLine = lineAngle(landmarks[23], landmarks[24])
   const separation = normalizeAcuteAngle(shoulderLine - hipLine)
