@@ -1,4 +1,10 @@
-import { calculateMetrics, buildCategoryFeedback, type FrameMetrics, type ClipSummary } from './MotionAnalysisStudio'
+import {
+  calculateMetrics,
+  buildCategoryFeedback,
+  peakIsPhysicallySupported,
+  type FrameMetrics,
+  type ClipSummary,
+} from './MotionAnalysisStudio'
 import type { NormalizedLandmark } from '@mediapipe/tasks-vision'
 
 /**
@@ -118,6 +124,27 @@ describe('buildCategoryFeedback Front-Side Stability scoring', () => {
     expect(frontSideStability?.score).toBe(3)
   })
 
+  it('does not score Upper-Half Timing from a whole-clip elbow range that every delivery saturates', () => {
+    // Measured on the same real minor-league delivery: the throwing elbow
+    // reads ~10 deg at the set position (hands together) and ~180 deg
+    // extended through release. Every genuine pitch therefore produces a
+    // whole-clip elbow spread near 180 deg, which the old thresholds
+    // (35 / 65) score as 1. A metric that cannot return a good score for a
+    // good delivery is not measuring anything, so it must not emit a
+    // confident number.
+    const realElbow = [10.2, 9.0, 11.3, 12.4, 75.8, 178.5, 174.2, 179.0, 176.1, 91.1, 147.1, 164.6]
+    const frames: FrameMetrics[] = realElbow.map((elbow, i) => ({
+      ...goodFrame(0.2 + i * 0.05, 150),
+      throwingElbow: elbow,
+    }))
+
+    const feedback = buildCategoryFeedback(frames, summary)
+    const upperHalf = feedback.find((item) => item.category === 'Upper-Half Timing')
+
+    expect(upperHalf?.score).not.toBe(1)
+    expect(upperHalf?.confidence).toBe('Low')
+  })
+
   it('keeps the genuine deepest-flex frame, which is the signal for this category', () => {
     // The deepest lead-knee flexion after landing is exactly what
     // "front-side stability" is about, so a high-confidence extreme must
@@ -132,5 +159,35 @@ describe('buildCategoryFeedback Front-Side Stability scoring', () => {
     const evidence = feedback.find((item) => item.category === 'Front-Side Stability')?.evidence ?? ''
 
     expect(evidence).toContain('46 degrees')
+  })
+})
+
+describe('phase-peak trustworthiness', () => {
+  it('rejects a single-frame spike in the trunk-rotation signal', () => {
+    // Real hip-shoulder separation from the minor-league clip, 30fps, one
+    // value per frame. Trunk coil cannot physically go 7 -> 83 -> 8 degrees
+    // in 66ms; from a side view the shoulder and hip lines are nearly
+    // end-on to the lens, so this reading is landmark jitter. Treating its
+    // maximum as "maximum external rotation" is what puts the MER phase
+    // photo after the ball has already left the hand.
+    const noisy = [4, 12, 10, 6, 1, 34, 74, 46, 4, 56, 38, 4, 6, 1, 34, 5, 7, 83, 8, 45, 38, 31, 20]
+    const peakIndex = noisy.indexOf(83)
+
+    expect(peakIsPhysicallySupported(noisy, peakIndex)).toBe(false)
+  })
+
+  it('accepts a peak whose neighbouring frames agree with it', () => {
+    // What a real trunk-coil peak looks like when the landmarks track well:
+    // it builds, crests, and collapses over several frames.
+    const clean = [12, 20, 31, 44, 55, 62, 66, 64, 58, 47, 33, 19, 8]
+    const peakIndex = clean.indexOf(66)
+
+    expect(peakIsPhysicallySupported(clean, peakIndex)).toBe(true)
+  })
+
+  it('rejects a peak sitting at the very edge of the window, where nothing supports it', () => {
+    const edge = [70, 12, 9, 8, 6, 5]
+
+    expect(peakIsPhysicallySupported(edge, 0)).toBe(false)
   })
 })

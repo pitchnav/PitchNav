@@ -119,6 +119,42 @@ function range(values: Array<number | null>): [number, number] | null {
   return [Math.min(...valid), Math.max(...valid)]
 }
 
+/**
+ * Whether the extreme at `peakIndex` looks like a real movement event rather
+ * than landmark jitter.
+ *
+ * Hip-shoulder separation is computed from the shoulder line and the hip
+ * line, and on a side view both are nearly end-on to the lens: heavily
+ * foreshortened, so a pixel or two of landmark wobble swings the angle
+ * enormously. Measured on a real side-view delivery it read
+ * 7 -> 83 -> 8 degrees across three consecutive 30fps frames, which no trunk
+ * can do. A body segment carrying real momentum moves smoothly, so a genuine
+ * peak is corroborated by the frames on either side of it; a jitter spike is
+ * not. Requiring that corroboration is what stops the "maximum external
+ * rotation" photo from landing after the ball has already been released.
+ */
+export function peakIsPhysicallySupported(
+  values: Array<number | null>,
+  peakIndex: number,
+  maxDeviationOfRange = 0.5,
+): boolean {
+  const peak = values[peakIndex]
+  if (peak === null || peak === undefined || !Number.isFinite(peak)) return false
+  const neighbours = [values[peakIndex - 1], values[peakIndex + 1]].filter(
+    (value): value is number => value !== null && value !== undefined && Number.isFinite(value),
+  )
+  // An extreme on the first or last sampled frame has nothing corroborating
+  // it, and is usually the window edge rather than the real event.
+  if (neighbours.length < 2) return false
+  const finite = values.filter((value): value is number => value !== null && Number.isFinite(value))
+  const range = Math.max(...finite) - Math.min(...finite)
+  if (range === 0) return true
+  const mean = neighbours.reduce((sum, value) => sum + value, 0) / neighbours.length
+  // Compared against the window's own range so this works for a trough as
+  // well as a crest, and for any units, without depending on sign.
+  return Math.abs(peak - mean) / range <= maxDeviationOfRange
+}
+
 export function buildCategoryFeedback(frames: FrameMetrics[], summary: ClipSummary): CategoryFeedback[] {
   const spread = (values: Array<number | null>) => {
     const valid = values.filter((value): value is number => value !== null && Number.isFinite(value))
@@ -185,14 +221,23 @@ export function buildCategoryFeedback(frames: FrameMetrics[], summary: ClipSumma
           : `The video shows ${sequenceGap.toFixed(2)} seconds from peak leg lift to the widest part of the stride. Use the same camera angle and effort at each two-week check so that number can be compared fairly.`,
     },
     {
+      // Deliberately not scored from elbowSpread. The throwing elbow is
+      // folded to roughly 10 degrees at the set position and extends to
+      // roughly 180 degrees through release, so the whole-clip range lands
+      // near 180 for every genuine delivery -- measured at 179.3 degrees on
+      // a minor-league pitcher whose arm action is not the problem. Against
+      // the old 35/65 thresholds that is a 1 for everybody, which means the
+      // number was never measuring arm timing. Timing is *when* the arm
+      // arrives relative to foot strike, which one clip at ordinary frame
+      // rates cannot establish: the wrist is the fastest-moving landmark and
+      // tracks at 0.03-0.49 confidence straight through release. Report it
+      // honestly as unscored rather than shipping a confident wrong number.
       category: 'Upper-Half Timing',
-      score: score(elbowSpread, 35, 65),
-      confidence: quality,
-      strength: 'Your throwing shoulder, elbow, and wrist stayed visible through the arm action. That lets us follow the arm from hand break into the forward throw instead of guessing through a blocked frame.',
-      development: elbowSpread > 65
-        ? 'Your elbow position changes a lot during this pitch, which can make the arm arrive late or early when the front foot lands. Work on a smooth hand break and let the arm move with the lower body instead of yanking it into place. Check the arm position again at front-foot landing in two weeks.'
-        : 'Your arm path looks controlled in this clip, but one pitch does not prove the timing repeats. Keep the hand break smooth and avoid forcing a certain elbow height. Use the two-week video check to see if the arm arrives in the same place when the front foot lands.',
-      evidence: `The estimated throwing-elbow range in this clip is ${Math.round(elbowSpread)} degrees. This is a video estimate used to compare your own follow-ups, not a perfect joint measurement.`,
+      score: 3,
+      confidence: 'Low',
+      strength: 'Your throwing shoulder, elbow, and wrist stayed visible through most of the arm action, so a coach can follow the arm from hand break into the forward throw.',
+      development: 'Arm timing means whether your arm reaches the same spot at the moment your front foot lands, and one clip cannot prove that. Do not change your arm path from this score. At the two-week check, record three pitches from the same spot and, if your phone offers it, use slow motion so the arm is sharp instead of blurred.',
+      evidence: `A coach reviews the arm position at front-foot landing in the saved phase images. The automatic measurement of arm range (${Math.round(elbowSpread)} degrees in this clip) covers the whole delivery, from the hands together at the start to the arm fully straight after release, so it is expected to be large for every pitcher and is not used as a score.`,
     },
     {
       category: 'Front-Side Stability',
@@ -1213,27 +1258,56 @@ export function MotionAnalysisStudio({
     const framesBeforeStride = widestStride ? frames.filter((frame) => frame.time <= widestStride.time) : frames
     const peakLegLift = [...(framesBeforeStride.length ? framesBeforeStride : frames)]
       .sort((a, b) => (b.legLift ?? -1) - (a.legLift ?? -1))[0]
-    // Hip-shoulder separation (trunk coil) is a real, camera-angle-tolerant 2D
-    // signal, not a guess: it builds through the stride, peaks around foot
-    // contact as the arm cocks, then collapses rapidly as the trunk rotates
-    // open through release. Detecting that actual peak-then-collapse shape in
-    // this pitcher's own data is a real event, unlike a fixed fraction of
-    // total clip length, which has no relationship to when the throw
-    // actually happened. Windows are capped at 0.6s -- several times longer
-    // than a real foot-contact-to-release interval -- purely as a guardrail
-    // against a noisy/low-confidence stretch pulling the peak search into
-    // unrelated later footage.
+    // Hip-shoulder separation (trunk coil) builds through the stride, peaks
+    // around foot contact as the arm cocks, then collapses as the trunk
+    // rotates open through release -- when it is actually measurable.
+    // Measured on a real side-view delivery it is often NOT: both the
+    // shoulder line and the hip line point almost straight at a side-on
+    // camera, so they are foreshortened to a few pixels and the angle
+    // between them swings wildly on landmark noise (7 -> 83 -> 8 degrees
+    // across consecutive frames on real footage). Taking the maximum of that
+    // series lands on whichever frame jittered hardest, which is how the
+    // "maximum external rotation" photo ends up after ball release. So the
+    // extreme is only accepted when the neighbouring frames corroborate it;
+    // otherwise MER/release stay null and the caller falls back to a fixed
+    // offset that is clearly labelled an estimate. Windows are capped at
+    // 0.6s -- several times longer than a real foot-contact-to-release
+    // interval -- as a guardrail against a noisy stretch pulling the search
+    // into unrelated later footage.
     const framesAfterStride = widestStride
       ? frames.filter((frame) => frame.time >= widestStride.time && frame.time <= widestStride.time + 0.6)
       : []
-    const maxExternalRotation = framesAfterStride.length
-      ? [...framesAfterStride].sort((a, b) => (b.hipShoulderSeparation ?? -Infinity) - (a.hipShoulderSeparation ?? -Infinity))[0]
+    const merCandidateIndex = framesAfterStride.length
+      ? framesAfterStride.reduce(
+          (best, frame, index) =>
+            (frame.hipShoulderSeparation ?? -Infinity) > (framesAfterStride[best].hipShoulderSeparation ?? -Infinity)
+              ? index
+              : best,
+          0,
+        )
+      : -1
+    const maxExternalRotation = merCandidateIndex >= 0
+      && peakIsPhysicallySupported(framesAfterStride.map((frame) => frame.hipShoulderSeparation), merCandidateIndex)
+      ? framesAfterStride[merCandidateIndex]
       : null
     const framesAfterMer = maxExternalRotation
       ? frames.filter((frame) => frame.time >= maxExternalRotation.time && frame.time <= maxExternalRotation.time + 0.6)
       : []
-    const ballRelease = framesAfterMer.length
-      ? [...framesAfterMer].sort((a, b) => (a.hipShoulderSeparation ?? Infinity) - (b.hipShoulderSeparation ?? Infinity))[0]
+    // Release is the trough of the same signal and needs the same
+    // corroboration; the check is written against the window's own range so
+    // it applies to a trough unchanged.
+    const releaseCandidateIndex = framesAfterMer.length
+      ? framesAfterMer.reduce(
+          (best, frame, index) =>
+            (frame.hipShoulderSeparation ?? Infinity) < (framesAfterMer[best].hipShoulderSeparation ?? Infinity)
+              ? index
+              : best,
+          0,
+        )
+      : -1
+    const ballRelease = releaseCandidateIndex >= 0
+      && peakIsPhysicallySupported(framesAfterMer.map((frame) => frame.hipShoulderSeparation), releaseCandidateIndex)
+      ? framesAfterMer[releaseCandidateIndex]
       : null
     // Peak trunk coil across the whole clip, with its timing. Used later to
     // test predicted mechanical signatures against what the delivery
