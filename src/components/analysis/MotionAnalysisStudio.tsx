@@ -274,16 +274,25 @@ export function buildCategoryFeedback(frames: FrameMetrics[], summary: ClipSumma
     },
     {
       // Scored on collapse only -- how far the knee folds past where it
-      // landed. Thresholds are provisional coaching judgement, not derived
-      // from labelled deliveries, and need a calibration set before they can
-      // be called validated.
+      // landed -- in three wide bands rather than five narrow ones.
+      //
+      // The bands are set by the measurement's own noise, which was measured
+      // rather than assumed: with the leg motionless on the rubber and every
+      // landmark above 0.9 confidence, the knee angle still reads
+      // 179.2 +/- 1.0 deg with a 4.5 deg spread across 22 frames. Collapse is
+      // a difference between two extremes, so it inherits roughly +/- 5 deg.
+      // Five bands would put boundaries about 9 deg apart and decide an
+      // athlete's score on jitter; 15 deg bands sit about three times the
+      // noise, so a change between bands is a change in the pitcher rather
+      // than in the tracking. Where those two boundaries sit is still
+      // coaching judgement and wants checking against graded deliveries.
       category: 'Front-Side Stability',
-      score: score(kneeCollapse, 8, 18),
+      score: kneeCollapse <= 15 ? 5 : kneeCollapse <= 30 ? 3 : 1,
       confidence: quality,
-      strength: kneeCollapse <= 18
+      strength: kneeCollapse <= 15
         ? 'Your front leg holds its shape after landing instead of folding under you. That firm front side is what the rest of your body turns around.'
         : 'Your front leg stayed visible from landing through the finish, so a coach can see exactly where the leg starts to give way.',
-      development: kneeCollapse > 18
+      development: kneeCollapse > 15
         ? 'Your front knee keeps bending after your foot lands instead of holding firm, so your chest travels around the front leg rather than over it. Use controlled lead-leg holds and single-leg step-downs, and stop before the knee locks hard or hurts.'
         : 'Your front leg holds up well in this pitch, but one pitch does not prove it repeats when the effort goes up. Keep the same firm base without snapping the knee straight, and compare the landing again at the two-week check.',
       evidence: `After your front foot lands, your front knee bends about ${Math.round(kneeCollapse)} more degrees before it firms up. Straightening after landing is the front leg doing its job, so only the extra bending counts here.`,

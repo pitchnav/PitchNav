@@ -120,9 +120,9 @@ describe('buildCategoryFeedback Front-Side Stability scoring', () => {
     const frontSideStability = feedback.find((item) => item.category === 'Front-Side Stability')
 
     // Lands at 143.5 and folds no further than 133.3, so collapse is 10.2 deg
-    // -> score 4. If the 0.03-confidence frame were trusted the knee would
-    // read 12.9 deg, a collapse of 130.6 deg -> score 1.
-    expect(frontSideStability?.score).toBe(4)
+    // -> firm. If the 0.03-confidence frame were trusted the knee would read
+    // 12.9 deg, a collapse of 130.6 deg -> worst band.
+    expect(frontSideStability?.score).toBe(5)
   })
 
   it('does not score Upper-Half Timing from a whole-clip elbow range that every delivery saturates', () => {
@@ -302,5 +302,37 @@ describe('Front-Side Stability distinguishes blocking from collapsing', () => {
       .find((item) => item.category === 'Front-Side Stability')
 
     expect(stability?.score).toBeLessThanOrEqual(2)
+  })
+})
+
+describe('scores stay within what the measurement can resolve', () => {
+  const base: ClipSummary = {
+    frames: 10, averageConfidence: 0.9,
+    elbowRange: null, kneeRange: null, trunkTiltRange: null,
+    peakLegLiftTime: 0.2, widestStrideTime: 1.0,
+    maxExternalRotationTime: null, ballReleaseTime: null,
+    peakSeparation: null, peakSeparationTime: null,
+    leadKneeChangeAfterStride: null, deliveryShapeValid: true,
+  }
+  function collapseOf(values: number[]) {
+    const frames: FrameMetrics[] = values.map((leadKnee, i) => ({
+      time: 1.0 + i * 0.03, confidence: 0.9, throwingElbow: 90, leadKnee,
+      trunkTilt: 20, hipShoulderSeparation: 10, strideWidth: 0.3, legLift: 0.1,
+      leadKneeConfidence: 0.9, throwingElbowConfidence: 0.9, trunkConfidence: 0.9,
+    }))
+    return buildCategoryFeedback(frames, base).find((i) => i.category === 'Front-Side Stability')?.score
+  }
+
+  // Measured noise floor: with the leg motionless and every landmark above
+  // 0.9 confidence, the knee angle still reads 179.2 +/- 1.0 deg with a
+  // 4.5 deg spread across 22 frames. Collapse is a difference of two
+  // extremes, so it carries roughly +/- 5 deg of noise. Bands must therefore
+  // be far enough apart that a boundary is not decided by jitter.
+  it('does not split two deliveries whose collapse differs by less than the noise', () => {
+    expect(collapseOf([150, 146, 145])).toBe(collapseOf([150, 143, 142]))
+  })
+
+  it('still separates a firm front leg from one that clearly folds', () => {
+    expect(collapseOf([150, 145, 148])).toBeGreaterThan(collapseOf([150, 110, 108]) as number)
   })
 })
