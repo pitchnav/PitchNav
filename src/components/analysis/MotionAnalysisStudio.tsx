@@ -152,6 +152,31 @@ function range(values: Array<number | null>): [number, number] | null {
  * not. Requiring that corroboration is what stops the "maximum external
  * rotation" photo from landing after the ball has already been released.
  */
+/**
+ * How many seconds of video timeline one second of real pitching occupies.
+ *
+ * Pitch Nav asks athletes to record iPhone Slo-mo at 240 FPS, and an exported
+ * Slo-mo file carries a ~30 FPS timeline: the motion is real but stretched
+ * eightfold. Every physiological constant in the phase logic -- the
+ * foot-contact-to-release interval, the search windows around it -- is
+ * expressed in real seconds, so on that file they cover an eighth of the
+ * motion they were meant to. Measured on a genuine 240 FPS delivery, the
+ * 0.6s search window after foot strike spanned 0.075s of real movement,
+ * which cannot contain ball release at all.
+ *
+ * Returns 1 whenever the rates are unknown or would shrink the windows, so
+ * ordinary real-time video is unaffected.
+ */
+export function motionTimeScale(
+  captureFps: number | null | undefined,
+  timelineFps: number | null | undefined,
+): number {
+  if (!captureFps || !timelineFps || captureFps <= 0 || timelineFps <= 0) return 1
+  const scale = captureFps / timelineFps
+  if (!Number.isFinite(scale) || scale < 1) return 1
+  return Math.min(scale, 16)
+}
+
 export function peakIsPhysicallySupported(
   values: Array<number | null>,
   peakIndex: number,
@@ -1322,8 +1347,13 @@ export function MotionAnalysisStudio({
     // 0.6s -- several times longer than a real foot-contact-to-release
     // interval -- as a guardrail against a noisy stretch pulling the search
     // into unrelated later footage.
+    // Real-world seconds converted into this file's timeline, so an iPhone
+    // Slo-mo export (240 FPS captured, ~30 FPS timeline) searches the same
+    // amount of actual movement rather than an eighth of it.
+    const timeScale = motionTimeScale(captureFps, detectedPlaybackFps ?? captureFps)
+    const searchWindow = 0.6 * timeScale
     const framesAfterStride = widestStride
-      ? frames.filter((frame) => frame.time >= widestStride.time && frame.time <= widestStride.time + 0.6)
+      ? frames.filter((frame) => frame.time >= widestStride.time && frame.time <= widestStride.time + searchWindow)
       : []
     const merCandidateIndex = framesAfterStride.length
       ? framesAfterStride.reduce(
@@ -1339,7 +1369,7 @@ export function MotionAnalysisStudio({
       ? framesAfterStride[merCandidateIndex]
       : null
     const framesAfterMer = maxExternalRotation
-      ? frames.filter((frame) => frame.time >= maxExternalRotation.time && frame.time <= maxExternalRotation.time + 0.6)
+      ? frames.filter((frame) => frame.time >= maxExternalRotation.time && frame.time <= maxExternalRotation.time + searchWindow)
       : []
     // Release is the trough of the same signal and needs the same
     // corroboration; the check is written against the window's own range so
@@ -1624,9 +1654,12 @@ export function MotionAnalysisStudio({
     // this clip (e.g. too few confident frames in the window).
     const merDetected = summary?.maxExternalRotationTime ?? null
     const releaseDetected = summary?.ballReleaseTime ?? null
-    const maxExternalRotation = merDetected ?? stride + 0.04
-    const ballRelease = releaseDetected ?? stride + 0.13
-    const finish = ballRelease + 0.35
+    // Same conversion for the fallback offsets: 0.04s and 0.13s are real
+    // foot-contact-to-release intervals, not timeline intervals.
+    const phaseScale = motionTimeScale(captureFps, detectedPlaybackFps ?? captureFps)
+    const maxExternalRotation = merDetected ?? stride + 0.04 * phaseScale
+    const ballRelease = releaseDetected ?? stride + 0.13 * phaseScale
+    const finish = ballRelease + 0.35 * phaseScale
     const phases = [
       { key: 'peak_leg_lift', label: 'Peak Leg Lift', time: peak },
       { key: 'hand_separation', label: 'Hand Separation', time: Math.min(clipEnd, handSeparation) },

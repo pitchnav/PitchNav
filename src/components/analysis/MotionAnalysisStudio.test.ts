@@ -2,6 +2,7 @@ import {
   calculateMetrics,
   buildCategoryFeedback,
   peakIsPhysicallySupported,
+  motionTimeScale,
   type FrameMetrics,
   type ClipSummary,
 } from './MotionAnalysisStudio'
@@ -334,5 +335,27 @@ describe('scores stay within what the measurement can resolve', () => {
 
   it('still separates a firm front leg from one that clearly folds', () => {
     expect(collapseOf([150, 145, 148])).toBeGreaterThan(collapseOf([150, 110, 108]) as number)
+  })
+})
+
+describe('slow-motion timelines', () => {
+  it('stretches real-world timings by the slow-motion factor', () => {
+    // An iPhone Slo-mo export captured at 240 FPS is written as a ~30 FPS
+    // timeline, so one second of file is one eighth of a second of pitching.
+    expect(motionTimeScale(240, 30)).toBe(8)
+    expect(motionTimeScale(120, 30)).toBe(4)
+  })
+
+  it('leaves real-time video alone', () => {
+    expect(motionTimeScale(30, 30)).toBe(1)
+    expect(motionTimeScale(60, 60)).toBe(1)
+  })
+
+  it('falls back to real time when the rates are unknown or implausible', () => {
+    expect(motionTimeScale(null, 30)).toBe(1)
+    expect(motionTimeScale(240, null)).toBe(1)
+    expect(motionTimeScale(240, 0)).toBe(1)
+    // Never shrink: a timeline faster than capture would squash the windows.
+    expect(motionTimeScale(30, 240)).toBe(1)
   })
 })
