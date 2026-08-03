@@ -11,6 +11,13 @@ const SEVERITY_STYLES: Record<string, string> = {
   info: 'bg-slate-700/40 text-slate-300',
 }
 
+// Postgres error code for "relation does not exist" — the specific signal
+// that migration 031 (agent_runs / agent_findings) has not been applied yet.
+// Any other error code is a real fault (RLS, connection, typo, etc.) and
+// must not be mistaken for a migration that is already applied.
+const MISSING_TABLE_CODE = '42P01'
+const MIGRATION_FILE = 'supabase/migrations/031_agent_os.sql'
+
 function PageHeader() {
   return (
     <div>
@@ -19,6 +26,15 @@ function PageHeader() {
         Agents read your data and report what needs attention. They cannot send, publish, or spend anything.
       </p>
     </div>
+  )
+}
+
+function MigrationNeededNotice({ tail }: { tail: string }) {
+  return (
+    <p className="mt-2 text-sm text-slate-400">
+      This screen needs one more step: open the Supabase SQL editor for this project and run the file{' '}
+      <code className="text-slate-300">{MIGRATION_FILE}</code> once. As soon as that finishes, {tail}.
+    </p>
   )
 }
 
@@ -33,20 +49,25 @@ export default async function AgentOsPage() {
 
   // The agent_runs / agent_findings tables ship in migration 031, which has
   // not been applied to every database yet. Until it runs, this query fails
-  // rather than returning an empty set — degrade to a clear setup message
-  // instead of crashing or rendering a broken skeleton.
+  // rather than returning an empty set. Only treat that specific "table
+  // missing" error as a setup step — any other error (RLS, connection, a
+  // future typo) is a real fault and must say so plainly instead of sending
+  // the product owner to re-apply a migration he already ran.
   if (runsError) {
+    const missingTable = runsError.code === MISSING_TABLE_CODE
     return (
       <div className="space-y-6">
         <PageHeader />
         <div className="card">
-          <h2 className="font-bold text-white">Setup needed</h2>
-          <p className="mt-2 text-sm text-slate-400">
-            The Pitch Nav OS database migration has not been applied to this database yet, so agent runs and
-            findings cannot be stored or displayed. Apply migration <code className="text-slate-300">031</code>
-            {' '}(<code className="text-slate-300">agent_runs</code> and{' '}
-            <code className="text-slate-300">agent_findings</code>), then reload this page.
-          </p>
+          <h2 className="font-bold text-white">{missingTable ? 'Setup needed' : 'Could not load agent data'}</h2>
+          {missingTable ? (
+            <MigrationNeededNotice tail="this page will work" />
+          ) : (
+            <p className="mt-2 text-sm text-slate-400">
+              Something went wrong loading agent data. Reloading the page usually fixes this; if it keeps
+              happening, share the message below.
+            </p>
+          )}
           <p className="mt-3 text-xs font-mono text-slate-600">{runsError.message}</p>
         </div>
       </div>
@@ -105,9 +126,13 @@ export default async function AgentOsPage() {
       <div className="card">
         <h2 className="font-bold text-white">Findings</h2>
         {findingsError ? (
-          <p className="mt-2 text-sm text-red-400">
-            Findings could not be loaded: {findingsError.message}
-          </p>
+          findingsError.code === MISSING_TABLE_CODE ? (
+            <MigrationNeededNotice tail="findings will show up here" />
+          ) : (
+            <p className="mt-2 text-sm text-red-400">
+              Findings could not be loaded. {findingsError.message}
+            </p>
+          )
         ) : (findings ?? []).length === 0 ? (
           <p className="mt-2 text-sm text-slate-500">
             {latestRunId ? 'Nothing needs your attention right now.' : 'Press Run now to check your data for the first time.'}
