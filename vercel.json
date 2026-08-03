@@ -1,3 +1,6 @@
 {
-  "crons": [{ "path": "/api/cron/retest-reminders", "schedule": "0 14 * * *" }]
+  "crons": [
+    { "path": "/api/cron/retest-reminders", "schedule": "0 14 * * *" },
+    { "path": "/api/agents/analytics", "schedule": "0 13 * * *" }
+  ]
 }
