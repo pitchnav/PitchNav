@@ -5,12 +5,17 @@
 -- than resolved in place: a condition that clears simply stops appearing,
 -- which avoids a resolution column nothing currently maintains.
 
+-- status defaults to 'running' because the row is inserted before any work
+-- happens: the route sets it explicitly to 'running' on insert, then to 'ok'
+-- or 'failed' when the run finishes. If a run is killed by a serverless
+-- timeout and never reaches its catch block, the row is left as 'running'
+-- rather than a false 'ok' with zero findings.
 create table if not exists public.agent_runs (
   id uuid primary key default gen_random_uuid(),
   agent text not null,
   started_at timestamptz not null default now(),
   finished_at timestamptz,
-  status text not null default 'ok' check (status in ('ok','failed')),
+  status text not null default 'running' check (status in ('running','ok','failed')),
   error text,
   findings_count int not null default 0
 );

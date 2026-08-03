@@ -13,6 +13,7 @@ type OrderQueryRow = {
   id: string
   status: string
   payment_confirmed_at: string | null
+  refunded_at: string | null
   athlete_profiles: { athlete_full_name: string | null } | { athlete_full_name: string | null }[] | null
   analysis_reports: { published_at: string | null } | { published_at: string | null }[] | null
 }
@@ -55,7 +56,7 @@ export async function POST(request: NextRequest) {
   const admin = createAdminClient()
   const { data: run, error: runError } = await admin
     .from('agent_runs')
-    .insert({ agent: 'analytics' })
+    .insert({ agent: 'analytics', status: 'running' })
     .select('id')
     .single()
   if (runError || !run) {
@@ -66,34 +67,50 @@ export async function POST(request: NextRequest) {
     // athlete_profiles has no first_name/last_name column -- the real column
     // is athlete_full_name, used directly as the athlete's display name.
     //
-    // Each query below orders oldest-first before the limit(500) cap is
-    // applied. Without an explicit order, PostgREST row order past the limit
-    // is unspecified, so truncation could silently drop any rows -- possibly
-    // the very oldest unpublished orders or oldest rejected submissions this
-    // agent exists to surface. Ordering oldest-first means that if truncation
-    // ever does kick in, it drops the newest (least urgent) rows, not
-    // arbitrary ones.
+    // Every query below is capped with limit(500). Without an explicit
+    // order, PostgREST row order past the limit is unspecified, so
+    // truncation could silently drop arbitrary rows. Each query below is
+    // ordered so that IF truncation ever kicks in, it drops the rows that do
+    // the least damage to this agent's own rules -- see the comment on each
+    // query, because that reasoning is not the same for all three.
     const { data: orders, error: ordersError } = await admin
       .from('orders')
-      .select('id,status,payment_confirmed_at,athlete_profiles(athlete_full_name),analysis_reports(published_at)')
+      .select('id,status,payment_confirmed_at,refunded_at,athlete_profiles(athlete_full_name),analysis_reports(published_at)')
       .not('payment_confirmed_at', 'is', null)
       .order('payment_confirmed_at', { ascending: true })
       .limit(500)
     if (ordersError) throw new Error(`orders: ${ordersError.message}`)
 
+    // Rule 1's severity only grows with age, so oldest-first means truncation
+    // (if it ever happens) drops the newest, least-urgent orders.
     const { data: analyses, error: analysesError } = await admin
       .from('motion_analyses')
       .select('id,order_id,phase_snapshots,published_at')
+      .is('published_at', null)
       .order('created_at', { ascending: true })
       .limit(500)
     if (analysesError) throw new Error(`motion_analyses: ${analysesError.message}`)
 
+    // Rule 2 (missing phase images) is urgent regardless of age, and published
+    // analyses are irrelevant to it anyway, so filtering them out at the query
+    // moves the 500-row cap far from ever binding on the rows that matter.
+
+    // Newest-first, unlike the other two queries. "replaced" is computed
+    // against the newest submission per order, so truncating the newest rows
+    // would remove the very replacements rule 3 depends on, reporting
+    // long-since-replaced videos as "no replacement" -- a false positive in
+    // the rule this cap exists to protect. A missed finding from truncating
+    // old rows is far less damaging than that false positive, so this query
+    // is ordered the opposite way from the other two on purpose.
     const { data: submissions, error: submissionsError } = await admin
       .from('video_submissions')
       .select('id,order_id,quality_approved,quality_reviewed_at,created_at')
-      .order('created_at', { ascending: true })
+      .order('created_at', { ascending: false })
       .limit(500)
     if (submissionsError) throw new Error(`video_submissions: ${submissionsError.message}`)
+
+    const submissionQueryRows = (submissions ?? []) as SubmissionQueryRow[]
+    const ordersWithVideo = new Set(submissionQueryRows.map((submission) => submission.order_id))
 
     const orderRows: OrderRow[] = ((orders ?? []) as OrderQueryRow[]).map((order) => {
       const profile = Array.isArray(order.athlete_profiles) ? order.athlete_profiles[0] : order.athlete_profiles
@@ -102,8 +119,10 @@ export async function POST(request: NextRequest) {
         id: order.id,
         status: order.status,
         payment_confirmed_at: order.payment_confirmed_at,
+        refunded_at: order.refunded_at,
         report_published_at: report?.published_at ?? null,
         athlete_name: profile?.athlete_full_name ?? null,
+        has_video: ordersWithVideo.has(order.id),
       }
     })
 
@@ -116,7 +135,6 @@ export async function POST(request: NextRequest) {
 
     // A rejected submission counts as replaced when a newer submission exists
     // for the same order.
-    const submissionQueryRows = (submissions ?? []) as SubmissionQueryRow[]
     const newestByOrder = new Map<string, string>()
     for (const submission of submissionQueryRows) {
       const current = newestByOrder.get(submission.order_id)
@@ -144,12 +162,11 @@ export async function POST(request: NextRequest) {
       if (insertError) throw new Error(`agent_findings: ${insertError.message}`)
     }
 
-    // agent_runs.status defaults to 'ok', so an unchecked failure here would
-    // leave a row indistinguishable from a genuine success (finished_at stuck
-    // null, findings_count stuck at 0) even though the findings above were
-    // already written. Checked and handled the same way as every other write
-    // in this route, so a failure here is recorded rather than silently
-    // producing a fake-success row.
+    // The row was inserted as 'running' before any work happened, so an
+    // in-flight run (or one killed by a timeout that never reaches the catch
+    // block) reads as still running rather than a false "OK". Checked and
+    // handled the same way as every other write in this route, so a failure
+    // here is recorded rather than silently leaving the row stuck.
     const { error: finishError } = await admin
       .from('agent_runs')
       .update({ finished_at: new Date().toISOString(), status: 'ok', findings_count: findings.length })
@@ -178,7 +195,7 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
   const secret = process.env.CRON_SECRET
   if (!secret || request.headers.get('authorization') !== `Bearer ${secret}`) {
-    return NextResponse.json({ error: 'Administrator access required.' }, { status: 403 })
+    return NextResponse.json({ error: 'A valid cron secret is required for GET.' }, { status: 403 })
   }
   return POST(request)
 }

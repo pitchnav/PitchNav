@@ -29,12 +29,22 @@ export function buildAnalyticsFindings(input: AnalyticsInput): Finding[] {
   for (const order of input.orders) {
     if (!order.payment_confirmed_at) continue
     if (order.report_published_at) continue
+    // Refunds and cancellations leave payment_confirmed_at populated (the
+    // payment genuinely happened), and a reset test order also deliberately
+    // keeps it so staff can replay the order without a new checkout. None of
+    // these are still waiting on a report, so none should ever be able to
+    // become a permanent, un-clearable urgent finding.
+    if (order.status === 'refunded' || order.status === 'cancelled') continue
+    if (order.refunded_at) continue
+    // Before the athlete has uploaded anything, staff have nothing to act on
+    // yet -- the wait is on the athlete, not on us.
+    if (!order.has_video) continue
     const days = daysWaiting(input.now, order.payment_confirmed_at)
     findings.push({
       agent: ANALYTICS,
       severity: waitSeverity(days),
       title: 'Paid order with no published report',
-      detail: `${order.athlete_name ?? 'An athlete'} paid and has been waiting ${describeWait(days)} for a report.`,
+      detail: `${order.athlete_name ?? 'An athlete'} paid, submitted a video, and has been waiting ${describeWait(days)} for a report.`,
       entity_type: 'order',
       entity_id: order.id,
     })

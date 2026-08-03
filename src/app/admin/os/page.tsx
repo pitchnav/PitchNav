@@ -10,6 +10,13 @@ const SEVERITY_STYLES: Record<string, string> = {
   attention: 'bg-yellow-400/10 text-yellow-300',
   info: 'bg-slate-700/40 text-slate-300',
 }
+const DEFAULT_SEVERITY_STYLE = 'bg-slate-700/40 text-slate-300'
+
+// Mirrors the urgent/attention/info rank order applied in analytics.ts.
+// PostgREST does not guarantee row order without an explicit .order(), so the
+// sort has to be re-applied here after the fetch -- otherwise the careful
+// ordering the agent computed is discarded at this database round trip.
+const SEVERITY_RANK: Record<string, number> = { urgent: 0, attention: 1, info: 2 }
 
 // Postgres error code for "relation does not exist" — the specific signal
 // that migration 031 (agent_runs / agent_findings) has not been applied yet.
@@ -74,18 +81,42 @@ export default async function AgentOsPage() {
     )
   }
 
+  // Newest run per agent regardless of status, so a failed or in-flight run
+  // is still visible on the agent's own card.
   const latestByAgent = new Map<string, NonNullable<typeof runs>[number]>()
   for (const run of runs ?? []) {
     if (!latestByAgent.has(run.agent)) latestByAgent.set(run.agent, run)
   }
 
-  const latestRunId = runs?.[0]?.id
-  const { data: findings, error: findingsError } = latestRunId
+  // The findings panel must never read off the newest row blindly: a run
+  // that failed, or one still mid-flight (or killed by a serverless timeout
+  // before it could mark itself failed), has zero findings recorded and
+  // would otherwise render as a false "nothing needs your attention" while
+  // the last genuinely good run's real findings are hidden. So the panel
+  // reads the newest run PER AGENT that actually finished with status 'ok'.
+  const lastGoodRunByAgent = new Map<string, NonNullable<typeof runs>[number]>()
+  for (const run of runs ?? []) {
+    if (lastGoodRunByAgent.has(run.agent)) continue
+    if (run.status === 'ok' && run.finished_at) lastGoodRunByAgent.set(run.agent, run)
+  }
+  const goodRunIds = Array.from(lastGoodRunByAgent.values()).map((run) => run.id)
+
+  const { data: rawFindings, error: findingsError } = goodRunIds.length
     ? await supabase
         .from('agent_findings')
         .select('id,severity,title,detail,entity_type,entity_id')
-        .eq('run_id', latestRunId)
+        .in('run_id', goodRunIds)
     : { data: [], error: null }
+
+  // Re-sort after the fetch: PostgREST gives no row-order guarantee without
+  // an explicit .order(), so the urgent-first ordering analytics.ts computed
+  // is not preserved by an .eq()/.in() round trip and must be re-applied here.
+  const findings = [...(rawFindings ?? [])].sort(
+    (a, b) => (SEVERITY_RANK[a.severity] ?? 99) - (SEVERITY_RANK[b.severity] ?? 99),
+  )
+
+  const overallLatestRun = runs?.[0] ?? null
+  const overallLatestRunOk = overallLatestRun?.status === 'ok'
 
   return (
     <div className="space-y-6">
@@ -104,9 +135,10 @@ export default async function AgentOsPage() {
                 <span className={`shrink-0 rounded-full px-2 py-1 text-xs font-medium ${
                   !run ? 'bg-slate-700/40 text-slate-400'
                     : run.status === 'ok' ? 'bg-accent-green/10 text-accent-green'
+                    : run.status === 'running' ? 'bg-electric-blue/10 text-electric-blue-light'
                     : 'bg-red-400/10 text-red-400'
                 }`}>
-                  {!run ? 'Never run' : run.status === 'ok' ? 'OK' : 'Failed'}
+                  {!run ? 'Never run' : run.status === 'ok' ? 'OK' : run.status === 'running' ? 'Running' : 'Failed'}
                 </span>
               </div>
               <p className="mt-3 text-xs text-slate-500">
@@ -133,29 +165,47 @@ export default async function AgentOsPage() {
               Findings could not be loaded. {findingsError.message}
             </p>
           )
-        ) : (findings ?? []).length === 0 ? (
-          <p className="mt-2 text-sm text-slate-500">
-            {latestRunId ? 'Nothing needs your attention right now.' : 'Press Run now to check your data for the first time.'}
-          </p>
         ) : (
-          <ul className="mt-4 space-y-3">
-            {(findings ?? []).map((finding) => (
-              <li key={finding.id} className="rounded-xl border border-surface-border bg-navy-950 p-4">
-                <div className="flex items-center gap-2">
-                  <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${SEVERITY_STYLES[finding.severity]}`}>
-                    {finding.severity}
-                  </span>
-                  <span className="font-semibold text-white">{finding.title}</span>
-                </div>
-                <p className="mt-2 text-sm text-slate-300">{finding.detail}</p>
-                {finding.entity_type === 'order' && finding.entity_id && (
-                  <Link href={`/admin/orders/${finding.entity_id}`} className="mt-2 inline-block text-xs text-electric-blue-light">
-                    Open this order →
-                  </Link>
-                )}
-              </li>
-            ))}
-          </ul>
+          <>
+            {overallLatestRun && !overallLatestRunOk && (
+              <p className="mt-2 text-sm text-yellow-300">
+                {overallLatestRun.status === 'running'
+                  ? 'The last run has not finished yet.'
+                  : 'The last run failed.'}{' '}
+                {goodRunIds.length > 0
+                  ? 'Showing findings from the last successful run instead.'
+                  : 'There is no earlier successful run to show yet.'}
+              </p>
+            )}
+            {findings.length === 0 ? (
+              <p className="mt-2 text-sm text-slate-500">
+                {!overallLatestRun
+                  ? 'Press Run now to check your data for the first time.'
+                  : goodRunIds.length > 0
+                    ? 'Nothing needed attention as of the last successful run.'
+                    : 'Nothing to show yet.'}
+              </p>
+            ) : (
+              <ul className="mt-4 space-y-3">
+                {findings.map((finding) => (
+                  <li key={finding.id} className="rounded-xl border border-surface-border bg-navy-950 p-4">
+                    <div className="flex items-center gap-2">
+                      <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${SEVERITY_STYLES[finding.severity] ?? DEFAULT_SEVERITY_STYLE}`}>
+                        {finding.severity}
+                      </span>
+                      <span className="font-semibold text-white">{finding.title}</span>
+                    </div>
+                    <p className="mt-2 text-sm text-slate-300">{finding.detail}</p>
+                    {finding.entity_type === 'order' && finding.entity_id && (
+                      <Link href={`/admin/orders/${finding.entity_id}`} className="mt-2 inline-block text-xs text-electric-blue-light">
+                        Open this order →
+                      </Link>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </>
         )}
       </div>
     </div>

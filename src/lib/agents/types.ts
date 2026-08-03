@@ -13,8 +13,10 @@ export type OrderRow = {
   id: string
   status: string
   payment_confirmed_at: string | null
+  refunded_at: string | null
   report_published_at: string | null
   athlete_name: string | null
+  has_video: boolean
 }
 
 export type AnalysisRow = {

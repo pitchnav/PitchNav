@@ -13,8 +13,10 @@ describe('paid but unpublished orders', () => {
       orders: [{
         id: 'o1', status: 'complete',
         payment_confirmed_at: '2026-08-01T12:00:00Z',
+        refunded_at: null,
         report_published_at: '2026-08-02T12:00:00Z',
         athlete_name: 'Pipeline Test',
+        has_video: true,
       }],
     }))
     expect(findings).toHaveLength(0)
@@ -25,8 +27,10 @@ describe('paid but unpublished orders', () => {
       orders: [{
         id: 'o1', status: 'in_analysis',
         payment_confirmed_at: '2026-08-01T12:00:00Z',
+        refunded_at: null,
         report_published_at: null,
         athlete_name: 'Pipeline Test',
+        has_video: true,
       }],
     }))
     expect(findings).toHaveLength(1)
@@ -38,10 +42,82 @@ describe('paid but unpublished orders', () => {
     const findings = buildAnalyticsFindings(input({
       orders: [{
         id: 'o1', status: 'awaiting_payment',
-        payment_confirmed_at: null, report_published_at: null, athlete_name: 'X',
+        payment_confirmed_at: null, refunded_at: null, report_published_at: null, athlete_name: 'X',
+        has_video: false,
       }],
     }))
     expect(findings).toHaveLength(0)
+  })
+
+  it('says nothing for a refunded order even though payment_confirmed_at is still set', () => {
+    const findings = buildAnalyticsFindings(input({
+      orders: [{
+        id: 'o1', status: 'refunded',
+        payment_confirmed_at: '2026-07-01T12:00:00Z',
+        refunded_at: '2026-07-05T12:00:00Z',
+        report_published_at: null,
+        athlete_name: 'Refunded Athlete',
+        has_video: true,
+      }],
+    }))
+    expect(findings).toHaveLength(0)
+  })
+
+  it('says nothing for a cancelled order even though payment_confirmed_at is still set', () => {
+    const findings = buildAnalyticsFindings(input({
+      orders: [{
+        id: 'o1', status: 'cancelled',
+        payment_confirmed_at: '2026-07-01T12:00:00Z',
+        refunded_at: null,
+        report_published_at: null,
+        athlete_name: 'Cancelled Athlete',
+        has_video: true,
+      }],
+    }))
+    expect(findings).toHaveLength(0)
+  })
+
+  it('says nothing when refunded_at is set even if status was not updated to refunded', () => {
+    const findings = buildAnalyticsFindings(input({
+      orders: [{
+        id: 'o1', status: 'in_analysis',
+        payment_confirmed_at: '2026-07-01T12:00:00Z',
+        refunded_at: '2026-07-05T12:00:00Z',
+        report_published_at: null,
+        athlete_name: 'Reset Test Order',
+        has_video: true,
+      }],
+    }))
+    expect(findings).toHaveLength(0)
+  })
+
+  it('says nothing for a paid order with no video uploaded yet', () => {
+    const findings = buildAnalyticsFindings(input({
+      orders: [{
+        id: 'o1', status: 'awaiting_videos',
+        payment_confirmed_at: '2026-07-01T12:00:00Z',
+        refunded_at: null,
+        report_published_at: null,
+        athlete_name: 'Slow Filmer',
+        has_video: false,
+      }],
+    }))
+    expect(findings).toHaveLength(0)
+  })
+
+  it('flags the same order once the video is in', () => {
+    const findings = buildAnalyticsFindings(input({
+      orders: [{
+        id: 'o1', status: 'in_analysis',
+        payment_confirmed_at: '2026-07-01T12:00:00Z',
+        refunded_at: null,
+        report_published_at: null,
+        athlete_name: 'Slow Filmer',
+        has_video: true,
+      }],
+    }))
+    expect(findings).toHaveLength(1)
+    expect(findings[0].entity_id).toBe('o1')
   })
 })
 
@@ -49,7 +125,10 @@ describe('waiting-time severity', () => {
   function waited(hours: number) {
     const paid = new Date(NOW.getTime() - hours * 3600_000).toISOString()
     return buildAnalyticsFindings(input({
-      orders: [{ id: 'o1', status: 'in_analysis', payment_confirmed_at: paid, report_published_at: null, athlete_name: 'A' }],
+      orders: [{
+        id: 'o1', status: 'in_analysis', payment_confirmed_at: paid, refunded_at: null,
+        report_published_at: null, athlete_name: 'A', has_video: true,
+      }],
     }))[0]
   }
 
@@ -127,7 +206,8 @@ describe('findings ordering', () => {
       orders: [{
         id: 'o1', status: 'in_analysis',
         payment_confirmed_at: new Date(NOW.getTime() - 2 * 86_400_000).toISOString(),
-        report_published_at: null, athlete_name: 'A',
+        refunded_at: null,
+        report_published_at: null, athlete_name: 'A', has_video: true,
       }],
       analyses: [{ id: 'a1', order_id: 'o2', phase_snapshot_count: 1, published_at: null }],
     }))
