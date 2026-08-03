@@ -40,5 +40,36 @@ export function buildAnalyticsFindings(input: AnalyticsInput): Finding[] {
     })
   }
 
-  return findings
+  for (const analysis of input.analyses) {
+    if (analysis.published_at) continue
+    if (analysis.phase_snapshot_count >= 6) continue
+    findings.push({
+      agent: ANALYTICS,
+      severity: 'urgent',
+      title: 'Analysis is missing phase images',
+      detail: `Only ${analysis.phase_snapshot_count} of 6 phase images saved, so the AI coaching draft cannot be generated yet.`,
+      entity_type: 'order',
+      entity_id: analysis.order_id,
+    })
+  }
+
+  for (const submission of input.submissions) {
+    if (submission.quality_approved !== false) continue
+    if (submission.replaced) continue
+    if (!submission.quality_reviewed_at) continue
+    if (daysWaiting(input.now, submission.quality_reviewed_at) < 3) continue
+    findings.push({
+      agent: ANALYTICS,
+      severity: 'attention',
+      title: 'Rejected video with no replacement',
+      detail: 'A video was rejected for quality and no replacement has been uploaded since.',
+      entity_type: 'order',
+      entity_id: submission.order_id,
+    })
+  }
+
+  // Screen order matters more than table order: urgent items must surface first
+  // regardless of which rule produced them.
+  const rank: Record<Severity, number> = { urgent: 0, attention: 1, info: 2 }
+  return findings.sort((a, b) => rank[a.severity] - rank[b.severity])
 }

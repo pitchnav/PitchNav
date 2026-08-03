@@ -65,3 +65,72 @@ describe('waiting-time severity', () => {
     expect(waited(72).severity).toBe('urgent')
   })
 })
+
+describe('analyses missing phase images', () => {
+  it('flags an analysis with fewer than six phase snapshots', () => {
+    const findings = buildAnalyticsFindings(input({
+      analyses: [{ id: 'a1', order_id: 'o1', phase_snapshot_count: 4, published_at: null }],
+    }))
+    expect(findings).toHaveLength(1)
+    expect(findings[0].severity).toBe('urgent')
+    expect(findings[0].entity_id).toBe('o1')
+  })
+
+  it('says nothing at exactly six', () => {
+    const findings = buildAnalyticsFindings(input({
+      analyses: [{ id: 'a1', order_id: 'o1', phase_snapshot_count: 6, published_at: null }],
+    }))
+    expect(findings).toHaveLength(0)
+  })
+
+  it('ignores an already published analysis', () => {
+    const findings = buildAnalyticsFindings(input({
+      analyses: [{ id: 'a1', order_id: 'o1', phase_snapshot_count: 2, published_at: '2026-08-01T12:00:00Z' }],
+    }))
+    expect(findings).toHaveLength(0)
+  })
+})
+
+describe('rejected videos with no replacement', () => {
+  function rejected(daysAgo: number, replaced: boolean) {
+    const reviewed = new Date(NOW.getTime() - daysAgo * 86_400_000).toISOString()
+    return buildAnalyticsFindings(input({
+      submissions: [{ id: 's1', order_id: 'o1', quality_approved: false, quality_reviewed_at: reviewed, replaced }],
+    }))
+  }
+
+  it('flags a rejection older than three days with nothing new', () => {
+    const findings = rejected(4, false)
+    expect(findings).toHaveLength(1)
+    expect(findings[0].severity).toBe('attention')
+  })
+
+  it('says nothing when a replacement arrived', () => {
+    expect(rejected(4, true)).toHaveLength(0)
+  })
+
+  it('says nothing within three days', () => {
+    expect(rejected(2, false)).toHaveLength(0)
+  })
+
+  it('ignores approved videos', () => {
+    const findings = buildAnalyticsFindings(input({
+      submissions: [{ id: 's1', order_id: 'o1', quality_approved: true, quality_reviewed_at: '2026-07-01T12:00:00Z', replaced: false }],
+    }))
+    expect(findings).toHaveLength(0)
+  })
+})
+
+describe('findings ordering', () => {
+  it('puts urgent findings before attention and info', () => {
+    const findings = buildAnalyticsFindings(input({
+      orders: [{
+        id: 'o1', status: 'in_analysis',
+        payment_confirmed_at: new Date(NOW.getTime() - 2 * 86_400_000).toISOString(),
+        report_published_at: null, athlete_name: 'A',
+      }],
+      analyses: [{ id: 'a1', order_id: 'o2', phase_snapshot_count: 1, published_at: null }],
+    }))
+    expect(findings.map((f) => f.severity)).toEqual(['urgent', 'attention'])
+  })
+})
