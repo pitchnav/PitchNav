@@ -65,22 +65,33 @@ export async function POST(request: NextRequest) {
   try {
     // athlete_profiles has no first_name/last_name column -- the real column
     // is athlete_full_name, used directly as the athlete's display name.
+    //
+    // Each query below orders oldest-first before the limit(500) cap is
+    // applied. Without an explicit order, PostgREST row order past the limit
+    // is unspecified, so truncation could silently drop any rows -- possibly
+    // the very oldest unpublished orders or oldest rejected submissions this
+    // agent exists to surface. Ordering oldest-first means that if truncation
+    // ever does kick in, it drops the newest (least urgent) rows, not
+    // arbitrary ones.
     const { data: orders, error: ordersError } = await admin
       .from('orders')
       .select('id,status,payment_confirmed_at,athlete_profiles(athlete_full_name),analysis_reports(published_at)')
       .not('payment_confirmed_at', 'is', null)
+      .order('payment_confirmed_at', { ascending: true })
       .limit(500)
     if (ordersError) throw new Error(`orders: ${ordersError.message}`)
 
     const { data: analyses, error: analysesError } = await admin
       .from('motion_analyses')
       .select('id,order_id,phase_snapshots,published_at')
+      .order('created_at', { ascending: true })
       .limit(500)
     if (analysesError) throw new Error(`motion_analyses: ${analysesError.message}`)
 
     const { data: submissions, error: submissionsError } = await admin
       .from('video_submissions')
       .select('id,order_id,quality_approved,quality_reviewed_at,created_at')
+      .order('created_at', { ascending: true })
       .limit(500)
     if (submissionsError) throw new Error(`video_submissions: ${submissionsError.message}`)
 
@@ -133,10 +144,17 @@ export async function POST(request: NextRequest) {
       if (insertError) throw new Error(`agent_findings: ${insertError.message}`)
     }
 
-    await admin
+    // agent_runs.status defaults to 'ok', so an unchecked failure here would
+    // leave a row indistinguishable from a genuine success (finished_at stuck
+    // null, findings_count stuck at 0) even though the findings above were
+    // already written. Checked and handled the same way as every other write
+    // in this route, so a failure here is recorded rather than silently
+    // producing a fake-success row.
+    const { error: finishError } = await admin
       .from('agent_runs')
       .update({ finished_at: new Date().toISOString(), status: 'ok', findings_count: findings.length })
       .eq('id', run.id)
+    if (finishError) throw new Error(`Could not mark the run finished: ${finishError.message}`)
 
     return NextResponse.json({ runId: run.id, findings: findings.length })
   } catch (error) {
@@ -149,6 +167,18 @@ export async function POST(request: NextRequest) {
   }
 }
 
+// GET exists solely for Vercel Cron, which invokes via GET and cannot send a
+// POST body or a CSRF token. POST accepts either the bearer secret or an
+// authenticated admin session because it is also the "Run now" button's
+// method. GET must NOT fall back to the admin cookie check: a safe-looking
+// GET is reachable via a top-level navigation with no CSRF protection, so
+// letting it run a state-mutating action off an admin's ambient cookies would
+// make the run triggerable by a plain link/redirect. Bearer-secret-only closes
+// that off while still letting the cron schedule work.
 export async function GET(request: NextRequest) {
+  const secret = process.env.CRON_SECRET
+  if (!secret || request.headers.get('authorization') !== `Bearer ${secret}`) {
+    return NextResponse.json({ error: 'Administrator access required.' }, { status: 403 })
+  }
   return POST(request)
 }
