@@ -91,7 +91,90 @@ export default function PricingPage() {
           </article>
         </div>
 
-        <p className="-mt-10 mb-16 text-center text-xs text-slate-600">Secure checkout powered by Stripe. Both memberships renew monthly and may be cancelled according to the membership terms.</p>
+        <p className="-mt-10 mb-6 text-center text-xs text-slate-600">Secure checkout powered by Stripe. Both memberships renew monthly and may be cancelled anytime.</p>
+
+        {/*
+          Refund guarantee. Deliberately narrow and specific: first report only,
+          14 days, full refund. It is a real commitment -- staff must honour it
+          without argument -- so it is written as a plain promise rather than
+          hedged marketing language. It also gives the honest "no guarantees"
+          messaging elsewhere on the site something concrete to sit beside:
+          Pitch Nav does not promise velocity, but it does stand behind the work.
+        */}
+        <div className="mx-auto mb-16 max-w-2xl rounded-xl border border-accent-green/25 bg-accent-green/5 p-5 text-center">
+          <p className="text-sm font-semibold text-white">
+            If your first report isn&apos;t useful, we&apos;ll refund it.
+          </p>
+          <p className="mt-1.5 text-sm text-slate-400">
+            Full refund on your first analysis within 14 days. No form to fill out — just email us.
+          </p>
+        </div>
+
+        {/*
+          Cost comparison. Rules this table has to keep following:
+
+          1. Every figure is checkable against a named third party. Lab
+             assessment pricing is per VISIT, taken from published rates at
+             UNO Pitching Lab ($400/pitcher), Premier Baseball KC ($350) and
+             MedStar's Orioles Pitching Lab / 5 Tool Sports Science ($500).
+             An earlier version of this row said "$5,000+", which is what the
+             CAMERA HARDWARE costs -- no parent is deciding between Pitch Nav
+             and buying a motion-capture rig, and a reader who knows that
+             concludes the whole table is rigged.
+          2. Units match. Pitch Nav is shown per REVIEW ($25/mo at one analysis
+             every two weeks = ~$12.50), not per month, so it is compared
+             like-for-like against a per-hour or per-visit price.
+          3. It does not criticise private coaches or facilities. Those are the
+             same people team packages get sold to, and plenty of them film
+             their own sessions, so "nothing recorded" was both impolitic and
+             not reliably true. Pitch Nav sits alongside lessons, not against
+             them.
+          4. Lead with what the athlete receives, not with being cheapest --
+             a table built on price teaches parents to shop on price.
+
+          Driveline is deliberately absent: they do not publish remote coaching
+          prices, so any figure would be invented. Re-verify all of these
+          before a major campaign; instruction pricing moves and varies by
+          region.
+        */}
+        <div className="mb-16">
+          <h2 className="text-2xl font-bold text-white mb-2">How this fits with what you already do</h2>
+          <p className="mb-6 text-sm text-slate-400">
+            Typical US pricing for pitching instruction and analysis, for context.
+          </p>
+          <div className="overflow-x-auto rounded-xl border border-surface-border">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-navy-800 text-xs uppercase tracking-wider text-slate-400">
+                <tr>
+                  <th className="px-4 py-3 font-semibold">Option</th>
+                  <th className="px-4 py-3 font-semibold">What you get</th>
+                  <th className="px-4 py-3 font-semibold whitespace-nowrap">Typical cost</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-surface-border">
+                <tr>
+                  <td className="px-4 py-3 font-medium text-white">Private lesson</td>
+                  <td className="px-4 py-3 text-slate-400">One hour of in-person instruction</td>
+                  <td className="px-4 py-3 whitespace-nowrap text-slate-300">$50–120 / hour</td>
+                </tr>
+                <tr>
+                  <td className="px-4 py-3 font-medium text-white">Lab assessment</td>
+                  <td className="px-4 py-3 text-slate-400">Motion-capture analysis at a facility</td>
+                  <td className="px-4 py-3 whitespace-nowrap text-slate-300">$350–500 / visit</td>
+                </tr>
+                <tr className="bg-electric-blue/5">
+                  <td className="px-4 py-3 font-bold text-white">Pitch Nav</td>
+                  <td className="px-4 py-3 text-slate-300">Frame-by-frame coach review, written report, video breakdown, and an eight-week plan</td>
+                  <td className="px-4 py-3 whitespace-nowrap font-bold text-electric-blue-light">~$12.50 / review</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p className="mt-4 text-sm text-slate-400">
+            Pitch Nav isn&apos;t a replacement for your coach. Between lessons, a coach reviews every
+            rep you send and you keep the report, the video breakdown, and the plan.
+          </p>
+        </div>
 
         {/* Delivery score note */}
         <div className="card mb-12 border-electric-blue/20">

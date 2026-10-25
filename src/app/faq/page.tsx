@@ -13,7 +13,7 @@ const FAQ_SECTIONS = [
     questions: [
       {
         q: 'What is Pitch Nav?',
-        a: 'Pitch Nav is a remote pitching mechanics analysis service. You upload pitching videos from your device, and an experienced pitching coach reviews them manually and delivers a comprehensive report including a mechanics scorecard, position-by-position breakdown, personalized drills, and a eight-week focus plan.',
+        a: 'Pitch Nav is a remote pitching mechanics analysis service. You upload a pitching video from your device, the Pitch Nav staff reviews it manually, and you receive a comprehensive report including a mechanics scorecard, position-by-position breakdown, personalized drills, and an eight-week focus plan.',
       },
       {
         q: 'Who is Pitch Nav for?',

@@ -5,6 +5,7 @@ import {
   Activity, CalendarDays, Gauge, LayoutDashboard
 } from 'lucide-react'
 import { SafetyDisclaimer } from '@/components/ui/SafetyDisclaimer'
+import { ADVISORS, hasAdvisors } from '@/lib/advisors'
 import { createClient } from '@/lib/supabase/server'
 import { calculateDeliveryScore } from '@/lib/utils'
 
@@ -125,7 +126,7 @@ function HowItWorks() {
       step: '04',
       icon: <FileBarChart2 className="h-6 w-6" />,
       title: 'Receive Your Report',
-      description: 'Your expert reviewer analyzes your delivery frame-by-frame and delivers a full report, voice-over video, drills, and an eight-week focus plan.',
+      description: 'The Pitch Nav staff analyzes your delivery frame by frame and delivers a full report, voice-over video, drills, and an eight-week focus plan.',
     },
   ]
 
@@ -341,7 +342,7 @@ function WhyPitchNav() {
     {
       icon: <Award className="h-6 w-6" />,
       title: 'Expert Reviewers',
-      description: 'Every analysis is completed by a human reviewer — an experienced pitching coach who evaluates your delivery manually, frame by frame.',
+      description: 'Every analysis is completed by a person on the Pitch Nav staff, who evaluates your delivery manually, frame by frame. Nothing is auto-generated and sent without review.',
     },
   ]
 
@@ -416,6 +417,69 @@ function PricingSection() {
         </div>
 
         <p className="mt-6 text-xs text-slate-600">Monthly memberships. Secure payment powered by Stripe.</p>
+      </div>
+    </section>
+  )
+}
+
+// ── Athlete advisor strip ─────────────────────────────────────
+//
+// Sits directly under the hero, in normal page flow -- deliberately not a
+// fixed/floating bar, so everyone who lands sees it once without it following
+// them down the page.
+//
+// Says ADVISE, not review. These players do not read submissions, and the
+// wording here has to keep saying so: a heading like "Your review staff" over
+// these faces would tell a paying parent that a Vanderbilt pitcher looked at
+// their kid's delivery. Reviewer credentials live in src/lib/reviewers.ts and
+// render through their own surface.
+//
+// Renders nothing when the list is empty, so it can never ship as "[Name]"
+// placeholders.
+
+function AdvisorStrip() {
+  if (!hasAdvisors()) return null
+
+  return (
+    <section className="border-y border-surface-border bg-navy-900">
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+          <div className="lg:w-56 lg:flex-shrink-0">
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-electric-blue-light">
+              Athlete advisors
+            </p>
+            <h2 className="mt-1 text-xl font-black text-white">College &amp; pro pitchers</h2>
+          </div>
+
+          <ul className="flex flex-wrap gap-x-8 gap-y-5">
+            {ADVISORS.map((advisor) => (
+              <li key={advisor.name} className="flex items-center gap-3">
+                {advisor.photo ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={advisor.photo}
+                    alt={advisor.name}
+                    className="h-11 w-11 rounded-full border border-surface-border object-cover"
+                  />
+                ) : (
+                  <div
+                    aria-hidden="true"
+                    className="flex h-11 w-11 items-center justify-center rounded-full border border-surface-border bg-navy-800 text-sm font-bold text-slate-400"
+                  >
+                    {advisor.name.trim().charAt(0).toUpperCase()}
+                  </div>
+                )}
+                <div>
+                  <p className="text-sm font-bold text-white">{advisor.name}</p>
+                  <p className="text-xs text-slate-400">
+                    {advisor.affiliation}
+                    {advisor.previously ? ` · formerly ${advisor.previously}` : ''}
+                  </p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
       </div>
     </section>
   )
@@ -538,6 +602,7 @@ export default async function HomePage() {
   return (
     <>
       <Hero />
+      <AdvisorStrip />
       <HowItWorks />
       <WhatIsIncluded />
       <CameraSetupPreview />

@@ -10,7 +10,7 @@ export const metadata: Metadata = {
     template: '%s | Pitch Nav',
   },
   description:
-    'Upload your pitching videos and receive a comprehensive breakdown of your mechanics, velocity-development opportunities, personalized drills, and training priorities from expert reviewers.',
+    'Upload your pitching video and receive a comprehensive breakdown of your mechanics, development opportunities, personalized drills, and training priorities, reviewed manually by the Pitch Nav staff.',
   keywords: [
     'pitching analysis',
     'pitching mechanics',
@@ -42,7 +42,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Pitch Nav | Baseball Pitching Mechanics Analysis',
     description:
-      'Upload your pitching videos and receive a comprehensive mechanics analysis from expert reviewers.',
+      'Upload your pitching video and receive a comprehensive mechanics analysis, reviewed manually by the Pitch Nav staff.',
     images: ['/og-image.png'],
   },
   robots: {
