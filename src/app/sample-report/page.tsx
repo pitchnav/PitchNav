@@ -174,10 +174,15 @@ export default function SampleReportPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {POSITIONS.map(({ position, notes, strength, opportunity, cue }) => (
               <div key={position} className="card">
-                {/* Image placeholder */}
-                <div className="rounded-lg bg-navy-800 border border-surface-border h-40 flex items-center justify-center mb-4">
-                  <p className="text-xs text-slate-600">[Annotated screenshot — {position}]</p>
-                </div>
+                {/* Annotated frames: hidden rather than shown as a grey
+                    "[Annotated screenshot — …]" box, which read as an unfinished
+                    page on the strongest sales asset on the site. The six
+                    position names below already match the frames to be pulled
+                    from a side-view video (peak leg lift, hand separation,
+                    lead-foot contact, max external rotation, ball release,
+                    finish), so real images drop straight in here once footage
+                    exists. Deliberately no stand-in image: a stock or generated
+                    frame on a sample report would misrepresent the product. */}
                 <h3 className="text-base font-bold text-white mb-2">{position}</h3>
                 <p className="text-xs text-slate-400 leading-relaxed mb-4">{notes}</p>
                 <div className="space-y-3">

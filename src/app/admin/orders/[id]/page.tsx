@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { ReviewerPitchData } from '@/components/pitch-data/ReviewerPitchData'
 import { OrderStatusBadge } from '@/components/ui/Badge'
 import {
   formatDateShort, formatFileSize, ORDER_STATUS_LABELS,
@@ -568,6 +569,13 @@ export default function AdminOrderDetailPage() {
             ) : (
               <p className="text-slate-500 text-sm">Profile not found.</p>
             )}
+
+            {/* The athlete's own device numbers, so the reviewer can see
+                measured ball flight next to the delivery being reviewed.
+                Read-only and source-labelled. */}
+            <div className="mt-6">
+              <ReviewerPitchData userId={order?.user_id} athleteProfileId={profile?.id} />
+            </div>
           </div>
 
           {/* Status change */}

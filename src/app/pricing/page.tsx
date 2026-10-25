@@ -1,7 +1,8 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { CheckCircle, ArrowRight, HelpCircle } from 'lucide-react'
+import { CheckCircle, ArrowRight, HelpCircle, Users } from 'lucide-react'
 import { SafetyDisclaimer } from '@/components/ui/SafetyDisclaimer'
+import { TeamPricingForm } from '@/components/forms/TeamPricingForm'
 
 export const metadata: Metadata = {
   title: 'Pricing',
@@ -175,6 +176,40 @@ export default function PricingPage() {
             rep you send and you keep the report, the video breakdown, and the plan.
           </p>
         </div>
+
+        {/* Teams & programs — added 2026-10-25.
+            Deliberately no price: team pricing is not set, and a placeholder
+            number would be a commitment the business has not made. */}
+        <section id="teams" className="card mb-12 scroll-mt-24 border-accent-green/25">
+          <div className="grid gap-8 lg:grid-cols-[1fr_1.1fr]">
+            <div>
+              <div className="inline-flex items-center gap-2 rounded-full border border-accent-green/30 bg-accent-green/10 px-3 py-1 text-xs font-bold uppercase tracking-widest text-accent-green">
+                <Users className="h-3 w-3" />
+                Teams &amp; programs
+              </div>
+              <h2 className="mt-4 text-2xl font-black text-white sm:text-3xl">
+                Built for a whole staff, not one arm
+              </h2>
+              <p className="mt-4 text-sm leading-relaxed text-slate-400">
+                Every pitcher on your roster gets the same review process, the same movement screens, and
+                the same two-week development cycle — with their history in one place so you can see who
+                is actually changing.
+              </p>
+              <p className="mt-4 text-sm font-semibold text-accent-green">
+                Now accepting pilot programs for the upcoming season.
+              </p>
+              <p className="mt-4 text-xs leading-relaxed text-slate-500">
+                Team pricing depends on roster size and how often you want pitchers submitting, so we quote
+                it rather than list it. Tell us the shape of your program and we&apos;ll come back with a
+                number.
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-surface-border bg-navy-950 p-5 sm:p-6">
+              <TeamPricingForm />
+            </div>
+          </div>
+        </section>
 
         {/* Delivery score note */}
         <div className="card mb-12 border-electric-blue/20">
