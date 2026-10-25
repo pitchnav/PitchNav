@@ -3,6 +3,7 @@ import {
   buildCategoryFeedback,
   peakIsPhysicallySupported,
   motionTimeScale,
+  selectPeakSeparationFrame,
   type FrameMetrics,
   type ClipSummary,
 } from './MotionAnalysisStudio'
@@ -357,5 +358,59 @@ describe('slow-motion timelines', () => {
     expect(motionTimeScale(240, 0)).toBe(1)
     // Never shrink: a timeline faster than capture would squash the windows.
     expect(motionTimeScale(30, 240)).toBe(1)
+  })
+})
+
+describe('peak hip-shoulder separation is trustworthy before it is reported', () => {
+  // peakSeparation is read directly by the convergence thresholds in
+  // src/lib/screen-mechanics-convergence.ts, which decide whether a measured
+  // physical limitation is showing up in the delivery. A wrong value there is
+  // worse than no value: >= 30 reports "not showing", i.e. a confident,
+  // specific, incorrect statement that an athlete's limitation is absent.
+  function sepFrame(time: number, hipShoulderSeparation: number, trunkConfidence = 0.9): FrameMetrics {
+    return {
+      time, confidence: 0.9, throwingElbow: 90, leadKnee: 150, trunkTilt: 20,
+      hipShoulderSeparation, strideWidth: 0.3, legLift: 0.1,
+      leadKneeConfidence: 0.9, throwingElbowConfidence: 0.9, trunkConfidence,
+    }
+  }
+
+  it('rejects the single-frame jitter spike measured on a real delivery', () => {
+    // 7 -> 83 -> 8 degrees across three consecutive frames, from the real
+    // side-view clip documented on peakIsPhysicallySupported. No trunk moves
+    // like that. Taken as a raw maximum, the 83 clears every "not showing"
+    // threshold on its own.
+    const frames = [
+      sepFrame(0.1, 6), sepFrame(0.2, 7), sepFrame(0.3, 83), sepFrame(0.4, 8), sepFrame(0.5, 9),
+    ]
+    expect(selectPeakSeparationFrame(frames)?.hipShoulderSeparation ?? null).not.toBe(83)
+  })
+
+  it('still reports a genuine peak that neighbouring frames corroborate', () => {
+    // A real coil builds and releases smoothly, so the frames on either side
+    // of the maximum sit close to it.
+    const frames = [
+      sepFrame(0.1, 12), sepFrame(0.2, 24), sepFrame(0.3, 34),
+      sepFrame(0.4, 38), sepFrame(0.5, 33), sepFrame(0.6, 21),
+    ]
+    expect(selectPeakSeparationFrame(frames)?.hipShoulderSeparation).toBe(38)
+  })
+
+  it('ignores frames whose trunk landmarks were not actually tracked', () => {
+    // The separation angle is built from landmarks 11/12/23/24 only, so a
+    // frame where those were lost cannot contribute a peak no matter how
+    // large the number it produced.
+    const frames = [
+      sepFrame(0.1, 20), sepFrame(0.2, 26), sepFrame(0.3, 95, 0.1),
+      sepFrame(0.4, 28), sepFrame(0.5, 22),
+    ]
+    const peak = selectPeakSeparationFrame(frames)
+    expect(peak?.hipShoulderSeparation).toBe(28)
+  })
+
+  it('returns null rather than a guess when nothing in the clip qualifies', () => {
+    // The convergence rules already treat null as inconclusive and say so.
+    expect(selectPeakSeparationFrame([])).toBeNull()
+    expect(selectPeakSeparationFrame([sepFrame(0.1, 30, 0.1), sepFrame(0.2, 40, 0.2)])).toBeNull()
   })
 })

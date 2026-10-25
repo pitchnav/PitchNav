@@ -199,6 +199,42 @@ export function peakIsPhysicallySupported(
   return Math.abs(peak - mean) / range <= maxDeviationOfRange
 }
 
+/**
+ * The clip's peak hip-shoulder separation, or null when no extreme in the
+ * clip is trustworthy enough to report.
+ *
+ * Read directly by the convergence thresholds in
+ * src/lib/screen-mechanics-convergence.ts, which decide whether a measured
+ * physical limitation is or is not showing up in the delivery. That makes a
+ * wrong value here worse than no value: it produces a confident, specific,
+ * incorrect statement about an athlete's body.
+ *
+ * Carries the same two guards the max-external-rotation and release peaks
+ * already use, for the reason documented on peakIsPhysicallySupported --
+ * viewed from the side, the shoulder and hip lines are nearly end-on, so a
+ * pixel of landmark wobble swings this angle enormously (measured at
+ * 7 -> 83 -> 8 degrees across three consecutive frames on a real delivery).
+ * As a raw global maximum that 83 becomes the reported peak, clears every
+ * "not showing" threshold, and tells staff a real limitation is absent.
+ */
+export function selectPeakSeparationFrame(frames: FrameMetrics[]): FrameMetrics | null {
+  const candidates = frames
+    .filter((frame) => frame.trunkConfidence >= 0.45)
+    .sort((a, b) => a.time - b.time)
+  if (!candidates.length) return null
+  const peakIndex = candidates.reduce(
+    (best, frame, index) =>
+      (frame.hipShoulderSeparation ?? -Infinity) > (candidates[best].hipShoulderSeparation ?? -Infinity)
+        ? index
+        : best,
+    0,
+  )
+  if (!peakIsPhysicallySupported(candidates.map((frame) => frame.hipShoulderSeparation), peakIndex)) {
+    return null
+  }
+  return candidates[peakIndex]
+}
+
 export function buildCategoryFeedback(frames: FrameMetrics[], summary: ClipSummary): CategoryFeedback[] {
   const spread = (values: Array<number | null>) => {
     const valid = values.filter((value): value is number => value !== null && Number.isFinite(value))
@@ -1387,11 +1423,24 @@ export function MotionAnalysisStudio({
       && peakIsPhysicallySupported(framesAfterMer.map((frame) => frame.hipShoulderSeparation), releaseCandidateIndex)
       ? framesAfterMer[releaseCandidateIndex]
       : null
-    // Peak trunk coil across the whole clip, with its timing. Used later to
-    // test predicted mechanical signatures against what the delivery
-    // actually did.
-    const peakSeparationFrame = [...frames]
-      .sort((a, b) => (b.hipShoulderSeparation ?? -Infinity) - (a.hipShoulderSeparation ?? -Infinity))[0]
+    // Peak trunk coil across the clip, with its timing. Used later to test
+    // predicted mechanical signatures against what the delivery actually did,
+    // and read directly by the convergence thresholds in
+    // src/lib/screen-mechanics-convergence.ts.
+    //
+    // This now carries the same two guards the MER and release peaks above
+    // already have, for the reason documented on peakIsPhysicallySupported:
+    // on a side view the shoulder and hip lines are nearly end-on, so a pixel
+    // of landmark wobble swings this angle enormously -- measured at
+    // 7 -> 83 -> 8 degrees across three consecutive frames on a real delivery.
+    // Taken as a raw global maximum that 83 becomes "peak separation", and
+    // every convergence threshold (>= 30, >= 32) then reports a limitation as
+    // "not showing" on the strength of one jittered frame -- a confident wrong
+    // answer about an athlete's body. Filter to frames whose trunk landmarks
+    // were actually tracked, then require the neighbouring frames to
+    // corroborate the extreme. Null when nothing qualifies, which the
+    // convergence rules already treat as inconclusive rather than guessing.
+    const peakSeparationFrame = selectPeakSeparationFrame(frames)
     const video = videoRef.current
     const clipStart = analysisStartRef.current
     const clipEnd = video ? Math.min(video.duration, analysisEndRef.current ?? video.duration) : null
