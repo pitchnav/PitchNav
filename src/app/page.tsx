@@ -441,40 +441,54 @@ function AdvisorStrip() {
   if (!hasAdvisors()) return null
 
   return (
-    <section className="border-y border-surface-border bg-navy-900">
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-          <div className="lg:w-56 lg:flex-shrink-0">
+    <section className="relative overflow-hidden border-y border-electric-blue/15 bg-gradient-to-b from-navy-900 to-navy-950">
+      {/* Soft brand glow behind the roster so the band reads as a feature
+          rather than a footer. Pointer-events-none so it never eats clicks. */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 -top-24 h-48 bg-glow-blue opacity-60"
+      />
+
+      <div className="relative mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+        <div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
+          <div className="lg:w-60 lg:flex-shrink-0">
             <p className="text-xs font-bold uppercase tracking-[0.18em] text-electric-blue-light">
               Athlete advisors
             </p>
-            <h2 className="mt-1 text-xl font-black text-white">College &amp; pro pitchers</h2>
+            <h2 className="mt-1.5 text-2xl font-black leading-tight text-white">
+              College &amp; pro pitchers
+            </h2>
           </div>
 
-          <ul className="flex flex-wrap gap-x-8 gap-y-5">
+          <ul className="flex flex-wrap gap-x-9 gap-y-6">
             {ADVISORS.map((advisor) => (
-              <li key={advisor.name} className="flex items-center gap-3">
+              <li
+                key={advisor.name}
+                className="group flex items-center gap-3.5 transition-transform duration-200 hover:-translate-y-0.5"
+              >
                 {advisor.photo ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={advisor.photo}
                     alt={advisor.name}
-                    className="h-11 w-11 rounded-full border border-surface-border object-cover"
+                    className="h-14 w-14 rounded-full object-cover ring-2 ring-electric-blue/40 transition-all duration-200 group-hover:ring-electric-blue"
                   />
                 ) : (
                   <div
                     aria-hidden="true"
-                    className="flex h-11 w-11 items-center justify-center rounded-full border border-surface-border bg-navy-800 text-sm font-bold text-slate-400"
+                    className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-navy-700 to-navy-800 text-lg font-black text-electric-blue-light ring-2 ring-electric-blue/25 transition-all duration-200 group-hover:ring-electric-blue/60"
                   >
                     {advisor.name.trim().charAt(0).toUpperCase()}
                   </div>
                 )}
                 <div>
-                  <p className="text-sm font-bold text-white">{advisor.name}</p>
-                  <p className="text-xs text-slate-400">
+                  <p className="text-[15px] font-bold leading-tight text-white">{advisor.name}</p>
+                  <p className="mt-0.5 text-xs font-semibold text-electric-blue-light">
                     {advisor.affiliation}
-                    {advisor.previously ? ` · formerly ${advisor.previously}` : ''}
                   </p>
+                  {advisor.previously && (
+                    <p className="text-xs text-slate-500">formerly {advisor.previously}</p>
+                  )}
                 </div>
               </li>
             ))}
