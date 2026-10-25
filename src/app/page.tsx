@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import {
   ArrowRight, Play, CheckCircle, Camera, FileBarChart2, Dumbbell,
-  Star, ChevronDown, Shield, Zap, Target, Users, TrendingUp, Award,
+  ChevronDown, Shield, Zap, Target, Users, TrendingUp, Award,
   Activity, CalendarDays, Gauge, LayoutDashboard
 } from 'lucide-react'
 import { SafetyDisclaimer } from '@/components/ui/SafetyDisclaimer'
@@ -421,62 +421,20 @@ function PricingSection() {
   )
 }
 
-// ── Testimonials (Placeholder) ────────────────────────────────
-
-function Testimonials() {
-  const testimonials = [
-    {
-      quote: 'PLACEHOLDER — Replace this testimonial with a real athlete review before launch.',
-      name: 'Athlete Name',
-      detail: 'High School Pitcher — Sample State',
-      isPlaceholder: true,
-    },
-    {
-      quote: 'PLACEHOLDER — Replace this testimonial with a real parent or coach review before launch.',
-      name: 'Parent / Coach Name',
-      detail: 'Travel Ball Parent — Sample City',
-      isPlaceholder: true,
-    },
-    {
-      quote: 'PLACEHOLDER — Replace this testimonial with a real athlete review before launch.',
-      name: 'College Pitcher Name',
-      detail: 'College Division — Sample University',
-      isPlaceholder: true,
-    },
-  ]
-
-  return (
-    <section className="py-24 bg-navy-950">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-4">
-          <h2 className="section-heading">What Athletes Are Saying</h2>
-        </div>
-        <p className="text-center text-sm text-yellow-400/80 mb-12 border border-yellow-500/20 bg-yellow-500/5 rounded-lg py-2 px-4 mx-auto max-w-lg">
-          ⚠️ PLACEHOLDER — These testimonials are sample content and must be replaced with real
-          reviews before launch.
-        </p>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {testimonials.map((t, i) => (
-            <div key={i} className="card opacity-60 border-dashed">
-              <div className="flex gap-1 mb-4">
-                {[...Array(5)].map((_, s) => (
-                  <Star key={s} className="h-4 w-4 text-yellow-400 fill-yellow-400" />
-                ))}
-              </div>
-              <p className="text-sm text-slate-500 italic leading-relaxed mb-6">&quot;{t.quote}&quot;</p>
-              <div>
-                <p className="text-sm font-semibold text-slate-500">{t.name}</p>
-                <p className="text-xs text-slate-600">{t.detail}</p>
-              </div>
-              <div className="mt-3 text-xs text-yellow-400/60">[PLACEHOLDER — Replace before launch]</div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  )
-}
+// ── Testimonials ──────────────────────────────────────────────
+//
+// Removed 2026-10-24. The section shipped with three "PLACEHOLDER" quotes
+// attributed to "Athlete Name, Sample State", above a visible warning banner
+// saying the reviews were sample content to replace before launch. To a parent
+// deciding whether to hand over a card, that reads as "this business is not
+// real yet" -- worse than having no testimonial section at all.
+//
+// Bring this back when there is at least ONE real, attributable quote from a
+// real athlete, parent or coach who has given permission. Do not restore it
+// with invented or composite reviews; a fabricated testimonial is a false
+// statement about a real product in a space where families are the customer.
+// Until then, the social proof above it (deliveries reviewed, coach
+// background, the sample report itself) carries this job.
 
 // ── FAQ Preview ───────────────────────────────────────────────
 
@@ -585,7 +543,6 @@ export default async function HomePage() {
       <CameraSetupPreview />
       <WhyPitchNav />
       <PricingSection />
-      <Testimonials />
       <FAQPreview />
 
       {/* Safety disclaimer section */}

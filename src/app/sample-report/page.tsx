@@ -287,7 +287,20 @@ export default function SampleReportPage() {
 
         {/* Eight-week plan */}
         <div className="card mb-8">
-          <h2 className="text-xl font-bold text-white mb-4">Eight-Week Focus Plan (Sample)</h2>
+          {/*
+            Heading says what is actually on screen. It previously read
+            "Eight-Week Focus Plan" above four weeks, which tells a parent
+            comparing plans that they are getting half of what the product
+            delivers. The real plan is eight weeks (see src/lib/throwing-plan.ts,
+            reassessed at 2/4/6/8) -- weeks 5-8 of this SAMPLE are simply not
+            written yet. Add real sample content for them and restore the
+            original heading; do not pad it with invented drill prescriptions.
+          */}
+          <h2 className="text-xl font-bold text-white mb-1">Focus Plan — First Four Weeks (Sample)</h2>
+          <p className="text-sm text-slate-400 mb-4">
+            Your full plan runs eight weeks, with a check-in every two weeks to adjust it. These are
+            the first four.
+          </p>
           <div className="space-y-4">
             {[
               { week: 1, focus: 'Front-Leg Stability', detail: 'Pivot Pickoff Drill daily (3×6). Focus on the feeling of a firm front leg through release on every bullpen pitch. Video yourself from the open side at least once.' },

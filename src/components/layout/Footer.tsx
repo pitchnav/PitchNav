@@ -1,5 +1,4 @@
 import Link from 'next/link'
-import { Instagram, Youtube, Twitter } from 'lucide-react'
 
 const footerLinks = {
   product: [
@@ -49,30 +48,16 @@ export function Footer() {
               </p>
             </div>
 
-            {/* Social links */}
-            <div className="mt-6 flex gap-3">
-              <a
-                href="#"
-                aria-label="Instagram"
-                className="rounded-lg border border-surface-border p-2.5 text-slate-400 hover:text-white hover:border-electric-blue transition-colors"
-              >
-                <Instagram className="h-4 w-4" />
-              </a>
-              <a
-                href="#"
-                aria-label="YouTube"
-                className="rounded-lg border border-surface-border p-2.5 text-slate-400 hover:text-white hover:border-electric-blue transition-colors"
-              >
-                <Youtube className="h-4 w-4" />
-              </a>
-              <a
-                href="#"
-                aria-label="Twitter / X"
-                className="rounded-lg border border-surface-border p-2.5 text-slate-400 hover:text-white hover:border-electric-blue transition-colors"
-              >
-                <Twitter className="h-4 w-4" />
-              </a>
-            </div>
+            {/*
+              Social links removed 2026-10-24. All three pointed at href="#",
+              so clicking them did nothing -- a visitor checking whether the
+              business is active finds three dead buttons, which reads worse
+              than no social section at all.
+
+              To restore: re-import the Instagram / Youtube / Twitter icons from
+              lucide-react and render them with the real profile URLs. They were
+              removed from the imports here because nothing was using them.
+            */}
           </div>
 
           {/* Product links */}
