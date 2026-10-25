@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Mail, Clock, AlertTriangle } from 'lucide-react'
+import { Mail, AlertTriangle } from 'lucide-react'
 
 export default function ContactPage() {
   const [submitted, setSubmitted] = useState(false)
@@ -80,17 +80,14 @@ export default function ContactPage() {
               <a href="mailto:support@pitchnav.com" className="text-sm text-electric-blue-light hover:underline">
                 support@pitchnav.com
               </a>
-              <p className="text-xs text-slate-500 mt-2">[PLACEHOLDER — replace with real support email before launch]</p>
+              <p className="text-xs text-slate-500 mt-2">We read every message ourselves.</p>
             </div>
 
-            <div className="card">
-              <Clock className="h-6 w-6 text-electric-blue-light mb-3" />
-              <h3 className="text-base font-semibold text-white mb-1">Response Times</h3>
-              <p className="text-sm text-slate-400">
-                [PLACEHOLDER — add actual business hours and response time expectations before launch]
-              </p>
-              <p className="text-xs text-slate-500 mt-2">Example: Monday–Friday, 9am–5pm EST. Typical response: 1–2 business days.</p>
-            </div>
+            {/* The "Response Times" card was removed 2026-10-25. It shipped with
+                visible "[PLACEHOLDER — add actual business hours...]" text on a
+                live public page. Restoring it needs real hours and a real
+                response-time commitment from Luke; inventing an SLA here would
+                be a promise the business has not made. */}
 
             <div className="card border-electric-blue/20">
               <h3 className="text-base font-semibold text-white mb-3">Common Questions</h3>

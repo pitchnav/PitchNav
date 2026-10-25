@@ -29,7 +29,7 @@ export default async function DashboardPage() {
   const completedOrders = orders?.filter((o) => o.status === 'complete') ?? []
   const { data: motionAnalyses } = await supabase
     .from('motion_analyses')
-    .select('id,order_id,source_video_storage_path,title,status,delivery_score,category_scores,velocity_estimate_low,velocity_estimate_high,velocity_confidence,strengths,development_priorities,coach_feedback,created_at,training_plans(duration_weeks,follow_up_date,weeks,title)')
+    .select('id,order_id,source_video_storage_path,title,status,delivery_score,category_scores,strengths,development_priorities,coach_feedback,created_at,training_plans(duration_weeks,follow_up_date,weeks,title)')
     .eq('user_id', user.id)
     .eq('status', 'published')
     .not('published_at', 'is', null)
@@ -118,8 +118,8 @@ export default async function DashboardPage() {
                     </div>
                     {analysis.status === 'published' && deliveryScore !== null && <span className="rounded-lg bg-electric-blue/10 px-3 py-1 text-sm font-black text-electric-blue-light">{deliveryScore}/30</span>}
                   </div>
-                  <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
-                    <div className="rounded-lg bg-navy-950 p-3"><p className="text-xs text-slate-500">Velocity estimate</p><p className="mt-1 font-bold text-white">{analysis.status === 'published' && analysis.velocity_estimate_low !== null ? `${Math.round(analysis.velocity_estimate_low)}–${Math.round(analysis.velocity_estimate_high)} mph` : '—'}</p></div>
+                  {/* Velocity-estimate tile removed 2026-10-25 (D-010 deleted its producer). */}
+                  <div className="mt-4 grid grid-cols-1 gap-3 text-sm">
                     <div className="rounded-lg bg-navy-950 p-3"><p className="text-xs text-slate-500">Training plan</p><p className="mt-1 font-bold text-white">{analysis.status === 'published' && plan?.duration_weeks ? `${plan.duration_weeks} weeks` : 'Pending coach'}</p></div>
                   </div>
                   {analysis.status === 'published' && analysis.coach_feedback && <p className="mt-4 line-clamp-3 text-sm text-slate-300">{analysis.coach_feedback}</p>}

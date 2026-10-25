@@ -6,6 +6,7 @@ const footerLinks = {
     { label: 'Pricing', href: '/pricing' },
     { label: 'Sample Report', href: '/sample-report' },
     { label: 'Camera Setup', href: '/camera-setup' },
+    { label: 'Movement Screens', href: '/movement-screens' },
     { label: 'FAQ', href: '/faq' },
   ],
   account: [

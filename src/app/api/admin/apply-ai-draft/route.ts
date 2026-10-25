@@ -59,9 +59,10 @@ export async function POST(request: Request) {
       opportunity.why_it_matters,
       opportunity.coaching_cue ? `Coaching cue: ${opportunity.coaching_cue}` : null,
     ].filter(Boolean).join('\n\n')
-    const velocityRange = analysis.velocity_estimate_low !== null && analysis.velocity_estimate_high !== null
-      ? `Video-estimated range: ${Number(analysis.velocity_estimate_low).toFixed(1)}–${Number(analysis.velocity_estimate_high).toFixed(1)} mph (${analysis.velocity_confidence ?? 'limited'} confidence). Not radar verified.`
-      : 'No video velocity range was produced. Do not infer exact velocity from mechanics scores.'
+    // Decision D-010 removed video-estimated velocity, so there is no estimated
+    // range to report and the athlete's radar-verified number comes from intake.
+    // The note is now constant rather than a branch on a column nothing writes.
+    const velocityRange = 'Velocity is not estimated from video. Use the athlete-reported radar number from intake, and do not infer exact velocity from mechanics scores.'
 
     const { data: report, error: reportError } = await admin.from('analysis_reports').upsert({
       order_id: orderId,

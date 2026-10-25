@@ -1,13 +1,13 @@
 import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
-import { Activity, ArrowRight, Gauge, Video } from 'lucide-react'
+import { Activity, ArrowRight, Video } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { OrderStatusBadge } from '@/components/ui/Badge'
 import { StatusTimeline } from '@/components/ui/StatusTimeline'
 import { SafetyDisclaimer } from '@/components/ui/SafetyDisclaimer'
 import { formatDateShort, formatFileSize, PLAYING_LEVEL_LABELS } from '@/lib/utils'
 import type { AthleteProfile, VideoSubmission, OrderStatusHistory,
-  PlayingLevel, AutomaticVelocityJob
+  PlayingLevel
 } from '@/types/database'
 
 export default async function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -33,14 +33,6 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
   const profile = order.athlete_profiles as AthleteProfile
   const videos = order.video_submissions as VideoSubmission[]
   const history = (order.order_status_history as OrderStatusHistory[]) ?? []
-  const { data: automaticVelocityData } = await supabase
-    .from('automatic_velocity_jobs')
-    .select('*')
-    .eq('order_id', order.id)
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle()
-  const automaticVelocity = automaticVelocityData as AutomaticVelocityJob | null
 
   // Generate signed URLs for video previews
   const videoUrls: Record<string, string> = {}
@@ -157,30 +149,12 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
             )}
           </div>
 
-          {automaticVelocity && (
-            <div className="card border-electric-blue/25 bg-electric-blue/5">
-              <div className="flex items-start gap-3">
-                <Gauge className="mt-0.5 h-5 w-5 shrink-0 text-electric-blue-light" />
-                <div className="min-w-0 flex-1">
-                  <h2 className="text-base font-semibold text-white">Automatic velocity review</h2>
-                  <p className="mt-1 text-sm text-slate-400">
-                    {automaticVelocity.status === 'queued' && 'Your video is in line for a velocity check.'}
-                    {automaticVelocity.status === 'processing' && 'We’re checking your video’s frame rate, calibration marker, and ball path.'}
-                    {automaticVelocity.status === 'completed' && !automaticVelocity.staff_approved && 'An estimated range is ready and waiting for a coach to verify it.'}
-                    {automaticVelocity.status === 'completed' && automaticVelocity.staff_approved && 'A coach verified your estimated range. It will appear in your finished report.'}
-                    {automaticVelocity.status === 'unavailable' && 'Your video didn’t qualify for a velocity estimate. Your mechanics review continues as normal.'}
-                    {automaticVelocity.status === 'failed' && 'The velocity check didn’t finish. A coach can retry it without you re-uploading.'}
-                  </p>
-                  {automaticVelocity.status === 'unavailable' && automaticVelocity.rejection_reason && (
-                    <p className="mt-2 text-xs text-yellow-300">Reason: {automaticVelocity.rejection_reason}</p>
-                  )}
-                  <p className="mt-3 text-xs text-slate-500">
-                    Video estimates are never labeled as radar verified and are not displayed before staff approval.
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
+          {/* The "Automatic velocity review" status panel was removed 2026-10-25.
+              Decision D-010 removed video-estimated velocity and deleted its
+              producer, so automatic_velocity_jobs is never written and this panel
+              could only ever show a stale row. It also narrated internals
+              ("checking your frame rate, calibration marker, and ball path"),
+              which D-011 keeps off athlete-facing surfaces. */}
 
           {/* Complete report CTA */}
           {order.status === 'complete' && (

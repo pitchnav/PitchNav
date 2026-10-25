@@ -35,8 +35,9 @@ const steps = [
       'Recommended frame rate: 120 or 240 fps if your device supports it',
       'Full body must remain in frame through release',
       'Do not zoom or move the camera during the pitch',
+      'Movement screens are filmed separately, facing the camera, each with its own phone placement',
     ],
-    note: 'Submit one clear, complete pitch from the open-side angle.',
+    note: 'Submit one clear, complete pitch from the open-side angle. The movement screens have their own guide.',
   },
   {
     icon: <Upload className="h-8 w-8" />,

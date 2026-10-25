@@ -292,7 +292,9 @@ function CameraSetupPreview() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+        {/* One angle ships today, so a two-column grid left the single card
+            sitting half-width like a failed image load. Centred and capped. */}
+        <div className="grid grid-cols-1 gap-8 max-w-xl mx-auto">
           {angles.map((angle) => (
             <div key={angle.name} className="card">
               <div className="text-4xl mb-4">{angle.icon}</div>
@@ -314,6 +316,77 @@ function CameraSetupPreview() {
           <Link href="/camera-setup" className="btn-secondary">
             View Full Camera Guide <ArrowRight className="h-4 w-4" />
           </Link>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// ── Movement Screens ─────────────────────────────────────────
+// Added 2026-10-25. The screens had shipped and been measurable for months
+// with zero presence outside the logged-in dashboard, so no prospect could
+// discover the thing that most separates Pitch Nav from a video review.
+
+function MovementScreensPreview() {
+  return (
+    <section className="py-24 bg-navy-950">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="grid items-center gap-12 lg:grid-cols-2">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-electric-blue-light">
+              Measured, not guessed
+            </p>
+            <h2 className="mt-3 text-3xl font-black text-white sm:text-4xl">
+              We measure your body, not just your delivery
+            </h2>
+            <p className="mt-5 text-base leading-relaxed text-slate-400">
+              Your pitching video shows <strong className="text-white">what</strong> breaks down. It
+              cannot reliably show <strong className="text-white">why</strong>. Most remote analysis
+              guesses at the cause from the footage — and that guess becomes your entire strength and
+              mobility plan.
+            </p>
+            <p className="mt-4 text-base leading-relaxed text-slate-400">
+              Instead you film five short held positions facing the camera. Slow, still, and in a plane
+              phone video measures dependably. Your plan is built on those numbers, and in two weeks we
+              re-measure them to see what actually moved.
+            </p>
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+              <Link href="/movement-screens" className="btn-secondary">
+                See the movement screens <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
+          </div>
+
+          <div className="grid gap-4">
+            {[
+              {
+                title: 'Where a screen exists, the report says measured',
+                body: 'Your limitation carries a number and a date, not an adjective.',
+              },
+              {
+                title: 'Where none exists, the report says so',
+                body: 'It stays at limited confidence and names the screen that would settle it.',
+              },
+              {
+                title: 'Each screen carries its own confidence tier',
+                body: 'A moderate-confidence proxy is never presented to you as a hard number.',
+              },
+              {
+                title: 'Re-measured every follow-up',
+                body: 'Progress is the change in your own numbers, compared against yourself.',
+              },
+            ].map((item) => (
+              <div key={item.title} className="card">
+                <div className="flex items-start gap-3">
+                  <CheckCircle className="mt-0.5 h-5 w-5 shrink-0 text-accent-green" />
+                  <div>
+                    <h3 className="text-sm font-bold text-white">{item.title}</h3>
+                    <p className="mt-1 text-sm leading-relaxed text-slate-400">{item.body}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </section>
@@ -576,14 +649,15 @@ function AuthenticatedHome({ firstName, latest, activeOrders }: { firstName: str
       <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="overflow-hidden rounded-3xl border border-electric-blue/20 bg-gradient-to-br from-navy-800 via-navy-900 to-navy-950 p-6 shadow-card sm:p-10">
           <div className="flex flex-col justify-between gap-8 lg:flex-row lg:items-end">
-            <div><p className="text-xs font-bold uppercase tracking-[0.22em] text-electric-blue-light">Your Pitch Nav home</p><h1 className="mt-3 text-4xl font-black text-white sm:text-6xl">Welcome back, {firstName}.</h1><p className="mt-3 max-w-2xl text-slate-400">Your latest scores, video feedback, velocity estimates, and weekly plan are collected here.</p></div>
+            <div><p className="text-xs font-bold uppercase tracking-[0.22em] text-electric-blue-light">Your Pitch Nav home</p><h1 className="mt-3 text-4xl font-black text-white sm:text-6xl">Welcome back, {firstName}.</h1><p className="mt-3 max-w-2xl text-slate-400">Your latest scores, video feedback, and weekly plan are collected here.</p></div>
             <div className="flex flex-wrap gap-3"><Link href="/dashboard" className="btn-primary"><LayoutDashboard className="h-4 w-4" /> Full Dashboard</Link><Link href="/dashboard/motion-lab" className="btn-secondary"><Activity className="h-4 w-4" /> Video Review</Link></div>
           </div>
         </div>
 
-        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {/* Velocity-estimate tile removed 2026-10-25: D-010 deleted the producer,
+            so velocity_estimate_low is never written and the tile always read "—". */}
+        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <div className="card"><p className="text-xs uppercase tracking-widest text-slate-500">Overall score</p><p className="mt-2 text-4xl font-black text-white">{deliveryScore ?? '—'}<span className="text-lg text-electric-blue-light">/30</span></p></div>
-          <div className="card"><p className="text-xs uppercase tracking-widest text-slate-500">Velocity estimate</p><p className="mt-2 text-3xl font-black text-white">{latest?.velocity_estimate_low != null ? `${Math.round(latest.velocity_estimate_low)}–${Math.round(latest.velocity_estimate_high)} mph` : '—'}</p><p className="mt-1 text-xs text-slate-500">Video-estimated; radar remains verified</p></div>
           <div className="card"><p className="text-xs uppercase tracking-widest text-slate-500">Current plan</p><p className="mt-2 text-3xl font-black text-white">{plan?.duration_weeks ? `${plan.duration_weeks} weeks` : '—'}</p><p className="mt-1 text-xs text-slate-500">Monday–Sunday calendar</p></div>
           <div className="card"><p className="text-xs uppercase tracking-widest text-slate-500">Active submissions</p><p className="mt-2 text-4xl font-black text-white">{activeOrders}</p><p className="mt-1 text-xs text-slate-500">Securely saved</p></div>
         </div>
@@ -607,7 +681,7 @@ export default async function HomePage() {
   if (user) {
     const [{ data: profile }, { data: latest }, { count: activeOrders }] = await Promise.all([
       supabase.from('profiles').select('full_name').eq('id', user.id).single(),
-      supabase.from('motion_analyses').select('id,title,delivery_score,velocity_estimate_low,velocity_estimate_high,category_scores,training_plans(duration_weeks,weeks)').eq('user_id', user.id).eq('status', 'published').not('published_at', 'is', null).order('created_at', { ascending: false }).limit(1).maybeSingle(),
+      supabase.from('motion_analyses').select('id,title,delivery_score,category_scores,training_plans(duration_weeks,weeks)').eq('user_id', user.id).eq('status', 'published').not('published_at', 'is', null).order('created_at', { ascending: false }).limit(1).maybeSingle(),
       supabase.from('orders').select('id', { count: 'exact', head: true }).eq('user_id', user.id).not('status', 'in', '(complete,cancelled,refunded)'),
     ])
     const firstName = profile?.full_name?.split(' ')[0] || user.email?.split('@')[0] || 'Athlete'
@@ -619,6 +693,7 @@ export default async function HomePage() {
       <AdvisorStrip />
       <HowItWorks />
       <WhatIsIncluded />
+      <MovementScreensPreview />
       <CameraSetupPreview />
       <WhyPitchNav />
       <PricingSection />

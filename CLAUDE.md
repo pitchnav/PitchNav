@@ -10,7 +10,7 @@ Read this file before changing code. Inspect the relevant implementation and mig
 
 - Working source: `/Users/lukecondrin/Documents/Codex/2026-07-14/pitchframe-website/work/pitchframe-ai`
 - User-facing installer scripts: `/Users/lukecondrin/Documents/Codex/2026-07-14/pitchframe-website/outputs`
-- Production site: `https://pitch-nav.vercel.app`
+- Production site: `https://pitchnav.com` (custom domain). `https://pitch-nav.vercel.app` only 307-redirects here — check pitchnav.com to confirm a deploy landed.
 - Git-backed deployment copy currently used by the installer scripts: `/Users/lukecondrin/Library/Application Support/Claude/local-agent-mode-sessions/28690780-510d-40c4-a6be-5c2d3e63a627/adb5d981-1d83-4c6c-85ed-38290d289509/local_8116bd30-1e72-46b8-a3ca-73aa321175be/outputs/pitchframe`
 
 Important: the working source is not itself a clean standalone Git repository. Do not commit from the user's home-directory Git repository. Existing installer scripts copy selected files from the working source into the deployment copy, type-check, commit, and push. Prefer improving this workflow rather than staging the user's home directory.
@@ -22,9 +22,10 @@ Pitch Nav is a premium remote pitching-analysis service for baseball pitchers. T
 1. Athlete creates an account and persistent profile.
 2. Athlete buys one of two monthly memberships through Stripe.
 3. Athlete records and submits one open-side video.
-4. Automatic pose processing prepares six candidate phase screenshots, measurements, a skeleton visualization, and a coaching draft.
-5. Staff verifies the material before publishing it.
-6. Athlete receives a report, drills, and a rolling training calendar.
+4. Athlete films the movement screens — short held positions facing the camera that measure physical capacity, so a limitation is measured rather than inferred from the pitch.
+5. Automatic pose processing prepares six candidate phase screenshots, measurements, a skeleton visualization, and a coaching draft.
+6. Staff verifies the material before publishing it.
+7. Athlete receives a report, drills, and a rolling training calendar.
 
 Memberships:
 
@@ -38,7 +39,7 @@ Memberships:
 - AI creates a coaching draft only. Staff must visually verify it before release.
 - Do not diagnose injuries or calculate clinical injury risk.
 - Do not guarantee velocity gains or outcomes.
-- Velocity may be shown only as a clearly labeled estimated range when required calibration and reliable tracking exist. Radar remains the verified measurement.
+- Velocity is never estimated from video. Decision D-010 removed it: realistic single-camera error is ±3–5 mph, which is the difference between 88 and 93 to a college coach. Athletes report a radar-verified number at intake instead. Do not reintroduce a video-derived velocity figure on the mechanics track.
 
 ## Technology
 
@@ -48,35 +49,23 @@ Memberships:
 - Resend transactional email
 - OpenAI API for staff-reviewed coaching drafts
 - MediaPipe Tasks Vision for browser-side 2D pose estimation
-- Optional external video worker for calibrated velocity processing
 - Vercel deployment
 
-## Current highest-priority bug
+## Resolved — the "Could not save this analysis" failure
 
-Automatic pose analysis can complete successfully (for example, hundreds of accepted samples with more than 90% landmark confidence), but clicking **Submit for staff review** sometimes ends with:
+**Status: fixed. Do not start here.** This section headed this file as the
+highest-priority bug for months after it was resolved, which sends a fresh
+session chasing a closed issue.
 
-`Could not save this analysis.`
+Automatic pose analysis would complete, but **Submit for staff review** could end
+with a generic `Could not save this analysis.`, blocking the six screenshots and
+the AI coaching draft. The generic message no longer exists in the codebase, the
+save path now surfaces real Supabase error codes, privileged persistence moved to
+protected routes under `src/app/api/admin/`, and the delivery pipeline is verified
+live end to end through AI draft generation and apply.
 
-The automatic retry then returns to the same failure, so the admin report page says automatic six-phase processing has not finished. This blocks the six screenshots and AI coaching draft even though the video was already analyzed.
-
-### Investigate and fix completely
-
-1. Inspect `src/components/analysis/MotionAnalysisStudio.tsx`, especially the submit/save path and all Supabase Storage and database writes.
-2. Preserve and display the real Supabase error code/message instead of reducing non-`Error` objects to the generic message.
-3. Verify whether the failure is caused by:
-   - RLS on `motion_analyses`, `training_plans`, or related tables;
-   - Storage RLS for `analysis-assets` when an admin processes files in an athlete-owned folder;
-   - a missing/stale migration, especially `015_motion_lab_rls_repair.sql`, `017_service_role_motion_analysis_access.sql`, or `023_automatic_processing_and_rolling_calendar.sql`;
-   - a schema mismatch in the insert/upsert payload;
-   - upload failure for one or more phase screenshots;
-   - a missing order/user relationship;
-   - a partial save leaving orphaned files or rows.
-4. Make the operation retry-safe and idempotent. Retrying must update/reuse the same analysis instead of producing duplicates.
-5. For staff/admin processing, prefer a protected server route that verifies the authenticated admin and performs privileged persistence with the server-only service-role client. Never expose the service-role key to browser code.
-6. Keep customer RLS strict: athletes may access only their own records and private files.
-7. Ensure six phase screenshots produced from the athlete's already-analyzed video connect to the correct order automatically. Staff should not need to run the video through a second, separate Motion Lab workflow.
-8. Report per-file or per-step failures clearly and retain enough state to retry without re-uploading the original video.
-9. Test both athlete submission and admin retry flows.
+For current priorities read `Pitch Nav Claude Memory/01_MEMORY/CURRENT_FOCUS.md`
+and the newest entry in `09_SESSIONS/SESSION_HANDOFF.md` — not this file.
 
 ## Relevant implementation
 
@@ -87,8 +76,9 @@ The automatic retry then returns to the same failure, so the admin report page s
 - AI draft route: `src/app/api/admin/ai-mechanics/route.ts`
 - AI draft apply route: `src/app/api/admin/apply-ai-draft/route.ts`
 - Review request route: `src/app/api/motion-lab/request-review/route.ts`
-- Velocity routes: `src/app/api/velocity-worker/callback/route.ts`, `src/app/api/velocity/enqueue/route.ts`
-- Recent migrations: `supabase/migrations/015_motion_lab_rls_repair.sql` through `supabase/migrations/023_automatic_processing_and_rolling_calendar.sql`
+- Movement screens: `src/lib/movement-screens.ts`, `src/lib/screen-mechanics-convergence.ts`, `src/app/dashboard/movement-screens/`, public guide `src/app/movement-screens/page.tsx`
+- Ball-flight physics (built, not wired to any surface): `src/lib/pitch-tracking/physics.ts`
+- Recent migrations: `supabase/migrations/015_motion_lab_rls_repair.sql` through `supabase/migrations/031_agent_os.sql`
 
 ## Current expected product behavior
 
@@ -100,8 +90,8 @@ The automatic retry then returns to the same failure, so the admin report page s
 - Video quality UI reports capture confirmation separately from playback timeline metadata.
 - Trimming must carry into pose processing, screenshots, skeleton export, and velocity processing.
 - The customer should not manually select calibration or baseball points.
-- Optional velocity estimation requires explicit customer opt-in and the printable 8-by-8-inch marker; otherwise it is skipped.
-- Velocity worker output stays behind the scenes and requires staff approval.
+- No video velocity estimation anywhere on the mechanics track. The printable 8-inch calibration marker, the opt-in, the velocity worker and its routes were all removed; the marker section came off `/camera-setup` on 2026-10-25.
+- Movement screens are a separate capture: short held positions filmed facing the camera, each with its own phone placement. Definitions live in `src/lib/movement-screens.ts` and the public guide at `/movement-screens` renders them from that file — update the definitions, not the page copy.
 - Staff review notifications go to `STAFF_REVIEW_EMAIL` through a Resend-verified sender.
 - Staff can approve/reject video quality; rejection removes cooldown and allows replacement upload.
 - Paid status comes from verified Stripe webhook events, not a success redirect.

@@ -262,8 +262,6 @@ function UploadContent() {
 
       if (dbError) throw dbError
 
-      // Automatic velocity processing only runs when the athlete explicitly
-
       setVideos((prev) => ({
         ...prev,
         [angle]: {
@@ -441,7 +439,7 @@ function UploadContent() {
                         </div>
                         {video.quality.warnings.filter((warning) => !(video.captureFps >= 120 && warning.includes('playback track is below 60 FPS'))).map((warning) => <p key={warning} className="mt-2 text-xs text-yellow-300">• {warning}</p>)}
                         <p className="mt-3 rounded-lg border border-electric-blue/20 bg-electric-blue/10 p-2 text-xs text-electric-blue-light"><strong>Your 240 FPS confirmation is saved.</strong> iPhone Slo-mo normally exports a roughly 30 FPS playback timeline so the pitch plays slowly. That does not mean the camera captured only 30 FPS.</p>
-                        {video.captureFps === 60 && <p className="mt-2 text-xs font-semibold text-yellow-300">60 FPS is mechanics-only. No video velocity estimate will be produced.</p>}
+                        {video.captureFps === 60 && <p className="mt-2 text-xs font-semibold text-yellow-300">60 FPS is accepted. 120 or 240 FPS captures fast positions like ball release more reliably, so some measurements may carry lower confidence.</p>}
                       </div>
                     )}
 

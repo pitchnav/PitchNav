@@ -9,7 +9,7 @@ export default async function ComparePage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
-  const { data: analyses } = await supabase.from('motion_analyses').select('id,title,source_video_storage_path,delivery_score,velocity_estimate_low,velocity_estimate_high,category_scores,strengths,development_priorities,created_at').eq('user_id', user.id).eq('status', 'published').not('published_at', 'is', null).order('created_at', { ascending: true })
+  const { data: analyses } = await supabase.from('motion_analyses').select('id,title,source_video_storage_path,delivery_score,category_scores,strengths,development_priorities,created_at').eq('user_id', user.id).eq('status', 'published').not('published_at', 'is', null).order('created_at', { ascending: true })
   if (!analyses || analyses.length < 2) {
     return (
       <div className="mx-auto max-w-4xl">
@@ -39,17 +39,12 @@ export default async function ComparePage() {
         <h1 className="mt-1 text-3xl font-black text-white sm:text-4xl">First analysis vs. latest</h1>
       </div>
       <section className="card"><ProgressComparison firstUrl={firstUrl} latestUrl={latestUrl} /></section>
-      <section className="grid gap-4 md:grid-cols-3">
+      {/* "Video velocity history" card removed 2026-10-25: D-010 deleted the
+          producer, so both ends of the progression always rendered "—". */}
+      <section className="grid gap-4 md:grid-cols-2">
         <div className="card">
           <p className="text-xs text-slate-500">Delivery score change</p>
           <p className="mt-2 text-3xl font-black text-white">{firstScore ?? '—'} → {latestScore ?? '—'}</p>
-        </div>
-        <div className="card">
-          <p className="text-xs text-slate-500">Video velocity history</p>
-          <p className="mt-2 text-2xl font-black text-white">
-            {first.velocity_estimate_low ? `${Math.round(first.velocity_estimate_low)}–${Math.round(first.velocity_estimate_high)} mph` : '—'} →{' '}
-            {latest.velocity_estimate_low ? `${Math.round(latest.velocity_estimate_low)}–${Math.round(latest.velocity_estimate_high)} mph` : '—'}
-          </p>
         </div>
         <div className="card">
           <p className="text-xs text-slate-500">Analyses compared</p>

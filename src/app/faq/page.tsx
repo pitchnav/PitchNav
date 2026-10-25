@@ -42,7 +42,11 @@ const FAQ_SECTIONS = [
       },
       {
         q: 'What video angles do I need to submit?',
-        a: 'The standard analysis requires one throwing-arm side view, filmed approximately perpendicular to the pitch direction with the complete body visible. Radar-backed evidence can be uploaded separately when available.',
+        a: 'The pitching analysis requires one throwing-arm side view, filmed approximately perpendicular to the pitch direction with the complete body visible. Separately, the movement screens are filmed facing the camera — each one has its own phone placement, described in the movement screen guide. Radar-backed evidence can be uploaded separately when available.',
+      },
+      {
+        q: 'What are the movement screens?',
+        a: 'Five short held positions you film facing the camera — things like a straight leg raise and an overhead reach. They measure the physical capacity behind your delivery. Your pitching video shows what changes in your mechanics, but it cannot reliably show why, and guessing the cause from pitching footage would drive your whole strength and mobility plan. Where a screen measured the limitation, your report says so; where no screen exists, it says that instead and names the one that would settle it. Staff may request additional screens when a specific question comes up.',
       },
       {
         q: 'What video format is accepted?',

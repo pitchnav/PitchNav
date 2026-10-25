@@ -92,33 +92,35 @@ function CameraSetupContent() {
           <div className="mt-4 grid gap-3 sm:grid-cols-4">
             {['Open Settings', 'Tap Camera', 'Tap Record Slo-mo', 'Choose 1080p at 240 fps'].map((step, index) => <div key={step} className="rounded-lg border border-surface-border bg-navy-950 p-3 text-sm text-slate-300"><strong className="mr-2 text-electric-blue-light">{index + 1}.</strong>{step}</div>)}
           </div>
-          <div className="mt-4 grid gap-3 sm:grid-cols-3"><div className="rounded-lg bg-accent-green/10 p-3 text-sm font-bold text-accent-green">240 FPS · Preferred</div><div className="rounded-lg bg-electric-blue/10 p-3 text-sm font-bold text-electric-blue-light">120 FPS · Accepted</div><div className="rounded-lg bg-yellow-400/10 p-3 text-sm font-bold text-yellow-200">Below 120 · No velocity estimate</div></div>
+          <div className="mt-4 grid gap-3 sm:grid-cols-3"><div className="rounded-lg bg-accent-green/10 p-3 text-sm font-bold text-accent-green">240 FPS · Preferred</div><div className="rounded-lg bg-electric-blue/10 p-3 text-sm font-bold text-electric-blue-light">120 FPS · Accepted</div><div className="rounded-lg bg-yellow-400/10 p-3 text-sm font-bold text-yellow-200">Below 120 · Reduced measurement confidence</div></div>
         </section>
 
         <CameraAlignmentStudio />
 
         <section className="card mb-10 border-electric-blue/30">
-          <div className="grid items-center gap-8 md:grid-cols-[0.8fr_1.2fr]">
-            <img
-              src="/velocity-calibration-marker.svg"
-              alt="Printable Pitch Nav automatic velocity calibration marker"
-              className="mx-auto w-full max-w-sm rounded-xl bg-white p-3"
-            />
+          <div className="flex flex-col items-start justify-between gap-5 sm:flex-row sm:items-center">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-electric-blue-light">Required for an automatic velocity estimate</p>
-              <h2 className="mt-2 text-2xl font-black text-white">Print and place the 8-inch calibration marker</h2>
-              <p className="mt-3 text-sm leading-relaxed text-slate-400">Pitch Nav finds this marker automatically and uses its known size to turn ball movement into an estimated speed range. You never click calibration points yourself.</p>
-              <ol className="mt-5 space-y-2 text-sm text-slate-300">
-                <li><strong className="text-white">1.</strong> Print at <strong className="text-white">Actual Size / 100%</strong>—never “Fit to Page.”</li>
-                <li><strong className="text-white">2.</strong> Confirm the black square measures exactly <strong className="text-white">8 × 8 inches</strong>.</li>
-                <li><strong className="text-white">3.</strong> Mount it flat and vertical beside the pitcher, as close as safely possible to the pitcher’s throwing plane.</li>
-                <li><strong className="text-white">4.</strong> Keep the complete marker visible from the start of the delivery through release.</li>
-              </ol>
-              <a href="/velocity-calibration-marker.svg" download="pitch-nav-velocity-calibration-marker.svg" className="btn-primary mt-6">Download printable marker</a>
-              <p className="mt-4 text-xs leading-relaxed text-yellow-200">No marker, an obscured marker, 60 FPS footage, or an unreliable ball track produces “velocity unavailable”—not a guessed number. Results are video-estimated and require staff approval; radar remains the verified measurement.</p>
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-electric-blue-light">Also part of your submission</p>
+              <h2 className="mt-2 text-2xl font-black text-white">Movement screens use a different setup</h2>
+              <p className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-400">
+                The guide on this page covers your pitching video. The movement screens are short held
+                positions filmed facing the camera, each with its own phone placement — on the floor, at
+                knee height, or at chest height. They measure the physical capacity behind your delivery.
+              </p>
             </div>
+            <a href="/movement-screens" className="btn-secondary shrink-0">
+              Movement screen guide <ChevronRight className="h-4 w-4" />
+            </a>
           </div>
         </section>
+
+        {/* The printable 8-inch calibration marker section was removed 2026-10-25.
+            It instructed athletes to print, measure and mount a marker "required
+            for an automatic velocity estimate" — a feature removed by decision
+            D-010, whose code (automatic-velocity.ts and the velocity routes) is
+            deleted. Athletes report a radar-verified number at intake instead, so
+            there is nothing for a marker to calibrate. Do not reintroduce it
+            without a working tracker behind it. */}
 
         {/* Angle selector */}
         <div className="flex flex-col sm:flex-row gap-3 mb-10">
