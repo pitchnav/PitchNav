@@ -4,6 +4,7 @@ const footerLinks = {
   product: [
     { label: 'How It Works', href: '/how-it-works' },
     { label: 'Pricing', href: '/pricing' },
+    { label: 'Pitch Metrics', href: '/pitch-metrics' },
     { label: 'Sample Report', href: '/sample-report' },
     { label: 'Camera Setup', href: '/camera-setup' },
     { label: 'Movement Screens', href: '/movement-screens' },

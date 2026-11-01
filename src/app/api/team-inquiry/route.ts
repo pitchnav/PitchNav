@@ -1,14 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { isResendConfigured, resend } from '@/lib/resend'
 
-/**
- * Team / program pricing enquiry.
- *
- * Mirrors the contact route: email out, no database row, honeypot first.
- * Nothing here quotes or implies a price — team pricing is unset, and this
- * form exists to start that conversation rather than to transact.
- */
+import { quoteProgram, money, type ProgramPlan, type Billing } from '@/lib/program-pricing'
 
+// Recompute quotes on the server; never trust amounts supplied by the browser.
 function escapeHtml(value: string): string {
   return value
     .replace(/&/g, '&amp;')
@@ -22,6 +17,10 @@ export async function POST(request: NextRequest) {
   try {
     body = await request.json()
   } catch {
+    return NextResponse.json({ error: 'Could not read the request.' }, { status: 400 })
+  }
+
+  if (!body || typeof body !== 'object' || Array.isArray(body)) {
     return NextResponse.json({ error: 'Could not read the request.' }, { status: 400 })
   }
 
@@ -52,6 +51,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'One of those fields is too long.' }, { status: 400 })
   }
 
+  let quote: ReturnType<typeof quoteProgram>
+  try {
+    quote = quoteProgram(count, body.programPlan as ProgramPlan, body.billing as Billing)
+  } catch (error) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : 'Invalid pricing selection.' }, { status: 400 })
+  }
+
   if (!isResendConfigured) {
     return NextResponse.json(
       { error: 'Our email service is temporarily unavailable. Please email support@pitchnav.com directly.' },
@@ -65,10 +71,17 @@ export async function POST(request: NextRequest) {
     ['Role', role],
     ['Pitchers', String(count)],
     ['Email', email],
+    ['Plan', quote.plan === 'complete' ? 'Complete Development' : 'Pitch Metrics'],
+    ['Billing', quote.billing],
+    ['Signup estimate (before tax)', money(quote.dueNow)],
+    ['One-time assessments', money(quote.assessment)],
+    ['Renewal', money(quote.recurring) + (quote.billing === 'annual' ? '/year' : '/month from month 2')],
+    ['First-year total', money(quote.firstYear)],
+    ['Pricing version', '2026-10-31 graduated launch rates; all athletes assumed new'],
   ]
 
   try {
-    await resend.emails.send({
+    const result = await resend.emails.send({
       from: `Pitch Nav <${process.env.RESEND_FROM_EMAIL}>`,
       to: process.env.CONTACT_DESTINATION_EMAIL ?? process.env.RESEND_FROM_EMAIL!,
       replyTo: email,
@@ -91,6 +104,7 @@ export async function POST(request: NextRequest) {
         </div>
       `,
     })
+    if (result.error) throw new Error('Email provider rejected the request')
   } catch {
     return NextResponse.json(
       { error: 'Could not send that request. Please email support@pitchnav.com directly.' },

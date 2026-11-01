@@ -1,36 +1,13 @@
 import type { Metadata } from 'next'
-import Link from 'next/link'
-import { CheckCircle, ArrowRight, HelpCircle, Users } from 'lucide-react'
+import { HelpCircle, Users } from 'lucide-react'
 import { SafetyDisclaimer } from '@/components/ui/SafetyDisclaimer'
+import { IndividualPricing } from '@/components/pricing/IndividualPricing'
 import { TeamPricingForm } from '@/components/forms/TeamPricingForm'
 
 export const metadata: Metadata = {
   title: 'Pricing',
-  description: 'Choose $25/month for throwing development or $40/month for throwing, strength, and mobility programming.',
+  description: 'Throwing and Pitch Metrics from $24.99/month, Complete Development $39.99/month. First-month offers, annual savings and per-player program pricing.',
 }
-
-const throwingIncluded = [
-  { item: 'Open-side video review', note: null },
-  { item: 'Six-position mechanics breakdown', note: 'Peak leg lift, hand separation, lead-foot contact, max external rotation, ball release, finish & deceleration' },
-  { item: 'Mechanics scorecard', note: '6 categories scored 1–5, Delivery Score out of 30' },
-  { item: 'Velocity profile', note: 'Based on athlete-provided readings with source clearly labeled' },
-  { item: '3 identified strengths', note: null },
-  { item: '3 development priorities', note: null },
-  { item: '3 personalized drills', note: 'Sets, reps, coaching cues, and common mistakes for each' },
-  { item: 'Eight-week Monday–Sunday development plan', note: 'Daily priorities, drills, recovery, progress checkboxes, and a retest date' },
-  { item: 'One new analysis every two weeks', note: 'Compare deliveries and track score, angle, and velocity trends over time' },
-  { item: 'Staff approval before release', note: 'Your results are reviewed before appearing in your dashboard' },
-  { item: 'Voice-over video analysis', note: 'Your reviewer walks through the report verbally' },
-  { item: 'Downloadable PDF report', note: null },
-  { item: 'Annotated position images', note: null },
-  { item: 'Follow-up analysis option', note: 'Available at a separate discounted rate after your first report' },
-]
-
-const performanceExtras = [
-  { item: 'Tailored eight-week strength plan', note: 'Conservative lifting recommendations tied to the report’s primary focus' },
-  { item: 'Monday–Sunday mobility calendar', note: 'Mobility, recovery, cues, common mistakes, and completion tracking' },
-  { item: 'Strength-to-throwing coordination', note: 'Programming designed to complement—not replace—the athlete’s existing throwing and coaching plan' },
-]
 
 const faqs = [
   {
@@ -42,12 +19,12 @@ const faqs = [
     a: 'If your videos do not meet quality standards, your reviewer will notify you and explain what is needed. You can upload replacement videos at no additional charge within 14 days of the request.',
   },
   {
-    q: 'What is the difference between the $25 and $40 memberships?',
-    a: 'The $25 Throwing Development membership includes the pitching analysis, throwing drills, feedback, and eight-week throwing plan. The $40 Complete Performance membership includes everything in the $25 option plus a tailored eight-week strength and mobility plan.',
+    q: 'Which membership includes Pitch Metrics?',
+    a: 'Throwing Development is $24.99/month and includes tailored throwing support. Complete Development is $39.99/month and adds lifting, mobility and access to Pitch Metrics when released. Standalone Pitch Metrics is $24.99/month with no paid assessment. Tracking is currently in development.',
   },
   {
-    q: 'How much does a follow-up analysis cost?',
-    a: 'Follow-up analysis pricing is set by the admin and displayed in your dashboard once your first report is complete. Contact us for current pricing.',
+    q: 'How do assessments and annual billing work?',
+    a: 'Throwing and Complete have a $49.99 one-time initial assessment per athlete. Annual subscriptions are paid upfront, replace the first-month discount and do not include the assessment fee. Existing subscriptions are not automatically changed by these new-plan prices.',
   },
 ]
 
@@ -65,34 +42,7 @@ export default function PricingPage() {
           </p>
         </div>
 
-        {/* Membership options */}
-        <div className="mb-16 grid gap-6 lg:grid-cols-2">
-          <article className="card relative overflow-hidden flex flex-col">
-            <div className="absolute inset-x-0 top-0 h-1 bg-electric-blue" aria-hidden />
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-electric-blue-light">Throwing Development</p>
-            <div className="mt-3 text-5xl font-black text-white">$25<span className="text-base font-medium text-slate-400">/month</span></div>
-            <p className="mt-3 text-sm leading-relaxed text-slate-400">Complete pitching analysis, throwing feedback, personalized drills, and an eight-week throwing plan.</p>
-            <div className="my-6 space-y-3 flex-1">
-              {throwingIncluded.map(({ item, note }) => <div key={item} className="flex items-start gap-3"><CheckCircle className="mt-0.5 h-5 w-5 shrink-0 text-electric-blue-light" /><div><p className="text-sm font-medium text-white">{item}</p>{note && <p className="mt-0.5 text-xs text-slate-500">{note}</p>}</div></div>)}
-            </div>
-            <Link href="/start-analysis?plan=throwing" className="btn-primary w-full justify-center py-4">Choose $25 Throwing Plan <ArrowRight className="h-5 w-5" /></Link>
-          </article>
-
-          <article className="card relative overflow-hidden flex flex-col border-accent-green/35">
-            <div className="absolute inset-x-0 top-0 h-1 bg-accent-green" aria-hidden />
-            <span className="absolute right-5 top-5 rounded-full bg-accent-green/15 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-accent-green">Most complete</span>
-            <p className="pr-28 text-xs font-bold uppercase tracking-[0.2em] text-accent-green">Complete Performance</p>
-            <div className="mt-3 text-5xl font-black text-white">$40<span className="text-base font-medium text-slate-400">/month</span></div>
-            <p className="mt-3 text-sm leading-relaxed text-slate-400">Everything in Throwing Development, plus a tailored two-month lifting and mobility plan.</p>
-            <div className="my-6 space-y-3 flex-1">
-              <div className="flex items-start gap-3"><CheckCircle className="mt-0.5 h-5 w-5 shrink-0 text-accent-green" /><p className="text-sm font-medium text-white">Everything in the $25 membership</p></div>
-              {performanceExtras.map(({ item, note }) => <div key={item} className="flex items-start gap-3"><CheckCircle className="mt-0.5 h-5 w-5 shrink-0 text-accent-green" /><div><p className="text-sm font-medium text-white">{item}</p>{note && <p className="mt-0.5 text-xs text-slate-500">{note}</p>}</div></div>)}
-            </div>
-            <Link href="/start-analysis?plan=performance" className="btn-accent w-full justify-center py-4">Choose $40 Complete Plan <ArrowRight className="h-5 w-5" /></Link>
-          </article>
-        </div>
-
-        <p className="-mt-10 mb-6 text-center text-xs text-slate-600">Secure checkout powered by Stripe. Both memberships renew monthly and may be cancelled anytime.</p>
+        <div className="mb-16"><IndividualPricing /></div>
 
         {/*
           Refund guarantee. Deliberately narrow and specific: first report only,
@@ -111,104 +61,13 @@ export default function PricingPage() {
           </p>
         </div>
 
-        {/*
-          Cost comparison. Rules this table has to keep following:
-
-          1. Every figure is checkable against a named third party. Lab
-             assessment pricing is per VISIT, taken from published rates at
-             UNO Pitching Lab ($400/pitcher), Premier Baseball KC ($350) and
-             MedStar's Orioles Pitching Lab / 5 Tool Sports Science ($500).
-             An earlier version of this row said "$5,000+", which is what the
-             CAMERA HARDWARE costs -- no parent is deciding between Pitch Nav
-             and buying a motion-capture rig, and a reader who knows that
-             concludes the whole table is rigged.
-          2. Units match. Pitch Nav is shown per REVIEW ($25/mo at one analysis
-             every two weeks = ~$12.50), not per month, so it is compared
-             like-for-like against a per-hour or per-visit price.
-          3. It does not criticise private coaches or facilities. Those are the
-             same people team packages get sold to, and plenty of them film
-             their own sessions, so "nothing recorded" was both impolitic and
-             not reliably true. Pitch Nav sits alongside lessons, not against
-             them.
-          4. Lead with what the athlete receives, not with being cheapest --
-             a table built on price teaches parents to shop on price.
-
-          Driveline is deliberately absent: they do not publish remote coaching
-          prices, so any figure would be invented. Re-verify all of these
-          before a major campaign; instruction pricing moves and varies by
-          region.
-        */}
-        <div className="mb-16">
-          <h2 className="text-2xl font-bold text-white mb-2">How this fits with what you already do</h2>
-          <p className="mb-6 text-sm text-slate-400">
-            Typical US pricing for pitching instruction and analysis, for context.
-          </p>
-          <div className="overflow-x-auto rounded-xl border border-surface-border">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-navy-800 text-xs uppercase tracking-wider text-slate-400">
-                <tr>
-                  <th className="px-4 py-3 font-semibold">Option</th>
-                  <th className="px-4 py-3 font-semibold">What you get</th>
-                  <th className="px-4 py-3 font-semibold whitespace-nowrap">Typical cost</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-surface-border">
-                <tr>
-                  <td className="px-4 py-3 font-medium text-white">Private lesson</td>
-                  <td className="px-4 py-3 text-slate-400">One hour of in-person instruction</td>
-                  <td className="px-4 py-3 whitespace-nowrap text-slate-300">$50–120 / hour</td>
-                </tr>
-                <tr>
-                  <td className="px-4 py-3 font-medium text-white">Lab assessment</td>
-                  <td className="px-4 py-3 text-slate-400">Motion-capture analysis at a facility</td>
-                  <td className="px-4 py-3 whitespace-nowrap text-slate-300">$350–500 / visit</td>
-                </tr>
-                <tr className="bg-electric-blue/5">
-                  <td className="px-4 py-3 font-bold text-white">Pitch Nav</td>
-                  <td className="px-4 py-3 text-slate-300">Frame-by-frame coach review, written report, video breakdown, and an eight-week plan</td>
-                  <td className="px-4 py-3 whitespace-nowrap font-bold text-electric-blue-light">~$12.50 / review</td>
-                </tr>
-              </tbody>
-            </table>
+        <section id="teams" className="card mb-12 scroll-mt-24 border-electric-blue/25">
+          <div className="mb-8 max-w-2xl">
+            <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-electric-blue-light"><Users className="h-4 w-4" /> Teams &amp; programs</p>
+            <h2 className="mt-3 text-3xl font-black text-white">One program. Every player.</h2>
+            <p className="mt-3 text-slate-400">Choose Pitch Metrics or Complete Development with tailored throwing, lifting, mobility and metrics. Add your roster size to calculate the total automatically. Larger rosters unlock lower rates for additional players.</p>
           </div>
-          <p className="mt-4 text-sm text-slate-400">
-            Pitch Nav isn&apos;t a replacement for your coach. Between lessons, a coach reviews every
-            rep you send and you keep the report, the video breakdown, and the plan.
-          </p>
-        </div>
-
-        {/* Teams & programs — added 2026-10-25.
-            Deliberately no price: team pricing is not set, and a placeholder
-            number would be a commitment the business has not made. */}
-        <section id="teams" className="card mb-12 scroll-mt-24 border-accent-green/25">
-          <div className="grid gap-8 lg:grid-cols-[1fr_1.1fr]">
-            <div>
-              <div className="inline-flex items-center gap-2 rounded-full border border-accent-green/30 bg-accent-green/10 px-3 py-1 text-xs font-bold uppercase tracking-widest text-accent-green">
-                <Users className="h-3 w-3" />
-                Teams &amp; programs
-              </div>
-              <h2 className="mt-4 text-2xl font-black text-white sm:text-3xl">
-                Built for a whole staff, not one arm
-              </h2>
-              <p className="mt-4 text-sm leading-relaxed text-slate-400">
-                Every pitcher on your roster gets the same review process, the same movement screens, and
-                the same two-week development cycle — with their history in one place so you can see who
-                is actually changing.
-              </p>
-              <p className="mt-4 text-sm font-semibold text-accent-green">
-                Now accepting pilot programs for the upcoming season.
-              </p>
-              <p className="mt-4 text-xs leading-relaxed text-slate-500">
-                Team pricing depends on roster size and how often you want pitchers submitting, so we quote
-                it rather than list it. Tell us the shape of your program and we&apos;ll come back with a
-                number.
-              </p>
-            </div>
-
-            <div className="rounded-xl border border-surface-border bg-navy-950 p-5 sm:p-6">
-              <TeamPricingForm />
-            </div>
-          </div>
+          <TeamPricingForm />
         </section>
 
         {/* Delivery score note */}

@@ -3,14 +3,13 @@
 import { useState } from 'react'
 import { Users, AlertCircle, CheckCircle, Loader2 } from 'lucide-react'
 
-/**
- * Team / program enquiry.
- *
- * Deliberately no price anywhere: team pricing is not set, and publishing a
- * placeholder number would be a commitment the business has not made. The form
- * collects what is needed to quote a programme and nothing more.
- */
+import { ProgramQuote } from '@/components/pricing/ProgramQuote'
+import { type Billing, type ProgramPlan } from '@/lib/program-pricing'
+
 export function TeamPricingForm() {
+  const [players, setPlayers] = useState('20')
+  const [plan, setPlan] = useState<ProgramPlan>('complete')
+  const [billing, setBilling] = useState<Billing>('monthly')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [sent, setSent] = useState(false)
@@ -30,7 +29,9 @@ export function TeamPricingForm() {
           name: String(data.get('name') ?? ''),
           organization: String(data.get('organization') ?? ''),
           role: String(data.get('role') ?? ''),
-          pitcherCount: String(data.get('pitcherCount') ?? ''),
+          pitcherCount: players,
+          programPlan: plan,
+          billing,
           email: String(data.get('email') ?? ''),
           // Honeypot: bots fill the hidden field, people leave it blank.
           website: String(data.get('website') ?? ''),
@@ -53,7 +54,7 @@ export function TeamPricingForm() {
         <CheckCircle className="mx-auto h-8 w-8 text-accent-green" />
         <h3 className="mt-3 text-lg font-bold text-white">Request received</h3>
         <p className="mx-auto mt-2 max-w-md text-sm text-slate-400">
-          We&apos;ll be in touch about a pilot programme for your pitchers.
+          We&apos;ll follow up with your selected plan, player count and pricing. No payment has been taken.
         </p>
       </div>
     )
@@ -61,6 +62,7 @@ export function TeamPricingForm() {
 
   return (
     <form onSubmit={handleSubmit} className="grid gap-4 sm:grid-cols-2">
+      <div className="sm:col-span-2 mb-4"><ProgramQuote players={players} plan={plan} billing={billing} onPlayers={setPlayers} onPlan={setPlan} onBilling={setBilling} /></div>
       <label className="sm:col-span-1">
         <span className="label">Your name</span>
         <input name="name" required maxLength={120} className="input mt-1" autoComplete="name" />
@@ -88,19 +90,6 @@ export function TeamPricingForm() {
         />
       </label>
 
-      <label className="sm:col-span-1">
-        <span className="label">Number of pitchers</span>
-        <input
-          name="pitcherCount"
-          required
-          type="number"
-          min={1}
-          max={500}
-          className="input mt-1"
-          placeholder="12"
-        />
-      </label>
-
       <label className="sm:col-span-2">
         <span className="label">Email</span>
         <input name="email" required type="email" maxLength={200} className="input mt-1" autoComplete="email" />
@@ -124,7 +113,7 @@ export function TeamPricingForm() {
       <div className="sm:col-span-2">
         <button type="submit" disabled={busy} className="btn-primary w-full justify-center py-4 disabled:opacity-50">
           {busy ? <Loader2 className="h-5 w-5 animate-spin" /> : <Users className="h-5 w-5" />}
-          Request team pricing
+          Request program enrollment
         </button>
       </div>
     </form>

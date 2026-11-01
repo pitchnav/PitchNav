@@ -1,3 +1,4 @@
+import { IndividualPricing } from '@/components/pricing/IndividualPricing'
 import Link from 'next/link'
 import {
   ArrowRight, Play, CheckCircle, Camera, FileBarChart2, Dumbbell,
@@ -223,7 +224,7 @@ function WhatIsIncluded() {
             <div className="flex items-center justify-between mb-6">
               <div>
                 <p className="text-xs text-slate-500 uppercase tracking-widest">Memberships</p>
-                <p className="text-3xl font-black text-white mt-1">From $25/month</p>
+                <p className="text-3xl font-black text-white mt-1">From $24.99/month</p>
               </div>
               <div className="rounded-lg bg-accent-green/10 px-3 py-1">
                 <span className="text-sm font-semibold text-accent-green">Core analysis included</span>
@@ -450,49 +451,13 @@ function WhyPitchNav() {
 // ── Pricing Section ───────────────────────────────────────────
 
 function PricingSection() {
-  const common = [
-    'Staff-reviewed open-side analysis',
-    'Six-position mechanics breakdown',
-    'Mechanics scorecard and velocity context',
-    'Three personalized throwing drills',
-    'Eight-week throwing development plan',
-    'One analysis every two weeks',
-  ]
-
-  return (
-    <section className="py-24 bg-navy-900" id="pricing">
-      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 text-center">
-        <h2 className="section-heading">Choose the Support You Need</h2>
-        <p className="section-subheading">Start with throwing development, or add tailored strength and mobility programming.</p>
-
-        <div className="mt-12 grid gap-6 text-left lg:grid-cols-2">
-          <article className="card relative overflow-hidden flex flex-col">
-            <div className="absolute inset-x-0 top-0 h-1 bg-electric-blue" aria-hidden />
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-electric-blue-light">Throwing Development</p>
-            <p className="mt-3 text-4xl font-black text-white">$25<span className="text-base font-medium text-slate-400">/month</span></p>
-            <p className="mt-3 text-sm text-slate-400">Pitching mechanics, feedback, drills, and your complete throwing roadmap.</p>
-            <div className="my-6 flex-1 space-y-3">{common.map((item) => <div key={item} className="flex items-center gap-2.5"><CheckCircle className="h-4 w-4 shrink-0 text-electric-blue-light" /><span className="text-sm text-slate-300">{item}</span></div>)}</div>
-            <Link href="/start-analysis?plan=throwing" className="btn-primary w-full justify-center py-4">Choose $25 Plan <ArrowRight className="h-5 w-5" /></Link>
-          </article>
-
-          <article className="card relative overflow-hidden flex flex-col border-accent-green/35">
-            <div className="absolute inset-x-0 top-0 h-1 bg-accent-green" aria-hidden />
-            <span className="absolute right-5 top-5 rounded-full bg-accent-green/15 px-3 py-1 text-[10px] font-bold uppercase text-accent-green">Most complete</span>
-            <p className="pr-28 text-xs font-bold uppercase tracking-[0.2em] text-accent-green">Complete Performance</p>
-            <p className="mt-3 text-4xl font-black text-white">$40<span className="text-base font-medium text-slate-400">/month</span></p>
-            <p className="mt-3 text-sm text-slate-400">Everything in Throwing Development, plus a tailored two-month strength and mobility plan.</p>
-            <div className="my-6 flex-1 space-y-3">
-              <div className="flex items-center gap-2.5"><CheckCircle className="h-4 w-4 shrink-0 text-accent-green" /><span className="text-sm text-slate-300">Everything in the $25 plan</span></div>
-              {['Eight-week strength plan','Monday–Sunday mobility calendar','Lifting cues, recovery guidance, and tracking'].map((item) => <div key={item} className="flex items-center gap-2.5"><CheckCircle className="h-4 w-4 shrink-0 text-accent-green" /><span className="text-sm text-slate-300">{item}</span></div>)}
-            </div>
-            <Link href="/start-analysis?plan=performance" className="btn-accent w-full justify-center py-4">Choose $40 Plan <ArrowRight className="h-5 w-5" /></Link>
-          </article>
-        </div>
-
-        <p className="mt-6 text-xs text-slate-600">Monthly memberships. Secure payment powered by Stripe.</p>
-      </div>
-    </section>
-  )
+  return <section className="py-24 bg-navy-900" id="pricing">
+    <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+      <div className="mb-10 text-center"><h2 className="section-heading">Choose the Support You Need</h2><p className="section-subheading">Tailored development or standalone pitch tracking. Monthly and annual options.</p></div>
+      <IndividualPricing />
+      <div className="mt-8 text-center"><Link href="/pricing#teams" className="btn-secondary">Explore program pricing <ArrowRight className="h-4 w-4" /></Link></div>
+    </div>
+  </section>
 }
 
 // ── Athlete advisor strip ─────────────────────────────────────

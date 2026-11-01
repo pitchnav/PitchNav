@@ -5,6 +5,7 @@ const createJestConfig = nextJest({ dir: './' })
 /** @type {import('jest').Config} */
 const config = {
   testEnvironment: 'node',
+  moduleNameMapper: { '^@/(.*)$': '<rootDir>/src/$1' },
   // Only this project's own tests. Without this, jest walks into mobile/ and
   // node_modules and tries to run vendored package test suites.
   roots: ['<rootDir>/src'],
