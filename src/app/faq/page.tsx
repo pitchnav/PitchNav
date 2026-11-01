@@ -13,11 +13,11 @@ const FAQ_SECTIONS = [
     questions: [
       {
         q: 'What is Pitch Nav?',
-        a: 'Pitch Nav is a remote pitching mechanics analysis service. You upload a pitching video from your device, the Pitch Nav staff reviews it manually, and you receive a comprehensive report including a mechanics scorecard, position-by-position breakdown, personalized drills, and an eight-week focus plan.',
+        a: "Pitch Nav combines pitching development with a phone-tracking system in development. Send us a mechanics video for staff feedback, drills and a throwing plan. Explore Pitch Tracking for our upcoming bullpen tools.",
       },
       {
         q: 'Who is Pitch Nav for?',
-        a: 'Pitch Nav is designed for baseball pitchers from middle school through adult recreational levels. Whether you\'re a high school pitcher working toward a showcase, a travel ball player developing your secondary pitches, or an adult league pitcher looking to stay healthy and improve, Pitch Nav can help you understand your delivery.',
+        a: "Pitchers ages 13 and up who want to understand their delivery and have a plan for their work between outings.",
       },
       {
         q: 'Is there an age requirement?',
@@ -25,7 +25,7 @@ const FAQ_SECTIONS = [
       },
       {
         q: 'Do I need to visit a facility?',
-        a: 'No. Everything is done remotely. You film your pitching session using your smartphone and upload the videos through our secure platform.',
+        a: "No. Film your delivery where you throw and upload it from your phone.",
       },
     ],
   },
@@ -34,19 +34,19 @@ const FAQ_SECTIONS = [
     questions: [
       {
         q: 'What phone do I need?',
-        a: 'Any modern smartphone that can record video at 120 fps or higher. Most iPhones from the last several years and many mid-to-high-end Android devices support this. Check your native camera app settings for "slow motion" or high-frame-rate options.',
+        a: "For a mechanics assessment, use a phone that records at 120 fps or higher. Check the slow-motion settings in your camera app. Pitch Tracking is a separate iPhone system that is still in testing.",
       },
       {
         q: 'Do I need a tripod?',
-        a: 'A tripod or stable surface is strongly recommended. The camera must stay completely stationary during filming. Fence-mounted phone holders, portable tripods, and dugout fence clips all work well.',
+        a: "Use a tripod or a secure phone mount. Keep the camera still through the whole pitch.",
       },
       {
         q: 'What video angles do I need to submit?',
-        a: 'The pitching analysis requires one throwing-arm side view, filmed approximately perpendicular to the pitch direction with the complete body visible. Separately, the movement screens are filmed facing the camera — each one has its own phone placement, described in the movement screen guide. Radar-backed evidence can be uploaded separately when available.',
+        a: "For a mechanics assessment, film from your throwing-arm side with your full body in view. Film movement screens separately using their setup guide. Pitch Tracking uses a different camera position.",
       },
       {
         q: 'What are the movement screens?',
-        a: 'Five short held positions you film facing the camera — things like a straight leg raise and an overhead reach. They measure the physical capacity behind your delivery. Your pitching video shows what changes in your mechanics, but it cannot reliably show why, and guessing the cause from pitching footage would drive your whole strength and mobility plan. Where a screen measured the limitation, your report says so; where no screen exists, it says that instead and names the one that would settle it. Staff may request additional screens when a specific question comes up.',
+        a: "Five short positions you hold on camera, such as a leg raise or overhead reach. They give our staff more information about your range of motion when building your plan. Your report labels the limits of those measurements.",
       },
       {
         q: 'What video format is accepted?',
@@ -63,7 +63,7 @@ const FAQ_SECTIONS = [
     questions: [
       {
         q: 'Who reviews my videos?',
-        a: 'Your videos are reviewed by a human pitching coach — not automated software. Pitch Nav does not claim to use laboratory-grade automatic biomechanics analysis. Every report is the product of a human reviewer watching your delivery frame by frame.',
+        a: "The Pitch Nav staff reviews your delivery frame by frame and checks your report before you receive it.",
       },
       {
         q: 'What is the Delivery Score?',
@@ -71,15 +71,15 @@ const FAQ_SECTIONS = [
       },
       {
         q: 'Can Pitch Nav tell me my velocity?',
-        a: 'No. Pitch Nav cannot accurately determine pitch velocity from a regular phone video without calibration data. All velocity information in your report comes from readings you provide yourself. These are clearly labeled as athlete-provided velocity. If you include radar-backed video or a radar screenshot, your reviewer may note that in the report.',
+        a: "Your mechanics report uses velocity readings you provide. Our separate Pitch Tracking system aims to measure velo from calibrated iPhone footage, but it is still in testing and is not publicly available.",
       },
       {
         q: 'How long does the analysis take?',
-        a: 'Most analyses are delivered within one business day of receiving a complete video submission and payment confirmation. Delivery time can vary based on current volume. Your dashboard shows a configured delivery estimate from the admin team.',
+        a: "Most reports arrive within one business day after we receive your complete submission and payment. Check your dashboard for the current estimate.",
       },
       {
         q: 'What six positions are analyzed?',
-        a: 'Peak leg lift, hand separation, lead-foot contact, maximum external rotation, ball release, and finish & deceleration. Each position includes annotated screenshots, reviewer notes, a strength, a development opportunity, and a coaching cue.',
+        a: "Peak leg lift, hand separation, lead-foot contact, maximum external rotation, ball release and finish. Your report includes images, notes and cues for each position.",
       },
     ],
   },
@@ -173,7 +173,7 @@ export default function FAQPage() {
         {/* Header */}
         <div className="text-center mb-16">
           <h1 className="text-4xl font-black tracking-tight text-white sm:text-5xl">
-            Frequently Asked Questions
+            Questions from Pitchers
           </h1>
           <p className="mt-4 text-lg text-slate-400 max-w-xl mx-auto">
             Can&apos;t find what you&apos;re looking for?{' '}

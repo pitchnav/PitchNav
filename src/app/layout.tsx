@@ -6,11 +6,11 @@ import { Footer } from '@/components/layout/Footer'
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? 'https://pitchnav.com'),
   title: {
-    default: 'Pitch Nav | Baseball Pitching Mechanics Analysis',
+    default: 'Pitch Nav | Pitch Tracking & Baseball Training',
     template: '%s | Pitch Nav',
   },
   description:
-    'Upload your pitching video and receive a comprehensive breakdown of your mechanics, development opportunities, personalized drills, and training priorities, reviewed manually by the Pitch Nav staff.',
+    'Get a staff-reviewed mechanics assessment and a throwing plan built for you. Explore Pitch Nav’s upcoming iPhone pitch tracking system.',
   keywords: [
     'pitching analysis',
     'pitching mechanics',
@@ -26,9 +26,9 @@ export const metadata: Metadata = {
     locale: 'en_US',
     url: '/',
     siteName: 'Pitch Nav',
-    title: 'Pitch Nav | Baseball Pitching Mechanics Analysis',
+    title: 'Pitch Nav | Pitch Tracking & Baseball Training',
     description:
-      'Upload your pitching videos and receive an easy-to-understand breakdown of your mechanics, velocity-development opportunities, personalized drills, and training priorities.',
+      'Understand your delivery. Follow a throwing and training plan built for you. Explore Pitch Tracking, now in development.',
     images: [
       {
         url: '/og-image.png',
@@ -40,9 +40,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Pitch Nav | Baseball Pitching Mechanics Analysis',
+    title: 'Pitch Nav | Pitch Tracking & Baseball Training',
     description:
-      'Upload your pitching video and receive a comprehensive mechanics analysis, reviewed manually by the Pitch Nav staff.',
+      'Send us your delivery. Get a mechanics review, drills and a throwing plan from the Pitch Nav staff.',
     images: ['/og-image.png'],
   },
   robots: {

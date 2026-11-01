@@ -20,7 +20,7 @@ function Hero() {
         <div className="mx-auto max-w-3xl text-center">
           <p className="text-xs font-bold uppercase tracking-[0.2em] text-electric-blue-light">Pitch Tracking + Tailored Development</p>
           <h1 className="mt-5 text-4xl font-black tracking-tight text-white sm:text-6xl">Track your pitches.<br /><span className="text-electric-blue-light">Build your game.</span></h1>
-          <p className="mt-6 text-lg leading-relaxed text-slate-400">Two sides of Pitch Nav: a single-camera pitch tracking system and a personalized plan for your throwing, lifting and mobility.</p>
+          <p className="mt-6 text-lg leading-relaxed text-slate-400">Track your bullpen with your iPhone. Get a throwing and training plan built around your game.</p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <Link href="/pitch-metrics" className="btn-primary">Explore Pitch Tracking <ArrowRight className="h-4 w-4" /></Link>
             <Link href="#tailored-development" className="btn-primary">Explore Tailored Development <ArrowRight className="h-4 w-4" /></Link>
@@ -30,11 +30,11 @@ function Hero() {
           <article className="card flex flex-col border-electric-blue/25">
             <p className="text-xs font-bold uppercase tracking-widest text-electric-blue-light">Track your bullpen · In development</p>
             <h2 className="mt-3 text-3xl font-black text-white">Pitch Tracking</h2>
-            <p className="mt-4 text-base leading-relaxed text-slate-300">A results-first experience for your iPhone. Designed to put velocity and persistent pitch locations up front, with video and tracers ready for review afterward.</p>
+            <p className="mt-4 text-base leading-relaxed text-slate-300">See your velo and where each pitch crossed the zone. Review the video and ball flight after your throw.</p>
             <ul className="mt-5 space-y-2 text-sm text-slate-400">
-              <li>One fixed camera, calibrated before your session</li>
-              <li>Pitch map with locations inside and outside the zone</li>
-              <li>Session history and app-to-website sync planned</li>
+              <li>Set up your phone once before the bullpen</li>
+              <li>Keep every pitch on the map, including your misses</li>
+              <li>Session history and phone sync coming later</li>
             </ul>
             <Link href="/pitch-metrics" className="btn-secondary mt-6 justify-center">Explore the tracking system <ArrowRight className="h-4 w-4" /></Link>
             <div className="mt-8"><PitchTrackingHUD /></div>
@@ -42,31 +42,31 @@ function Hero() {
           <article id="tailored-development" className="card flex flex-col scroll-mt-24 border-electric-blue/25">
             <p className="text-xs font-bold uppercase tracking-widest text-electric-blue-light">Develop your game · Staff-reviewed</p>
             <h2 className="mt-3 text-3xl font-black text-white">Tailored Development</h2>
-            <p className="mt-4 text-base leading-relaxed text-slate-300">Start with an assessment of your delivery and goals. Turn your development priorities into a practical throwing plan, with lifting and mobility in Complete Development.</p>
+            <p className="mt-4 text-base leading-relaxed text-slate-300">Send us your delivery. We’ll review your mechanics and give you drills and a throwing plan. Add lifting and mobility with Complete Development.</p>
             <ul className="mt-5 space-y-2 text-sm text-slate-400">
-              <li>Staff-reviewed mechanics assessment and feedback</li>
-              <li>Personalized throwing, lifting and mobility options</li>
-              <li>Ongoing plans, progress tracking and reassessment</li>
+              <li>Mechanics feedback from the Pitch Nav staff</li>
+              <li>Throwing, lifting and mobility built for you</li>
+              <li>Follow your plan and check your progress</li>
             </ul>
             <Link href="/pricing" className="btn-secondary mt-6 justify-center">Explore development plans <ArrowRight className="h-4 w-4" /></Link>
             <div className="mt-8 flex flex-1 flex-col rounded-2xl border border-surface-border bg-navy-950 p-6">
               <div className="flex items-center justify-between gap-3"><span className="font-black italic text-white">PITCH <span className="text-electric-blue-light">NAV</span></span><span className="text-xs font-semibold text-slate-400">PLAN PREVIEW</span></div>
-              <p className="mt-8 text-xs font-bold uppercase tracking-widest text-electric-blue-light">Your development roadmap</p>
-              <h3 className="mt-3 text-2xl font-black text-white">A clear next step.<br />Every session.</h3>
+              <p className="mt-8 text-xs font-bold uppercase tracking-widest text-electric-blue-light">Your training plan</p>
+              <h3 className="mt-3 text-2xl font-black text-white">Know what to work on.</h3>
               <div className="my-8 space-y-4">
                 {[
-                  {icon: FileBarChart2, title: 'Assess', text: 'Review your delivery, strengths and development priorities.'},
-                  {icon: Target, title: 'Throw', text: 'Follow personalized drills and throwing priorities.'},
-                  {icon: Dumbbell, title: 'Build', text: 'Add tailored lifting and mobility with Complete Development.'},
-                  {icon: CalendarDays, title: 'Review', text: 'Track completion and revisit your plan as you develop.'},
+                  {icon: FileBarChart2, title: 'Assess', text: 'Find what works in your delivery and what needs work.'},
+                  {icon: Target, title: 'Throw', text: 'Take your drills and throwing plan to the field.'},
+                  {icon: Dumbbell, title: 'Build', text: 'Pair your throwing with lifting and mobility.'},
+                  {icon: CalendarDays, title: 'Review', text: 'Log your work and review your progress.'},
                 ].map(({icon: Icon,title,text}) => <div key={title} className="rounded-xl bg-navy-900 p-5"><Icon className="h-5 w-5 text-electric-blue-light" /><h4 className="mt-3 text-lg font-bold text-white">{title}</h4><p className="mt-2 text-sm leading-relaxed text-slate-400">{text}</p></div>)}
               </div>
               <Link href="/sample-report" className="mt-auto text-sm font-semibold text-electric-blue-light">View a sample report <ArrowRight className="ml-1 inline h-4 w-4" /></Link>
-              <p className="mt-4 text-xs text-slate-500">Illustrative plan structure. Your assessment determines your program.</p>
+              <p className="mt-4 text-xs text-slate-500">Sample plan layout. We build your program after your assessment.</p>
             </div>
           </article>
         </div>
-        <div className="mt-10 text-center"><h2 className="text-2xl font-bold text-white">One place to track. One plan to develop.</h2><p className="mx-auto mt-3 max-w-2xl text-slate-400">Complete Development brings tailored training and future Pitch Tracking access together. Phone tracking and automatic session sync are still in development.</p></div>
+        <div className="mt-10 text-center"><h2 className="text-2xl font-bold text-white">Bring your bullpen and training together.</h2><p className="mx-auto mt-3 max-w-2xl text-slate-400">Complete Development includes your training plan and Pitch Tracking when it launches. Tracking and phone sync are still in testing.</p></div>
       </div>
     </section>
   )
@@ -92,7 +92,7 @@ function HowItWorks() {
       step: '03',
       icon: <Target className="h-6 w-6" />,
       title: 'Pay & Submit',
-      description: 'Complete your secure checkout for the Pitch Nav Development Membership package. Your submission is immediately queued for review.',
+      description: 'Choose your plan and submit your video for review.',
     },
     {
       step: '04',
@@ -108,7 +108,7 @@ function HowItWorks() {
         <div className="text-center mb-16">
           <h2 className="section-heading">How Tailored Development Works</h2>
           <p className="section-subheading">
-            Four steps from your phone to your personalized mechanics report.
+            Film your delivery. Get your mechanics reviewed. Take your plan to the field.
           </p>
         </div>
 
@@ -167,10 +167,9 @@ function WhatIsIncluded() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
           <div>
-            <h2 className="section-heading">Everything in the Analysis</h2>
+            <h2 className="section-heading">What you get</h2>
             <p className="mt-4 text-lg text-slate-400 leading-relaxed">
-              Your Pitch Nav Development Membership delivers a thorough, professional breakdown of your
-              delivery — designed to give you actionable information, not generic advice.
+              Get a breakdown of your delivery, drills with coaching cues, and a plan for your next eight weeks.
             </p>
             <ul className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-3">
               {items.map((item) => (
@@ -182,10 +181,10 @@ function WhatIsIncluded() {
             </ul>
             <div className="mt-10 flex gap-4">
               <Link href="/start-analysis" className="btn-primary">
-                View Membership Options <ArrowRight className="h-4 w-4" />
+                See Plans <ArrowRight className="h-4 w-4" />
               </Link>
               <Link href="/pricing" className="btn-secondary">
-                See Pricing Details
+                See Pricing
               </Link>
             </div>
           </div>
@@ -198,7 +197,7 @@ function WhatIsIncluded() {
                 <p className="text-3xl font-black text-white mt-1">From $24.99/month</p>
               </div>
               <div className="rounded-lg bg-accent-green/10 px-3 py-1">
-                <span className="text-sm font-semibold text-accent-green">Core analysis included</span>
+                <span className="text-sm font-semibold text-accent-green">Mechanics review</span>
               </div>
             </div>
 
@@ -257,10 +256,9 @@ function CameraSetupPreview() {
     <section className="py-24 bg-navy-900">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
-          <h2 className="section-heading">Simple Camera Setup</h2>
+          <h2 className="section-heading">Film Your Mechanics Assessment</h2>
           <p className="section-subheading">
-            No special equipment needed. Our guided wizard walks you through exactly where to place
-            your phone before you record.
+            For a mechanics review, film from your throwing-arm side. Follow the guide to keep your full delivery in view.
           </p>
         </div>
 
@@ -306,21 +304,16 @@ function MovementScreensPreview() {
         <div className="grid items-center gap-12 lg:grid-cols-2">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-electric-blue-light">
-              Measured, not guessed
+              Movement Checks
             </p>
             <h2 className="mt-3 text-3xl font-black text-white sm:text-4xl">
-              We measure your body, not just your delivery
+              Build around how you move
             </h2>
             <p className="mt-5 text-base leading-relaxed text-slate-400">
-              Your pitching video shows <strong className="text-white">what</strong> breaks down. It
-              cannot reliably show <strong className="text-white">why</strong>. Most remote analysis
-              guesses at the cause from the footage — and that guess becomes your entire strength and
-              mobility plan.
+              Your range of motion helps us put your delivery in context. Film five short movement checks alongside your pitching video.
             </p>
             <p className="mt-4 text-base leading-relaxed text-slate-400">
-              Instead you film five short held positions facing the camera. Slow, still, and in a plane
-              phone video measures dependably. Your plan is built on those numbers, and in two weeks we
-              re-measure them to see what actually moved.
+              We use those checks to guide your training and compare your range of motion at follow-ups.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link href="/movement-screens" className="btn-secondary">
@@ -332,20 +325,20 @@ function MovementScreensPreview() {
           <div className="grid gap-4">
             {[
               {
-                title: 'Where a screen exists, the report says measured',
-                body: 'Your limitation carries a number and a date, not an adjective.',
+                title: 'See your measurements',
+                body: 'Your report records each measurement and when you took it.',
               },
               {
-                title: 'Where none exists, the report says so',
-                body: 'It stays at limited confidence and names the screen that would settle it.',
+                title: 'Know what needs another look',
+                body: 'If we need another movement check, your report explains which one.',
               },
               {
-                title: 'Each screen carries its own confidence tier',
-                body: 'A moderate-confidence proxy is never presented to you as a hard number.',
+                title: 'Understand the limits',
+                body: 'Each check includes a confidence rating so you know how to use the result.',
               },
               {
-                title: 'Re-measured every follow-up',
-                body: 'Progress is the change in your own numbers, compared against yourself.',
+                title: 'Check your progress',
+                body: 'Repeat the checks at follow-ups to see what has changed.',
               },
             ].map((item) => (
               <div key={item.title} className="card">
@@ -371,8 +364,8 @@ function WhyPitchNav() {
   const reasons = [
     {
       icon: <Shield className="h-6 w-6" />,
-      title: 'No Hype. No Guarantees.',
-      description: 'We provide honest mechanical feedback — not velocity promises. Every report clearly labels athlete-provided data and reviewer estimates.',
+      title: 'Know what to work on',
+      description: 'We review your delivery and explain what to work on. We label estimates and cannot promise velocity gains.',
     },
     {
       icon: <TrendingUp className="h-6 w-6" />,
@@ -386,8 +379,8 @@ function WhyPitchNav() {
     },
     {
       icon: <Award className="h-6 w-6" />,
-      title: 'Expert Reviewers',
-      description: 'Every analysis is completed by a person on the Pitch Nav staff, who evaluates your delivery manually, frame by frame. Nothing is auto-generated and sent without review.',
+      title: 'Staff-reviewed feedback',
+      description: 'The Pitch Nav staff reviews your delivery frame by frame and checks your report before you receive it.',
     },
   ]
 
@@ -397,7 +390,7 @@ function WhyPitchNav() {
         <div className="text-center mb-16">
           <h2 className="section-heading">Why Pitch Nav</h2>
           <p className="section-subheading">
-            Built with transparency, safety, and athlete development as the priority.
+            Clear feedback. Useful drills. A plan you can follow.
           </p>
         </div>
 
@@ -424,7 +417,7 @@ function WhyPitchNav() {
 function PricingSection() {
   return <section className="py-24 bg-navy-900" id="pricing">
     <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-      <div className="mb-10 text-center"><h2 className="section-heading">Choose the Support You Need</h2><p className="section-subheading">Tailored development or standalone pitch tracking. Monthly and annual options.</p></div>
+      <div className="mb-10 text-center"><h2 className="section-heading">Find Your Plan</h2><p className="section-subheading">Choose training, Pitch Tracking, or both. Pay monthly or yearly.</p></div>
       <IndividualPricing />
       <div className="mt-8 text-center"><Link href="/pricing#teams" className="btn-secondary">Explore program pricing <ArrowRight className="h-4 w-4" /></Link></div>
     </div>
@@ -549,7 +542,7 @@ function FAQPreview() {
     <section className="py-24 bg-navy-900">
       <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
-          <h2 className="section-heading">Common Questions</h2>
+          <h2 className="section-heading">Before You Start</h2>
         </div>
 
         <div className="space-y-4">

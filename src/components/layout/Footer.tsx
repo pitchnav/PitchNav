@@ -36,8 +36,8 @@ export function Footer() {
               <span className="text-2xl font-black italic tracking-tight text-electric-blue-light">Nav</span>
             </Link>
             <p className="text-sm text-slate-400 max-w-xs leading-relaxed">
-              Remote pitching mechanics analysis for baseball pitchers at every level.
-              Understand your delivery. Develop your velocity.
+              Pitch tracking and training built for pitchers.
+              Know your pitches. Get to work.
             </p>
 
             {/* Safety disclaimer */}

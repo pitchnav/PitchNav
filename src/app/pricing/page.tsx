@@ -35,10 +35,10 @@ export default function PricingPage() {
         {/* Header */}
         <div className="text-center mb-16">
           <h1 className="text-4xl font-black tracking-tight text-white sm:text-5xl">
-            Simple, Transparent Pricing
+            Plans for Your Next Step
           </h1>
           <p className="mt-4 text-lg text-slate-400 max-w-2xl mx-auto">
-            Ongoing development—not a one-time report. Submit every two weeks, receive staff-reviewed feedback, follow your daily plan, and measure what changes.
+            Start with an assessment, get a training plan, or choose Pitch Tracking. Find the option that fits your season.
           </p>
         </div>
 
@@ -65,7 +65,7 @@ export default function PricingPage() {
           <div className="mb-8 max-w-2xl">
             <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-electric-blue-light"><Users className="h-4 w-4" /> Teams &amp; programs</p>
             <h2 className="mt-3 text-3xl font-black text-white">One program. Every player.</h2>
-            <p className="mt-3 text-slate-400">Choose Pitch Tracking or Complete Development with tailored throwing, lifting, mobility and metrics. Tell us about your roster and we’ll follow up with a program proposal.</p>
+            <p className="mt-3 text-slate-400">Bring Pitch Nav to your team. Choose Pitch Tracking or a full throwing, lifting and mobility program. Tell us about your roster and we’ll put together a quote.</p>
           </div>
           <TeamPricingForm />
         </section>
@@ -77,8 +77,7 @@ export default function PricingPage() {
             <div>
               <h3 className="text-base font-semibold text-white mb-2">About the Delivery Score</h3>
               <p className="text-sm text-slate-400 leading-relaxed">
-                The Delivery Score (out of 30) is a coaching tool that tracks your own progress
-                over time. It is <strong className="text-white">not</strong> a medical score, a
+                Use your Delivery Score to compare your mechanics over time. It is <strong className="text-white">not</strong> a medical score, a
                 laboratory measurement, or a prediction of injury or performance. It&apos;s meant
                 only to show your own development over time.
               </p>
@@ -88,7 +87,7 @@ export default function PricingPage() {
 
         {/* FAQ */}
         <div className="mb-16">
-          <h2 className="text-2xl font-bold text-white mb-6">Pricing Questions</h2>
+          <h2 className="text-2xl font-bold text-white mb-6">Plan Questions</h2>
           <div className="space-y-4">
             {faqs.map((faq) => (
               <div key={faq.q} className="card">

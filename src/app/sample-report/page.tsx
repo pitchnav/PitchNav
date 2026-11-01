@@ -91,9 +91,8 @@ export default function SampleReportPage() {
         <div className="mb-8 rounded-xl border border-yellow-500/20 bg-yellow-500/5 p-4 flex gap-3">
           <AlertTriangle className="h-5 w-5 text-yellow-400 flex-shrink-0 mt-0.5" />
           <p className="text-sm text-yellow-400/90">
-            <strong>Sample Report — All data on this page is fictional.</strong> This is a
-            demonstration of the Pitch Nav report format using a fictional athlete. Real reports
-            include actual video screenshots, personalized analysis, and athlete-specific drills.
+            <strong>Sample Report — All data on this page is fictional.</strong> Your report includes
+            screenshots from your video, a review of your mechanics, and drills for your delivery.
           </p>
         </div>
 
@@ -328,10 +327,9 @@ export default function SampleReportPage() {
 
         {/* CTA */}
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-white mb-4">Ready to Get Your Own Analysis?</h2>
+          <h2 className="text-2xl font-bold text-white mb-4">Get Your Delivery Reviewed</h2>
           <p className="text-slate-400 mb-8 max-w-lg mx-auto">
-            Submit your pitching videos and receive a complete report like this one,
-            personalized to your specific delivery.
+            Send us your pitching video. Get a breakdown of your mechanics and drills to take to your next session.
           </p>
           <Link href="/pricing" className="btn-primary text-base px-8 py-4">
             Choose My Membership <ArrowRight className="h-5 w-5" />

@@ -9,7 +9,7 @@ export function PitchTrackingHUD() {
       <div className="mt-4 rounded-2xl border border-surface-border bg-navy-900 p-5">
         <p className="text-xs font-semibold tracking-widest text-slate-400">VELOCITY · EXAMPLE ONLY</p>
         <p className="mt-2 flex items-baseline gap-2"><span className="text-6xl font-black tracking-tight text-white">88.1</span><span className="text-sm text-slate-400">MPH</span></p>
-        <p className="mt-2 text-xs text-slate-400">Illustrative value, not a measured result</p>
+        <p className="mt-2 text-xs text-slate-400">Sample number · not a measured pitch</p>
       </div>
       <div className="mt-4 rounded-2xl border border-surface-border p-4">
         <p className="flex items-center gap-2 text-xs font-semibold tracking-widest text-slate-300"><Target className="h-4 w-4 text-electric-blue-light" /> PITCH LOCATION</p>
@@ -26,6 +26,6 @@ export function PitchTrackingHUD() {
       </div>
       <div className="mt-4 flex items-center justify-between gap-2 text-xs text-slate-400"><span className="flex items-center gap-1"><Play className="h-3 w-3" /> Replay after processing</span><Database className="h-4 w-4" aria-hidden="true" /></div>
     </div>
-    <figcaption className="mt-4 text-center text-xs leading-relaxed text-slate-400">Design preview with sample data. Dashes mean unavailable metrics. This is not a live recording or proof of tracking accuracy.</figcaption>
+    <figcaption className="mt-4 text-center text-xs leading-relaxed text-slate-400">Sample HUD. These are demo numbers and locations. A dash means the metric is unavailable.</figcaption>
   </figure>
 }

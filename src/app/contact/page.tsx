@@ -50,7 +50,7 @@ export default function ContactPage() {
         <div className="text-center mb-16">
           <h1 className="text-4xl font-black tracking-tight text-white sm:text-5xl">Contact Us</h1>
           <p className="mt-4 text-lg text-slate-400 max-w-xl mx-auto">
-            Have a question about your order, billing, or the analysis process? We&apos;re here to help.
+            Questions about your plan, assessment, or account? Send us a message.
           </p>
         </div>
 

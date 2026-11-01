@@ -77,9 +77,8 @@ export default function MovementScreensPage() {
         <div className="mb-12 text-center">
           <h1 className="text-4xl font-black tracking-tight text-white sm:text-5xl">Movement Screens</h1>
           <p className="mx-auto mt-4 max-w-2xl text-lg text-slate-400">
-            Short held positions you film facing the camera. They measure the physical capacity behind
-            your delivery, so your plan is built on what your body can actually do rather than a guess
-            made from pitching footage.
+            Film these short movement checks so we can assess your range of motion and build
+            your training plan around it.
           </p>
         </div>
 

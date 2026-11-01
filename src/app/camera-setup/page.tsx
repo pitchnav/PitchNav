@@ -78,16 +78,15 @@ function CameraSetupContent() {
         {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-4xl font-black tracking-tight text-white sm:text-5xl">
-            Camera Setup Guide
+            Film Your Mechanics Assessment
           </h1>
           <p className="mt-4 text-lg text-slate-400 max-w-2xl mx-auto">
-            Follow these instructions carefully before filming. Good video quality is the most
-            important factor in a thorough analysis.
+            Give us a clear look at your full delivery. This guide is for mechanics reviews; Pitch Tracking uses a separate setup.
           </p>
         </div>
 
         <section className="card mb-10 overflow-hidden border-electric-blue/30">
-          <div className="mb-5"><p className="text-xs font-bold uppercase tracking-[0.2em] text-electric-blue-light">Required recording mode</p><h2 className="mt-1 text-2xl font-black text-white">Record with SLO-MO—not normal Video mode</h2><p className="mt-2 text-sm text-slate-400">On iPhone, set Settings → Camera → Record Slo-mo to 1080p at 240 FPS when available. Then open the Camera app and swipe to <strong className="text-white">SLO-MO</strong> before recording. Choosing a slower playback speed afterward does not create high-frame-rate footage.</p></div>
+          <div className="mb-5"><p className="text-xs font-bold uppercase tracking-[0.2em] text-electric-blue-light">Required recording mode</p><h2 className="mt-1 text-2xl font-black text-white">Use Slo-Mo for Your Mechanics Video</h2><p className="mt-2 text-sm text-slate-400">On iPhone, set Settings → Camera → Record Slo-mo to 1080p at 240 FPS when available. Then open the Camera app and swipe to <strong className="text-white">SLO-MO</strong> before recording. Choosing a slower playback speed afterward does not create high-frame-rate footage.</p></div>
           <img src="/pitch-nav-slow-motion-guide.png?v=20260718" alt="Pitch Nav iPhone instructions showing Settings, Camera, Record Slo-mo, and selection of 240 FPS or 120 FPS" className="w-full rounded-xl border border-surface-border" />
           <div className="mt-4 grid gap-3 sm:grid-cols-4">
             {['Open Settings', 'Tap Camera', 'Tap Record Slo-mo', 'Choose 1080p at 240 fps'].map((step, index) => <div key={step} className="rounded-lg border border-surface-border bg-navy-950 p-3 text-sm text-slate-300"><strong className="mr-2 text-electric-blue-light">{index + 1}.</strong>{step}</div>)}

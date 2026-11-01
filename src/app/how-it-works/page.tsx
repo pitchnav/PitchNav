@@ -12,8 +12,8 @@ const steps = [
   {
     icon: <CheckCircle className="h-8 w-8" />,
     number: '01',
-    title: 'Create Your Athlete Profile',
-    description: 'Set up a free account and complete the multi-step intake form. You\'ll share information about your physical profile, velocity history, pitching background, and goals.',
+    title: 'Tell Us About Your Game',
+    description: 'Create your account and tell us about your pitching background, current training and goals.',
     details: [
       'Name, age, height, weight, and playing level',
       'Throwing handedness and primary position',
@@ -28,7 +28,7 @@ const steps = [
     icon: <Camera className="h-8 w-8" />,
     number: '02',
     title: 'Set Up Your Camera',
-    description: 'Follow the camera-setup wizard before you film. It gives you a diagram, a distance guide, and a checklist to confirm before you continue.',
+    description: 'Use the camera guide to frame your full delivery before you throw.',
     details: [
       'Open-side view: film from the throwing-arm side, perpendicular to the pitch',
       'Camera height: 6 feet high, with the lens level',
@@ -43,23 +43,23 @@ const steps = [
     icon: <Upload className="h-8 w-8" />,
     number: '03',
     title: 'Upload Your Video',
-    description: 'Record directly from your device or upload an existing video from your camera roll. We support MP4, MOV, and most common formats.',
+    description: 'Upload a clear pitch from your camera roll. We accept MP4, MOV and other common video formats.',
     details: [
       'One open-side video (required)',
       'Radar screenshot or radar-backed video (optional)',
       'Video quality checklist before final submission',
     ],
-    note: 'Videos are stored securely in a private bucket. Only you and your assigned reviewer can access your files.',
+    note: 'Your uploaded videos are private. You and your assigned reviewer can access them.',
   },
   {
     icon: <CreditCard className="h-8 w-8" />,
     number: '04',
     title: 'Pay & Submit',
-    description: 'Review your order summary, agree to the terms and disclaimer, and complete your secure checkout. Your order is created only after payment is confirmed.',
+    description: 'Check your order details and finish checkout. We confirm payment before reviewing your submission.',
     details: [
       'Secure checkout powered by Stripe',
       'Pitch Nav does not store your card number',
-      '$25 throwing or $40 complete monthly membership',
+      'See the pricing page for current plans and assessment fees',
       'Order confirmation email sent immediately',
       'Your order goes straight into review',
     ],
@@ -81,7 +81,7 @@ const steps = [
   {
     icon: <FileBarChart2 className="h-8 w-8" />,
     number: '06',
-    title: 'View Your Complete Report',
+    title: 'Get Your Report',
     description: 'When your analysis is complete, you\'ll receive an email and can access your full report in your dashboard.',
     details: [
       'Delivery Score and six-category scorecard',
@@ -103,10 +103,10 @@ export default function HowItWorksPage() {
         {/* Header */}
         <div className="text-center mb-20">
           <h1 className="text-4xl font-black tracking-tight text-white sm:text-5xl">
-            How Pitch Nav Works
+            Start Your Development Plan
           </h1>
           <p className="mt-4 text-lg text-slate-400 max-w-2xl mx-auto">
-            From your first video to your completed mechanics report — a clear, step-by-step overview of the entire process.
+            Send your delivery. Get feedback. Take your plan to the field. These steps cover mechanics assessments and training.
           </p>
         </div>
 
