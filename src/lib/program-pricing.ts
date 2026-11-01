@@ -1,22 +1,13 @@
-/** Approved launch catalog. Integer USD cents; independent of legacy Stripe subscriptions. */
-export type ProgramPlan = 'metrics' | 'complete'
-export type Billing = 'monthly' | 'annual'
-export const STANDALONE_ASSESSMENT_CENTS = 5999
-export const ASSESSMENT_CENTS = 4999
-export const INDIVIDUAL_PLANS = {
-  throwing: { name: 'Throwing Development', monthly: 2499, firstMonth: 1999, annual: 23999, assessment: ASSESSMENT_CENTS },
-  complete: { name: 'Complete Development', monthly: 3999, firstMonth: 3499, annual: 37999, assessment: ASSESSMENT_CENTS },
-  metrics: { name: 'Pitch Tracking', monthly: 2499, firstMonth: 1999, annual: 23999, assessment: 0 },
-} as const
+import 'server-only'
+import { ASSESSMENT_CENTS, type ProgramPlan, type Billing } from './pricing-catalog'
+export { money, INDIVIDUAL_PLANS, type ProgramPlan, type Billing } from './pricing-catalog'
+
 export const PROGRAM_TIERS = [
   { label: 'Players 1–9', seats: 9, metrics: { monthly: 2499, annual: 23999 }, complete: { monthly: 3999, annual: 37999 } },
   { label: 'Players 10–24', seats: 15, metrics: { monthly: 2199, annual: 20999 }, complete: { monthly: 3499, annual: 32999 } },
   { label: 'Players 25–49', seats: 25, metrics: { monthly: 1899, annual: 17999 }, complete: { monthly: 2999, annual: 27999 } },
   { label: 'Players 50+', seats: 451, metrics: { monthly: 1699, annual: 15999 }, complete: { monthly: 2699, annual: 24999 } },
 ] as const
-export function money(cents: number) {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(cents / 100)
-}
 export function quoteProgram(players: number, plan: ProgramPlan, billing: Billing) {
   if (!Number.isInteger(players) || players < 1 || players > 500) throw new Error('Enter 1–500 players as a whole number.')
   if (plan !== 'metrics' && plan !== 'complete') throw new Error('Choose Pitch Tracking or Complete Development.')

@@ -2,7 +2,7 @@ import { PitchTrackingHUD } from '@/components/pricing/PitchTrackingHUD'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { Camera, Target, Play, BarChart3, ArrowRight, Database } from 'lucide-react'
-import { INDIVIDUAL_PLANS, money } from '@/lib/program-pricing'
+import { INDIVIDUAL_PLANS, money } from '@/lib/pricing-catalog'
 
 export const metadata: Metadata = {
   title: 'Pitch Tracking System',

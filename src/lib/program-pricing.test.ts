@@ -1,3 +1,4 @@
+jest.mock('server-only', () => ({}), { virtual: true })
 import { quoteProgram, INDIVIDUAL_PLANS } from './program-pricing'
 
 describe('approved pricing in integer cents', () => {

@@ -12,6 +12,7 @@ const ADMIN_NAV = [
   { href: '/admin/drills', label: 'Drill Library', icon: Dumbbell },
   { href: '/admin/motion-lab', label: 'Motion Reviews', icon: Activity },
   { href: '/admin/tracker-studio', label: 'Tracker Studio', icon: Film },
+  { href: '/admin/program-pricing', label: 'Program Pricing', icon: Users },
   { href: '/admin/settings', label: 'Settings', icon: Settings },
 ]
 

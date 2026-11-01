@@ -1,3 +1,4 @@
+jest.mock('server-only', () => ({}), { virtual: true })
 import { NextRequest } from 'next/server'
 import { POST } from './route'
 import { resend } from '@/lib/resend'

@@ -3,8 +3,7 @@
 import { useState } from 'react'
 import { Users, AlertCircle, CheckCircle, Loader2 } from 'lucide-react'
 
-import { ProgramQuote } from '@/components/pricing/ProgramQuote'
-import { type Billing, type ProgramPlan } from '@/lib/program-pricing'
+import { type Billing, type ProgramPlan } from '@/lib/pricing-catalog'
 
 export function TeamPricingForm() {
   const [players, setPlayers] = useState('20')
@@ -62,7 +61,9 @@ export function TeamPricingForm() {
 
   return (
     <form onSubmit={handleSubmit} className="grid gap-4 sm:grid-cols-2">
-      <div className="sm:col-span-2 mb-4"><ProgramQuote players={players} plan={plan} billing={billing} onPlayers={setPlayers} onPlan={setPlan} onBilling={setBilling} /></div>
+      <label><span className="label">Program</span><select className="input mt-1" value={plan} onChange={e=>setPlan(e.target.value as ProgramPlan)}><option value="metrics">Pitch Tracking</option><option value="complete">Complete Development</option></select></label>
+      <label><span className="label">Number of players</span><input required className="input mt-1" type="number" min={1} max={500} step={1} value={players} onChange={e=>setPlayers(e.target.value)} /></label>
+      <label className="sm:col-span-2"><span className="label">Preferred billing</span><select className="input mt-1" value={billing} onChange={e=>setBilling(e.target.value as Billing)}><option value="monthly">Monthly</option><option value="annual">Annual</option></select></label>
       <label className="sm:col-span-1">
         <span className="label">Your name</span>
         <input name="name" required maxLength={120} className="input mt-1" autoComplete="name" />

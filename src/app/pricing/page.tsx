@@ -65,7 +65,7 @@ export default function PricingPage() {
           <div className="mb-8 max-w-2xl">
             <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-electric-blue-light"><Users className="h-4 w-4" /> Teams &amp; programs</p>
             <h2 className="mt-3 text-3xl font-black text-white">One program. Every player.</h2>
-            <p className="mt-3 text-slate-400">Choose Pitch Tracking or Complete Development with tailored throwing, lifting, mobility and metrics. Add your roster size to calculate the total automatically. Larger rosters unlock lower rates for additional players.</p>
+            <p className="mt-3 text-slate-400">Choose Pitch Tracking or Complete Development with tailored throwing, lifting, mobility and metrics. Tell us about your roster and we’ll follow up with a program proposal.</p>
           </div>
           <TeamPricingForm />
         </section>
