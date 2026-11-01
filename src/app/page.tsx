@@ -1,3 +1,4 @@
+import { PitchTrackingHUD } from '@/components/pricing/PitchTrackingHUD'
 import { IndividualPricing } from '@/components/pricing/IndividualPricing'
 import Link from 'next/link'
 import {
@@ -14,89 +15,59 @@ import { calculateDeliveryScore } from '@/lib/utils'
 
 function Hero() {
   return (
-    <section className="flex flex-col lg:flex-row overflow-hidden bg-navy-950" style={{ minHeight: '100vh' }}>
-
-      {/* ── Left panel ── */}
-      <div className="relative z-10 flex flex-col justify-center w-full lg:w-1/2 px-6 sm:px-12 lg:px-16 xl:px-24 pt-28 pb-16 lg:py-0">
-
-        {/* Tag */}
-        <div className="inline-flex w-fit items-center gap-2 rounded-full border border-electric-blue/30 bg-electric-blue/10 px-4 py-1.5 text-xs font-semibold text-electric-blue-light uppercase tracking-widest mb-8">
-          <Zap className="h-3 w-3" />
-          Expert-Reviewed Pitching Analysis
-        </div>
-
-        {/* Headline */}
-        <h1 className="text-5xl font-black tracking-tight text-white sm:text-6xl xl:text-7xl leading-[1.05] uppercase">
-          UNDERSTAND<br />
-          YOUR DELIVERY.<br />
-          <span className="text-electric-blue">BUILD BETTER<br />VELOCITY.</span>
-        </h1>
-
-        {/* Subtext */}
-        <p className="mt-6 max-w-md text-base text-slate-400 leading-relaxed">
-          Expert-reviewed video feedback that shows what&apos;s working, what to improve, and what to work on next.
-        </p>
-
-        {/* CTAs */}
-        <div className="mt-10 flex flex-col sm:flex-row gap-4">
-          <Link href="/start-analysis" className="btn-primary text-base px-8 py-4 uppercase tracking-wide font-bold">
-            START MY ANALYSIS
-          </Link>
-          <Link href="/sample-report" className="btn-secondary text-base px-8 py-4 uppercase tracking-wide font-bold">
-            VIEW SAMPLE REPORT
-          </Link>
-        </div>
-
-        {/* Feature badges */}
-        <div className="mt-14 flex flex-wrap gap-6">
-          {[
-            { icon: <TrendingUp className="h-4 w-4" />, label: 'DATA-DRIVEN', sub: 'Objective insights' },
-            { icon: <Target className="h-4 w-4" />, label: 'MECHANICS', sub: 'Deeper understanding' },
-            { icon: <Zap className="h-4 w-4" />, label: 'PERFORMANCE', sub: 'Better results' },
-          ].map(({ icon, label, sub }) => (
-            <div key={label} className="flex items-center gap-2.5">
-              <div className="text-electric-blue-light">{icon}</div>
-              <div>
-                <p className="text-xs font-bold text-white tracking-widest">{label}</p>
-                <p className="text-xs text-slate-500">{sub}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* ── Right panel — hero image ── */}
-      <div className="flex w-full flex-col overflow-hidden bg-[#020817] lg:w-1/2 lg:min-h-screen lg:pt-16">
-        <div className="border-b border-electric-blue/15 px-6 py-6 sm:px-10 lg:px-12 xl:px-16">
-          <p className="text-xs font-bold uppercase tracking-[0.22em] text-electric-blue-light">Your delivery, translated</p>
-          <div className="mt-2 flex flex-col gap-2 xl:flex-row xl:items-end xl:justify-between">
-            <h2 className="max-w-xl text-2xl font-black uppercase text-white sm:text-3xl">See what the reviewer sees.</h2>
-            <p className="max-w-sm text-sm leading-relaxed text-slate-400">Key positions, video-based estimates, coaching context, and a practical development plan in one report.</p>
+    <section className="bg-navy-950 pt-28 pb-20 sm:pt-36">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-3xl text-center">
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-electric-blue-light">Pitch Tracking + Tailored Development</p>
+          <h1 className="mt-5 text-4xl font-black tracking-tight text-white sm:text-6xl">Track your pitches.<br /><span className="text-electric-blue-light">Build your game.</span></h1>
+          <p className="mt-6 text-lg leading-relaxed text-slate-400">Two sides of Pitch Nav: a single-camera pitch tracking system and a personalized plan for your throwing, lifting and mobility.</p>
+          <div className="mt-8 flex flex-wrap justify-center gap-3">
+            <Link href="/pitch-metrics" className="btn-primary">Explore Pitch Tracking <ArrowRight className="h-4 w-4" /></Link>
+            <Link href="#tailored-development" className="btn-primary">Explore Tailored Development <ArrowRight className="h-4 w-4" /></Link>
           </div>
         </div>
-
-        <div className="relative min-h-[340px] flex-1 sm:min-h-[480px] lg:min-h-0">
-          <img
-            src="/pitcher-hero-v2.jpg"
-            alt="Pitcher in Pitch Nav jersey with an example delivery-analysis breakdown"
-            className="absolute inset-0 h-full w-full object-contain object-center"
-          />
-        </div>
-
-        <div className="grid grid-cols-1 border-t border-electric-blue/15 sm:grid-cols-3">
-          {[
-            ['HUMAN REVIEWED', 'Coaching context—not automated claims'],
-            ['SIX POSITIONS', 'Delivery checkpoints connected to video'],
-            ['CLEAR NEXT STEPS', 'Strengths, priorities, drills, and plan'],
-          ].map(([title, detail]) => (
-            <div key={title} className="border-b border-electric-blue/10 px-6 py-5 last:border-b-0 sm:border-b-0 sm:border-r sm:last:border-r-0">
-              <p className="text-xs font-black tracking-widest text-white">{title}</p>
-              <p className="mt-1 text-xs leading-relaxed text-slate-500">{detail}</p>
+        <div className="mt-14 grid items-stretch gap-6 lg:grid-cols-2">
+          <article className="card flex flex-col border-electric-blue/25">
+            <p className="text-xs font-bold uppercase tracking-widest text-electric-blue-light">Track your bullpen · In development</p>
+            <h2 className="mt-3 text-3xl font-black text-white">Pitch Tracking</h2>
+            <p className="mt-4 text-base leading-relaxed text-slate-300">A results-first experience for your iPhone. Designed to put velocity and persistent pitch locations up front, with video and tracers ready for review afterward.</p>
+            <ul className="mt-5 space-y-2 text-sm text-slate-400">
+              <li>One fixed camera, calibrated before your session</li>
+              <li>Pitch map with locations inside and outside the zone</li>
+              <li>Session history and app-to-website sync planned</li>
+            </ul>
+            <Link href="/pitch-metrics" className="btn-secondary mt-6 justify-center">Explore the tracking system <ArrowRight className="h-4 w-4" /></Link>
+            <div className="mt-8"><PitchTrackingHUD /></div>
+          </article>
+          <article id="tailored-development" className="card flex flex-col scroll-mt-24 border-electric-blue/25">
+            <p className="text-xs font-bold uppercase tracking-widest text-electric-blue-light">Develop your game · Staff-reviewed</p>
+            <h2 className="mt-3 text-3xl font-black text-white">Tailored Development</h2>
+            <p className="mt-4 text-base leading-relaxed text-slate-300">Start with an assessment of your delivery and goals. Turn your development priorities into a practical throwing plan, with lifting and mobility in Complete Development.</p>
+            <ul className="mt-5 space-y-2 text-sm text-slate-400">
+              <li>Staff-reviewed mechanics assessment and feedback</li>
+              <li>Personalized throwing, lifting and mobility options</li>
+              <li>Ongoing plans, progress tracking and reassessment</li>
+            </ul>
+            <Link href="/pricing" className="btn-secondary mt-6 justify-center">Explore development plans <ArrowRight className="h-4 w-4" /></Link>
+            <div className="mt-8 flex flex-1 flex-col rounded-2xl border border-surface-border bg-navy-950 p-6">
+              <div className="flex items-center justify-between gap-3"><span className="font-black italic text-white">PITCH <span className="text-electric-blue-light">NAV</span></span><span className="text-xs font-semibold text-slate-400">PLAN PREVIEW</span></div>
+              <p className="mt-8 text-xs font-bold uppercase tracking-widest text-electric-blue-light">Your development roadmap</p>
+              <h3 className="mt-3 text-2xl font-black text-white">A clear next step.<br />Every session.</h3>
+              <div className="my-8 space-y-4">
+                {[
+                  {icon: FileBarChart2, title: 'Assess', text: 'Review your delivery, strengths and development priorities.'},
+                  {icon: Target, title: 'Throw', text: 'Follow personalized drills and throwing priorities.'},
+                  {icon: Dumbbell, title: 'Build', text: 'Add tailored lifting and mobility with Complete Development.'},
+                  {icon: CalendarDays, title: 'Review', text: 'Track completion and revisit your plan as you develop.'},
+                ].map(({icon: Icon,title,text}) => <div key={title} className="rounded-xl bg-navy-900 p-5"><Icon className="h-5 w-5 text-electric-blue-light" /><h4 className="mt-3 text-lg font-bold text-white">{title}</h4><p className="mt-2 text-sm leading-relaxed text-slate-400">{text}</p></div>)}
+              </div>
+              <Link href="/sample-report" className="mt-auto text-sm font-semibold text-electric-blue-light">View a sample report <ArrowRight className="ml-1 inline h-4 w-4" /></Link>
+              <p className="mt-4 text-xs text-slate-500">Illustrative plan structure. Your assessment determines your program.</p>
             </div>
-          ))}
+          </article>
         </div>
+        <div className="mt-10 text-center"><h2 className="text-2xl font-bold text-white">One place to track. One plan to develop.</h2><p className="mx-auto mt-3 max-w-2xl text-slate-400">Complete Development brings tailored training and future Pitch Tracking access together. Phone tracking and automatic session sync are still in development.</p></div>
       </div>
-
     </section>
   )
 }
@@ -135,7 +106,7 @@ function HowItWorks() {
     <section className="py-24 bg-navy-900">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
-          <h2 className="section-heading">How It Works</h2>
+          <h2 className="section-heading">How Tailored Development Works</h2>
           <p className="section-subheading">
             Four steps from your phone to your personalized mechanics report.
           </p>
