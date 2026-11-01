@@ -8,7 +8,7 @@ export function ProgramQuote({ players, plan, billing }: { players: string; plan
     <div className="grid gap-4 sm:grid-cols-3">
       <label><span className="label">Program</span><select name="programPlan" className="input mt-1" defaultValue={plan}><option value="metrics">Pitch Tracking</option><option value="complete">Complete Development</option></select></label>
       <label><span className="label">Players</span><input name="pitcherCount" className="input mt-1" type="number" min={1} max={500} step={1} required defaultValue={players} /></label>
-      <label><span className="label">Billing</span><select name="billing" className="input mt-1" defaultValue={billing}><option value="monthly">Monthly</option><option value="annual">Annual</option></select></label>
+      <label><span className="label">Billing</span><select name="billing" className="input mt-1" defaultValue={billing}><option value="monthly">Monthly</option><option value="annual">Annual · best value (paid upfront)</option></select></label>
     </div>
     <button className="btn-primary" type="submit">Calculate program quote</button>
     {!quote ? <p role="alert" className="text-red-400">Enter a whole number of players from 1 to 500.</p> : <div aria-live="polite" className="rounded-xl border border-electric-blue/30 bg-electric-blue/5 p-5">

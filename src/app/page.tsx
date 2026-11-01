@@ -24,7 +24,7 @@ function Hero() {
           <p className="mt-6 text-lg leading-relaxed text-slate-400">Track your bullpen with your iPhone. Get a throwing and training plan built around your game.</p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <Link href="/pitch-metrics" className="btn-primary">Explore Pitch Tracking <ArrowRight className="h-4 w-4" /></Link>
-            <Link href="#tailored-development" className="btn-primary">Explore Tailored Development <ArrowRight className="h-4 w-4" /></Link>
+            <Link href="/tailored-development" className="btn-primary">Explore Tailored Development <ArrowRight className="h-4 w-4" /></Link>
           </div>
         </div>
         <div className="mt-14 grid items-stretch gap-6 lg:grid-cols-2">
@@ -49,7 +49,7 @@ function Hero() {
               <li>Throwing, lifting and mobility built for you</li>
               <li>Follow your plan and check your progress</li>
             </ul>
-            <Link href="/pricing" className="btn-secondary mt-6 justify-center">Explore development plans <ArrowRight className="h-4 w-4" /></Link>
+            <Link href="/tailored-development" className="btn-secondary mt-6 justify-center">Explore development plans <ArrowRight className="h-4 w-4" /></Link>
             <div className="mt-8 flex flex-1 flex-col rounded-2xl border border-surface-border bg-navy-950 p-6">
               <div className="flex items-center justify-between gap-3"><span className="font-black italic text-white">PITCH <span className="text-electric-blue-light">NAV</span></span><span className="text-xs font-semibold text-slate-400">PLAN PREVIEW</span></div>
               <p className="mt-8 text-xs font-bold uppercase tracking-widest text-electric-blue-light">Your training plan</p>
