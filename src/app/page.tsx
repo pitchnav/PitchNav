@@ -1,3 +1,4 @@
+import { TrainingPlanPreview } from '@/components/home/TrainingPlanPreview'
 import { PitchTrackingHUD } from '@/components/pricing/PitchTrackingHUD'
 import { IndividualPricing } from '@/components/pricing/IndividualPricing'
 import Link from 'next/link'
@@ -53,14 +54,7 @@ function Hero() {
               <div className="flex items-center justify-between gap-3"><span className="font-black italic text-white">PITCH <span className="text-electric-blue-light">NAV</span></span><span className="text-xs font-semibold text-slate-400">PLAN PREVIEW</span></div>
               <p className="mt-8 text-xs font-bold uppercase tracking-widest text-electric-blue-light">Your training plan</p>
               <h3 className="mt-3 text-2xl font-black text-white">Know what to work on.</h3>
-              <div className="my-8 space-y-4">
-                {[
-                  {icon: FileBarChart2, title: 'Assess', text: 'Find what works in your delivery and what needs work.'},
-                  {icon: Target, title: 'Throw', text: 'Take your drills and throwing plan to the field.'},
-                  {icon: Dumbbell, title: 'Build', text: 'Pair your throwing with lifting and mobility.'},
-                  {icon: CalendarDays, title: 'Review', text: 'Log your work and review your progress.'},
-                ].map(({icon: Icon,title,text}) => <div key={title} className="rounded-xl bg-navy-900 p-5"><Icon className="h-5 w-5 text-electric-blue-light" /><h4 className="mt-3 text-lg font-bold text-white">{title}</h4><p className="mt-2 text-sm leading-relaxed text-slate-400">{text}</p></div>)}
-              </div>
+              <TrainingPlanPreview />
               <Link href="/sample-report" className="mt-auto text-sm font-semibold text-electric-blue-light">View a sample report <ArrowRight className="ml-1 inline h-4 w-4" /></Link>
               <p className="mt-4 text-xs text-slate-500">Sample plan layout. We build your program after your assessment.</p>
             </div>
