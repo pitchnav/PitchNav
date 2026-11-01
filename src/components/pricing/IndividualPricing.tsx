@@ -19,7 +19,8 @@ export function IndividualPricing() {
     <div className="grid gap-6 lg:grid-cols-3">
       {(Object.keys(INDIVIDUAL_PLANS) as (keyof typeof INDIVIDUAL_PLANS)[]).map(key => {
         const plan = INDIVIDUAL_PLANS[key]
-        return <article key={key} className="card flex flex-col text-left">
+        return <article key={key} className={`card flex flex-col text-left ${key === 'complete' ? '!border-amber-400/80 ring-1 ring-amber-400/30 shadow-[0_0_28px_rgba(251,191,36,0.10)]' : ''}`}>
+          {key === 'complete' && <p className="mb-4 inline-flex w-fit rounded-full border border-amber-300/40 bg-amber-400/10 px-3 py-1 text-xs font-bold uppercase tracking-wider text-amber-300">Best value · Our pick</p>}
           <p className="text-xs font-bold uppercase tracking-widest text-electric-blue-light">{key === 'metrics' ? 'Beta in development' : key === 'complete' ? 'All-in-one development' : 'Throwing focus'}</p>
           <h3 className="mt-3 text-xl font-bold text-white">{plan.name}</h3>
           <p className="mt-5 text-4xl font-black text-white">{money(billing === 'annual' ? plan.annual : plan.firstMonth)}</p>
