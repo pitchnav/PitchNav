@@ -6,7 +6,7 @@ import { TeamPricingForm } from '@/components/forms/TeamPricingForm'
 
 export const metadata: Metadata = {
   title: 'Pricing',
-  description: 'Throwing and Pitch Metrics from $24.99/month, Complete Development $39.99/month. First-month offers, annual savings and per-player program pricing.',
+  description: 'Throwing and Pitch Tracking from $24.99/month, Complete Development $39.99/month. First-month offers, annual savings and per-player program pricing.',
 }
 
 const faqs = [
@@ -19,8 +19,8 @@ const faqs = [
     a: 'If your videos do not meet quality standards, your reviewer will notify you and explain what is needed. You can upload replacement videos at no additional charge within 14 days of the request.',
   },
   {
-    q: 'Which membership includes Pitch Metrics?',
-    a: 'Throwing Development is $24.99/month and includes tailored throwing support. Complete Development is $39.99/month and adds lifting, mobility and access to Pitch Metrics when released. Standalone Pitch Metrics is $24.99/month with no paid assessment. Tracking is currently in development.',
+    q: 'Which membership includes Pitch Tracking?',
+    a: 'Throwing Development is $24.99/month and includes tailored throwing support. Complete Development is $39.99/month and adds lifting, mobility and access to Pitch Tracking when released. Standalone Pitch Tracking is $24.99/month with no paid assessment. Tracking is currently in development.',
   },
   {
     q: 'How do assessments and annual billing work?',
@@ -65,7 +65,7 @@ export default function PricingPage() {
           <div className="mb-8 max-w-2xl">
             <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-electric-blue-light"><Users className="h-4 w-4" /> Teams &amp; programs</p>
             <h2 className="mt-3 text-3xl font-black text-white">One program. Every player.</h2>
-            <p className="mt-3 text-slate-400">Choose Pitch Metrics or Complete Development with tailored throwing, lifting, mobility and metrics. Add your roster size to calculate the total automatically. Larger rosters unlock lower rates for additional players.</p>
+            <p className="mt-3 text-slate-400">Choose Pitch Tracking or Complete Development with tailored throwing, lifting, mobility and metrics. Add your roster size to calculate the total automatically. Larger rosters unlock lower rates for additional players.</p>
           </div>
           <TeamPricingForm />
         </section>

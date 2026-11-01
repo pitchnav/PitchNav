@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
     ['Role', role],
     ['Pitchers', String(count)],
     ['Email', email],
-    ['Plan', quote.plan === 'complete' ? 'Complete Development' : 'Pitch Metrics'],
+    ['Plan', quote.plan === 'complete' ? 'Complete Development' : 'Pitch Tracking'],
     ['Billing', quote.billing],
     ['Signup estimate (before tax)', money(quote.dueNow)],
     ['One-time assessments', money(quote.assessment)],

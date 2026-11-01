@@ -14,7 +14,7 @@ const NAV_LINKS = [
   { href: '/how-it-works', label: 'How It Works' },
   { href: '/sample-report', label: 'Sample Report' },
   { href: '/pricing', label: 'Pricing' },
-    { href: '/pitch-metrics', label: 'Pitch Metrics' },
+    { href: '/pitch-metrics', label: 'Pitch Tracking' },
   { href: '/faq', label: 'FAQ' },
 ]
 
