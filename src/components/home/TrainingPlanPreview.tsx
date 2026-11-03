@@ -5,9 +5,9 @@ const examples = [
     icon: FileBarChart2, title: 'Assess', description: 'Why does your fastball sail when you aim for the corner?',
     heading: 'Your best fastball gives us a starting point',
     rows: [
-      ['Keep', 'Your stride takes you right at the catcher. That stays.'],
-      ['Work on', 'On the high misses, your chest slows down and your elbow straightens early. The last part of the throw looks pushy. On your best strike, your chest keeps turning as the ball comes out.'],
-      ['First move', 'Start with rocker throws. We want that same easy turn when you get back on the mound.'],
+      ['Keep', 'You carry your chest well as you stride. Keep that posture.'],
+      ['Work on', 'On the high miss, your front knee keeps bending and your chest opens while the throwing hand is still coming up. Then you rush the arm forward. On your best strike, the knee steadies sooner and you turn through the throw.'],
+      ['First move', 'Use step-over med-ball throws on lift day to work on the landing. Before the pen, use three easy rocker throws to find that turn with a baseball.'],
     ],
   },
   {

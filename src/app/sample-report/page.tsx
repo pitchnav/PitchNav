@@ -22,23 +22,23 @@ const DEMO_ATHLETE = {
 }
 
 const SCORECARD = [
-  { category: 'Direction', score: 4, notes: 'Your front foot lands on the same line on the strike and the high miss.' },
-  { category: 'Lower-half rhythm', score: 4, notes: 'You start moving down the mound as the lift knee comes down. There’s no extra gather before you stride.' },
-  { category: 'Arm timing', score: 3, notes: 'On the high miss, the elbow starts to straighten while the chest has barely turned past landing.' },
-  { category: 'Front leg', score: 3, notes: 'The knee takes your weight on both throws. It keeps sliding forward longer on the miss.' },
-  { category: 'Posture', score: 4, notes: 'Your head travels with your stride. You can keep that move while we work on the finish.' },
-  { category: 'Command', score: 3, notes: 'Two of the five fastballs in the first pen reached the glove. On the other three, the catcher had to reach up.' },
+  { category: 'Stride Direction', score: 3, notes: 'Your lead foot lands a little across the line from the rubber to the target. Compare where it lands on the fastball you locate best.' },
+  { category: 'Lower-Half Sequencing', score: 3, notes: 'Your lift knee starts down while your hips stay over the rubber. Most of your move toward home happens late in the stride.' },
+  { category: 'Arm Timing', score: 2, notes: 'At foot strike your chest has started to open while your throwing hand is still coming up behind you. The arm has to hurry from there.' },
+  { category: 'Lead-Leg Block', score: 2, notes: 'Your front knee takes your weight at landing, then keeps bending as your chest turns. On your best strike it steadies sooner.' },
+  { category: 'Postural Control', score: 4, notes: 'You carry your chest well through the stride. The extra lean toward your glove side shows up late, near release.' },
+  { category: 'Fastball Command', score: 3, notes: 'Two of five fastballs reached the glove in this sample pen. The other three missed high. We’ll use that same target next time to check the adjustment.' },
 ]
 
 const deliveryScore = SCORECARD.reduce((sum, c) => sum + c.score, 0)
 
 const phases = [
-  ['Leg lift', 'Your lift flows straight into the stride. Keep that tempo.'],
-  ['Hands separate', 'The ball leaves the glove as you move downhill. The strike and miss look alike here.'],
-  ['Front foot lands', 'You land in line with the catcher on both pitches. The difference comes after the shoe hits dirt.'],
-  ['Chest turns', 'On the strike, your front knee steadies and your throwing shoulder comes around. On the miss, the knee keeps traveling and the chest slows.'],
-  ['Ball comes out', 'On the miss, the elbow straightens early and the throw looks pushy. The catcher has to lift the glove. The strike comes out while you’re still turning.'],
-  ['Finish', 'Your arm swings across your body on both pitches. Leave the finish alone and spend your drill time on the move after landing.'],
+  ['Leg Lift & Forward Move', 'You load the back hip well. The pause comes as the lift knee drops. Let your belt start traveling toward the catcher with the knee so you have room to stride at your own pace.'],
+  ['Hand Break & Arm Path', 'After your hands split, the ball swings a long way behind your back hip. By the time your front foot is down, the hand is still coming up. Watch that sequence on a strike and a miss.'],
+  ['Foot Strike & Lead-Leg Stability', 'You land slightly closed with some bend in the front knee. On the high miss you keep sinking after the foot is down. On the strike the knee takes the landing, then holds while you turn. That’s the rep to copy.'],
+  ['Hip-Shoulder Separation & Trunk Rotation', 'Your belt and the lettering on your jersey start facing the catcher almost together. In the step-over drill, let the lead foot take your weight before you turn the ball into the wall.'],
+  ['Arm Acceleration & Release', 'On the miss your chest opens early, then your elbow straightens and you reach for the glove. That last reach is the push we want to clean up. Use the rocker to feel the shoulder come around with the throw.'],
+  ['Deceleration & Follow-Through', 'After release you carry farther toward your glove side on the misses. Compare the landing first. A different finish only matters here if the change carries over to where the fastball goes.'],
 ]
 
 export default function SampleReportPage() {
@@ -101,8 +101,15 @@ export default function SampleReportPage() {
         </div>
 
         <section className="card mb-8">
-          <h2 className="text-xl font-bold text-white">Coach’s recap</h2>
-          <p className="mt-3 text-slate-300">Keep your stride. It gets you on line even when you miss. The fastball looks pushy when you try to guide it to the corner. On those throws your chest slows and your arm reaches out early. Your best strike gives us the move to chase. Start with rocker throws, then take that same turn into the first five fastballs of your next pen.</p>
+          <h2 className="text-xl font-bold text-white">Overall Mechanical Assessment</h2>
+          <h3 className="mt-4 font-bold text-electric-blue-light">High priority · Lower-half stability and rotational sequencing</h3>
+          <p className="mt-3 text-slate-300">Your posture through the stride is a strength. The part we’d work on first is landing. On the high miss, your front knee keeps giving while your chest opens and your throwing hand is still behind you. From there the throw looks rushed and pushy. On the strike, your front leg settles sooner and you turn through the throw.</p>
+          <ol className="mt-4 list-decimal space-y-2 pl-5 text-sm text-slate-300">
+            <li>Give the front leg a chance to take your weight and firm up as you turn.</li>
+            <li>Let the hips lead the turn toward home. Compare your belt and shoulders at landing.</li>
+            <li>Check when the throwing hand comes up relative to that turn on your regular fastball.</li>
+            <li>Carry the easy arm action from your rocker throws into the pen. Use the first five fastballs to check command.</li>
+          </ol>
         </section>
 
         {/* Scorecard */}
