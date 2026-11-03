@@ -7,3 +7,19 @@
     transform: scale(1.035);
   }
 }
+
+.angle {
+  object-fit: contain;
+  opacity: 0;
+}
+
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .product .angle {
+    transition: transform 280ms ease-out, opacity 220ms ease-out;
+  }
+
+  .product:hover .angle {
+    opacity: 1;
+    transition-delay: 0s, 1s;
+  }
+}

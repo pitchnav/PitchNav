@@ -48,6 +48,7 @@ export default function Catalog() {
       {visible.map(product => <li key={product.image} className={styles.product}>
         <div className="relative aspect-square overflow-hidden bg-white">
           <Image src={'/shop/' + product.image + '.webp'} alt={product.name} fill sizes="(min-width: 1024px) 33vw, 50vw" className="object-contain" />
+          <Image src={'/shop/' + product.image + '-angle.webp'} alt="" fill sizes="(min-width: 1024px) 33vw, 50vw" className={styles.angle} />
           {product.recommended && <span className="absolute bottom-2 right-2 rounded-sm bg-navy-950 px-2 py-1 text-xs font-semibold text-white sm:bottom-4 sm:right-4">Recommended</span>}
         </div>
         <div className="space-y-0.5 px-3 pt-3 font-['Helvetica_Neue',Arial,sans-serif] text-[15px] font-normal leading-snug sm:px-5 sm:text-base">
