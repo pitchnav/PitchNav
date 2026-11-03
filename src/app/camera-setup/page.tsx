@@ -81,7 +81,7 @@ function CameraSetupContent() {
             Film Your Mechanics Assessment
           </h1>
           <p className="mt-4 text-lg text-slate-400 max-w-2xl mx-auto">
-            Give us a clear look at your full delivery. This guide is for mechanics reviews; Pitch Tracking uses a separate setup.
+            Film one complete delivery from your throwing-arm side. Keep your feet and throwing hand in frame through the finish. We can review your mechanics without knowing where the pitch landed. This guide is for mechanics reviews; Pitch Tracking uses a separate setup.
           </p>
         </div>
 

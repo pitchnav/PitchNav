@@ -2,11 +2,11 @@ import { CalendarDays, ChevronDown, Dumbbell, FileBarChart2, Target } from 'luci
 
 const examples = [
   {
-    icon: FileBarChart2, title: 'Assess', description: 'Why does your fastball sail when you aim for the corner?',
-    heading: 'Your best fastball gives us a starting point',
+    icon: FileBarChart2, title: 'Assess', description: 'What happens between foot plant and release?',
+    heading: 'One side-view pitch, one priority',
     rows: [
       ['Keep', 'You carry your chest well as you stride. Keep that posture.'],
-      ['Work on', 'On the high miss, your front knee keeps bending and your chest opens while the throwing hand is still coming up. Then you rush the arm forward. On your best strike, the knee steadies sooner and you turn through the throw.'],
+      ['Work on', 'After foot plant, your front knee keeps bending and your chest opens while the throwing hand is still coming up. Then you rush the arm forward.'],
       ['First move', 'Use step-over med-ball throws on lift day to work on the landing. Before the pen, use three easy rocker throws to find that turn with a baseball.'],
     ],
   },
@@ -23,7 +23,7 @@ const examples = [
     icon: Dumbbell, title: 'Build', description: 'See why a coach might put a step-over med-ball throw in your lift.',
     heading: 'Give your front leg something to turn against',
     rows: [
-      ['Why it’s here', 'On the same high misses, your front knee keeps drifting toward the plate after your foot lands. On your best strike it takes your weight, then steadies while your chest turns.'],
+      ['Why it’s here', 'Your knee keeps traveling toward home after your foot lands. The step-over gives you a way to practice taking your weight on that leg and turning from there.'],
       ['Step-over throw', 'Stand sideways to a throwing wall with a light medicine ball at your chest. Step over a rolled towel with your lead foot. As that foot takes your weight, turn and toss the ball into the wall with both hands. Reset between reps.'],
       ['Check the rep', 'Let the knee bend on landing. Can you finish facing the wall with your lead foot still planted? If you need a second step to catch yourself, shorten the stride. Without a ball, rehearse the same step and turn.'],
     ],
@@ -33,7 +33,7 @@ const examples = [
     heading: 'What we’d take into the next pen',
     rows: [
       ['Catcher’s log', 'Last Wednesday, two of five fastballs stayed at the glove. This Wednesday, three did. Both misses were still high.'],
-      ['Coach’s call', 'Keep the rocker in warmups for one more pen. Film a strike and a high miss from the same side angle. Compare what the chest does from foot plant until the ball leaves your hand.'],
+      ['Coach’s call', 'Keep the rocker in warmups for one more pen. Film one regular delivery from the same side angle. Check whether the front knee steadies as the chest turns.'],
       ['In the weight room', 'Last lift: dumbbell bench, 40 lb per hand for six clean reps. Start there next time and log how the set feels.'],
     ],
   },

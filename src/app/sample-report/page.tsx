@@ -22,23 +22,23 @@ const DEMO_ATHLETE = {
 }
 
 const SCORECARD = [
-  { category: 'Stride Direction', score: 3, notes: 'Your lead foot lands a little across the line from the rubber to the target. Compare where it lands on the fastball you locate best.' },
+  { category: 'Stride Direction', score: 3, notes: 'Your stride carries you toward home. At landing, check where your hips are relative to the front foot.' },
   { category: 'Lower-Half Sequencing', score: 3, notes: 'Your lift knee starts down while your hips stay over the rubber. Most of your move toward home happens late in the stride.' },
   { category: 'Arm Timing', score: 2, notes: 'At foot strike your chest has started to open while your throwing hand is still coming up behind you. The arm has to hurry from there.' },
-  { category: 'Lead-Leg Block', score: 2, notes: 'Your front knee takes your weight at landing, then keeps bending as your chest turns. On your best strike it steadies sooner.' },
+  { category: 'Lead-Leg Block', score: 2, notes: 'Your front knee takes your weight at landing, then keeps bending as your chest turns.' },
   { category: 'Postural Control', score: 4, notes: 'You carry your chest well through the stride. The extra lean toward your glove side shows up late, near release.' },
-  { category: 'Fastball Command', score: 3, notes: 'Two of five fastballs reached the glove in this sample pen. The other three missed high. We’ll use that same target next time to check the adjustment.' },
+  { category: 'Fastball Command', score: 3, notes: 'Optional bullpen log from the catcher, scored separately for this example. Two of five fastballs reached the glove. The side-view assessment uses one delivery.' },
 ]
 
 const deliveryScore = SCORECARD.reduce((sum, c) => sum + c.score, 0)
 
 const phases = [
   ['Leg Lift & Forward Move', 'You load the back hip well. The pause comes as the lift knee drops. Let your belt start traveling toward the catcher with the knee so you have room to stride at your own pace.'],
-  ['Hand Break & Arm Path', 'After your hands split, the ball swings a long way behind your back hip. By the time your front foot is down, the hand is still coming up. Watch that sequence on a strike and a miss.'],
-  ['Foot Strike & Lead-Leg Stability', 'You land slightly closed with some bend in the front knee. On the high miss you keep sinking after the foot is down. On the strike the knee takes the landing, then holds while you turn. That’s the rep to copy.'],
+  ['Hand Break & Arm Path', 'After your hands split, the ball swings a long way behind your back hip. By the time your front foot is down, the hand is still coming up. Use the frame where the lead shoe touches down to check the timing.'],
+  ['Foot Strike & Lead-Leg Stability', 'Your front knee bends as the shoe takes your weight. Follow it from foot plant to release. It keeps moving forward while your chest turns. That’s where we’ll start.'],
   ['Hip-Shoulder Separation & Trunk Rotation', 'Your belt and the lettering on your jersey start facing the catcher almost together. In the step-over drill, let the lead foot take your weight before you turn the ball into the wall.'],
-  ['Arm Acceleration & Release', 'On the miss your chest opens early, then your elbow straightens and you reach for the glove. That last reach is the push we want to clean up. Use the rocker to feel the shoulder come around with the throw.'],
-  ['Deceleration & Follow-Through', 'After release you carry farther toward your glove side on the misses. Compare the landing first. A different finish only matters here if the change carries over to where the fastball goes.'],
+  ['Arm Acceleration & Release', 'Your chest opens early, then your elbow straightens and you reach for the glove. That last reach is the push we want to clean up. Use the rocker to feel the shoulder come around with the throw.'],
+  ['Deceleration & Follow-Through', 'After release your upper body carries toward your glove side. Work on the landing first and let the arm finish naturally.'],
 ]
 
 export default function SampleReportPage() {
@@ -103,7 +103,7 @@ export default function SampleReportPage() {
         <section className="card mb-8">
           <h2 className="text-xl font-bold text-white">Overall Mechanical Assessment</h2>
           <h3 className="mt-4 font-bold text-electric-blue-light">High priority · Lower-half stability and rotational sequencing</h3>
-          <p className="mt-3 text-slate-300">Your posture through the stride is a strength. The part we’d work on first is landing. On the high miss, your front knee keeps giving while your chest opens and your throwing hand is still behind you. From there the throw looks rushed and pushy. On the strike, your front leg settles sooner and you turn through the throw.</p>
+          <p className="mt-3 text-slate-300">Your posture through the stride is a strength. The part we’d work on first is landing. After foot plant, your front knee keeps giving while your chest opens and your throwing hand is still behind you. From there the throw looks rushed and pushy. The goal is to let the front leg take your weight and steady as you turn through the throw.</p>
           <ol className="mt-4 list-decimal space-y-2 pl-5 text-sm text-slate-300">
             <li>Give the front leg a chance to take your weight and firm up as you turn.</li>
             <li>Let the hips lead the turn toward home. Compare your belt and shoulders at landing.</li>
@@ -139,7 +139,7 @@ export default function SampleReportPage() {
 
         <section className="card mb-8">
           <h2 className="text-xl font-bold text-white">The delivery, from lift to finish</h2>
-          <p className="mt-2 text-sm text-slate-400">Here’s how we’d compare a fastball at the glove with one that sailed.</p>
+          <p className="mt-2 text-sm text-slate-400">One side-view pitch, from the first move off the rubber through the finish.</p>
           <dl className="mt-5 grid gap-5 sm:grid-cols-2">
             {phases.map(([name, detail]) => <div key={name}><dt className="font-bold text-white">{name}</dt><dd className="mt-1 text-sm text-slate-300">{detail}</dd></div>)}
           </dl>
@@ -156,7 +156,7 @@ export default function SampleReportPage() {
         <section className="card mb-8">
           <h2 className="text-xl font-bold text-white">First four weeks of the sample development plan</h2>
           <ol className="mt-5 space-y-4 text-slate-300">
-            <li><strong>Week 1 · Get a baseline.</strong> Use the first five fastballs in your scheduled pen. Keep one target and count how often the catcher has to lift the glove. Save a strike and a high miss.</li>
+            <li><strong>Week 1 · Get a baseline.</strong> Use the first five fastballs in your scheduled pen. Keep one target and count how often the catcher has to lift the glove. Save one side-view delivery for your next mechanics check.</li>
             <li><strong>Week 2 · Try the rocker.</strong> Use three warmup throws for the drill. Repeat the five-fastball check at the same effort. In this example the pitcher went from two at the glove to three. Keep working before calling that progress.</li>
             <li><strong>Week 3 · Mix your pitches.</strong> Call a changeup between fastballs. See if you can come back to the glove when you only get one shot at the fastball.</li>
             <li><strong>Week 4 · Review the carryover.</strong> Compare regular pitches from weeks one and four. If the high miss keeps showing up, revisit the landing with your coach before adding another drill.</li>
