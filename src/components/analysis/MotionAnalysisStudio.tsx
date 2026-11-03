@@ -1202,6 +1202,10 @@ export function MotionAnalysisStudio({
     setProgress(end > start ? Math.max(0, Math.min(1, (video.currentTime - start) / (end - start))) : 0)
   }, [handedness, stridePercent])
 
+  useEffect(() => {
+    if (videoRef.current?.paused && !analyzingRef.current && !exportingRef.current) drawFrame()
+  }, [drawFrame])
+
   const renderLoop = useCallback(() => {
     drawFrame()
     const video = videoRef.current
@@ -1781,7 +1785,7 @@ export function MotionAnalysisStudio({
         label: 'Maximum External Rotation Candidate',
         time: Math.min(clipEnd, maxExternalRotation),
         note: merDetected !== null
-          ? 'Detected from this pitch’s own trunk-rotation timing, not an estimate.'
+          ? 'Estimated from trunk rotation. Confirm the event on replay.'
           : 'Could not detect a clear trunk-rotation peak in this clip; timing is an estimate.',
       },
       {
@@ -1789,7 +1793,7 @@ export function MotionAnalysisStudio({
         label: 'Ball Release Candidate',
         time: Math.min(clipEnd, ballRelease),
         note: releaseDetected !== null
-          ? 'Detected from this pitch’s own trunk-rotation timing, not an estimate.'
+          ? 'Estimated from trunk rotation. Confirm the event on replay.'
           : 'Could not detect a clear release point in this clip; timing is an estimate.',
       },
       { key: 'finish', label: 'Finish & Deceleration', time: Math.min(clipEnd, finish) },
@@ -2292,7 +2296,7 @@ export function MotionAnalysisStudio({
                 className="w-full accent-electric-blue"
               />
               {summary && <div className="flex flex-wrap gap-2" aria-label="Estimated phase timeline">
-                {([['Peak lift',summary.peakLegLiftTime],['Foot plant',summary.widestStrideTime],['Layback candidate',summary.maxExternalRotationTime],['Release candidate',summary.ballReleaseTime]] as const).map(([label,time])=>time !== null && <button type="button" key={label} className="btn-secondary text-xs" onClick={()=>{const video=videoRef.current;if(video){video.pause();setPlaying(false);video.currentTime=time}}}>{label} · {time.toFixed(2)}s</button>)}
+                {([['Peak lift',summary.peakLegLiftTime],['Foot plant candidate',summary.widestStrideTime],['Layback candidate',summary.maxExternalRotationTime],['Release candidate',summary.ballReleaseTime]] as const).map(([label,time])=>time !== null && <button type="button" key={label} className="btn-secondary text-xs" onClick={()=>{const video=videoRef.current;if(video){video.pause();setPlaying(false);video.currentTime=time}}}>{label} · {time.toFixed(2)}s</button>)}
               </div>}
               <details className="rounded-lg border border-slate-700 p-3 text-sm text-slate-300" open={marking || undefined}>
                 <summary className="cursor-pointer font-semibold text-white">Replay measurements and stride calibration</summary>

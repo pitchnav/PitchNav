@@ -28,16 +28,7 @@
 }
 
 .hero {
-  position: relative;
-  isolation: isolate;
-  background: #020d1b;
-}
-.hero::before {
-  content: '';
-  position: absolute;
-  inset: 0 0 0 36%;
-  z-index: -1;
-  background: linear-gradient(90deg, #020d1b, transparent 30%), url('/shop/bullpen-banner.webp') center / cover no-repeat;
+  background: #021332 url('/shop/equipment-banner.webp') center / cover no-repeat;
 }
 .product {
   overflow: hidden;
@@ -48,5 +39,9 @@
 .product img { mix-blend-mode: multiply; }
 .recommendedProduct { padding-bottom: 0; }
 @media (max-width: 700px) {
-  .hero::before { left: 0; opacity: .32; background-position: right center; }
+  .hero {
+    background-position: right top;
+    background-size: auto 9rem;
+    padding-top: 7rem;
+  }
 }
