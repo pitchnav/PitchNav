@@ -29,3 +29,27 @@
   border: 2px solid #4496ff;
   padding-bottom: 0.75rem;
 }
+
+.hero {
+  position: relative;
+  isolation: isolate;
+  background: #020d1b;
+}
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 0 36%;
+  z-index: -1;
+  background: linear-gradient(90deg, #020d1b, transparent 30%), url('/shop/bullpen-banner.webp') center / cover no-repeat;
+}
+.product {
+  overflow: hidden;
+  border-radius: 14px;
+  background: white;
+  box-shadow: 0 2px 10px rgb(15 23 42 / 6%);
+}
+.product img { mix-blend-mode: multiply; }
+.recommendedProduct { padding-bottom: 0; }
+@media (max-width: 700px) {
+  .hero::before { left: 0; opacity: .32; background-position: right center; }
+}
