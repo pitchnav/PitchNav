@@ -1,5 +1,6 @@
 'use client'
 
+import { shoulderEstimates } from '@/lib/pitch-replay'
 import { VideoRecorder } from '@/components/capture/VideoRecorder'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -911,6 +912,14 @@ export function MotionAnalysisStudio({
   autoProcess?: boolean
 }) {
   const videoRef = useRef<HTMLVideoElement>(null)
+  const trailRef = useRef<VideoPoint[]>([])
+  const [marks, setMarks] = useState<Array<{x:number;y:number}>>([])
+  const [marking, setMarking] = useState(false)
+  const [torqueReference, setTorqueReference] = useState('')
+  const markLabels = ['top of head standing upright', 'ground at feet in that frame', 'rubber at foot plant', 'lead heel in that same frame']
+  const heightPixels = marks.length >= 2 ? Math.hypot(marks[0].x-marks[1].x,marks[0].y-marks[1].y) : 0
+  const stridePercent = marks.length === 4 && heightPixels > 10
+    ? Math.round(100*Math.hypot(marks[2].x-marks[3].x,marks[2].y-marks[3].y)/heightPixels) : null
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const landmarkerRef = useRef<PoseLandmarker | null>(null)
   const animationRef = useRef<number | null>(null)
@@ -1115,6 +1124,20 @@ export function MotionAnalysisStudio({
           context.restore()
         }
       } else if (!plainCaptureRef.current) {
+        const right = handedness === 'right'
+        const wrist = landmarks[right ? 16 : 15]
+        const trail = trailRef.current
+        const last = trail[trail.length-1]
+        if (!wrist || wrist.visibility < .75 || (last && (video.currentTime < last.time || video.currentTime-last.time > .15))) trail.length=0
+        if (wrist && wrist.visibility >= .75 && trail[trail.length-1]?.time !== video.currentTime) {
+          trail.push({x:wrist.x,y:wrist.y,time:video.currentTime})
+        }
+        while (trail.length && video.currentTime-trail[0].time > .45) trail.shift()
+        context.beginPath()
+        trail.forEach((point,i) => i ? context.lineTo(point.x*width,point.y*height) : context.moveTo(point.x*width,point.y*height))
+        context.lineWidth=Math.max(2,width/320)
+        context.strokeStyle='#34d399'
+        context.stroke()
         context.lineCap = 'round'
         context.lineJoin = 'round'
         context.shadowBlur = 12
@@ -1139,15 +1162,45 @@ export function MotionAnalysisStudio({
           context.fillStyle = (landmark.visibility ?? 0) > 0.75 ? '#ffffff' : '#facc15'
           context.fill()
         })
+        context.shadowBlur=0
+        const estimates=shoulderEstimates(result.worldLandmarks?.[0] ?? [],right)
+        const font=Math.max(10,Math.min(width/46,height/29))
+        context.font=`600 ${font}px sans-serif`
+        const lines=[
+          {value:estimates.horizontal,label:'Horiz. abduction',anchor:landmarks[right?12:11]},
+          {value:estimates.rotation,label:'External rotation',anchor:landmarks[right?14:13]},
+          {value:stridePercent,label:'Stride / height',anchor:landmarks[right?27:28]},
+        ]
+        lines.forEach(({value,label,anchor},i)=>{
+          if (!anchor || anchor.visibility < .75 || value === null) return
+          const text=`${label}  ≈${value}${i===2?'%':'°'}`
+          const box=context.measureText(text).width+font
+          const x=anchor.x>.5 ? font : width-box-font
+          const y=height*(.22+i*.23)
+          context.strokeStyle='#e2e8f0'
+          context.lineWidth=Math.max(1,font/10)
+          context.beginPath()
+          context.moveTo(anchor.x*width,anchor.y*height)
+          context.lineTo(x===font?x+box:x,y)
+          context.stroke()
+          context.fillStyle='rgba(2,8,23,.90)'
+          context.fillRect(x,y-font,box,font*1.6)
+          context.fillStyle='white'
+          context.fillText(text,x+font*.5,y+font*.16)
+        })
+        context.fillStyle='#07101d'
+        context.fillRect(0,0,width,font*2)
+        context.fillStyle='white'
+        context.font=`600 ${font*.85}px sans-serif`
+        context.fillText('PITCH NAV  /  EXPERIMENTAL POSE ESTIMATES',font*.5,font*1.35)
       }
       context.shadowBlur = 0
-    }
-
+    } else { trailRef.current.length = 0 }
 
     const start = analysisStartRef.current
     const end = Math.min(video.duration, analysisEndRef.current ?? video.duration)
     setProgress(end > start ? Math.max(0, Math.min(1, (video.currentTime - start) / (end - start))) : 0)
-  }, [handedness])
+  }, [handedness, stridePercent])
 
   const renderLoop = useCallback(() => {
     drawFrame()
@@ -1185,6 +1238,11 @@ export function MotionAnalysisStudio({
   }, [])
 
   async function handleFile(file: File, capture?: { normalSpeed: true; cameraFps?: number }) {
+    trailRef.current=[]
+    setMarks([])
+    setMarking(false)
+    setTorqueReference('')
+
     if (!file.type.startsWith('video/')) {
       setError('Choose a supported video file.')
       return
@@ -2166,6 +2224,8 @@ export function MotionAnalysisStudio({
                   drawFrame()
                   void detectVideoFrameRate(event.currentTarget)
                 }}
+                onSeeked={drawFrame}
+                onSeeking={() => { trailRef.current=[] }}
                 onEnded={() => {
                   setPlaying(false)
                   if (analyzingRef.current) finishAnalysis()
@@ -2188,6 +2248,17 @@ export function MotionAnalysisStudio({
                 ref={canvasRef}
                 className="h-full w-full object-contain"
                 aria-label="Video analysis canvas"
+                onClick={event=>{
+                  const canvas=event.currentTarget
+                  if (!marking || marks.length>=4 || !videoRef.current?.paused) return
+                  const rect=canvas.getBoundingClientRect()
+                  const zoom=Math.min(rect.width/canvas.width,rect.height/canvas.height)
+                  const x=(event.clientX-rect.left-(rect.width-canvas.width*zoom)/2)/zoom
+                  const y=(event.clientY-rect.top-(rect.height-canvas.height*zoom)/2)/zoom
+                  if (x<0 || y<0 || x>canvas.width || y>canvas.height) return
+                  setMarks([...marks,{x,y}])
+                  if (marks.length===3) setMarking(false)
+                }}
               />
               {modelStatus === 'loading' && (
                 <div className="absolute inset-0 flex items-center justify-center bg-navy-950/80 text-sm text-white">
@@ -2220,6 +2291,20 @@ export function MotionAnalysisStudio({
                 }}
                 className="w-full accent-electric-blue"
               />
+              {summary && <div className="flex flex-wrap gap-2" aria-label="Estimated phase timeline">
+                {([['Peak lift',summary.peakLegLiftTime],['Foot plant',summary.widestStrideTime],['Layback candidate',summary.maxExternalRotationTime],['Release candidate',summary.ballReleaseTime]] as const).map(([label,time])=>time !== null && <button type="button" key={label} className="btn-secondary text-xs" onClick={()=>{const video=videoRef.current;if(video){video.pause();setPlaying(false);video.currentTime=time}}}>{label} · {time.toFixed(2)}s</button>)}
+              </div>}
+              <details className="rounded-lg border border-slate-700 p-3 text-sm text-slate-300" open={marking || undefined}>
+                <summary className="cursor-pointer font-semibold text-white">Replay measurements and stride calibration</summary>
+                <p className="my-2">Green traces the throwing wrist. Shoulder angles use inferred 3D pose and appear when the landmarks and arm position support an estimate. Their accuracy in pitching is unvalidated.</p>
+                <p>Stride length: {stridePercent === null ? 'calibration needed' : `≈${stridePercent}% of height · side-view estimate`}. Use a fixed, square side view. Pause on an upright frame at mound depth for height, then scrub to foot plant for stride.</p>
+                <button type="button" className="btn-secondary my-2" onClick={()=>{videoRef.current?.pause();setPlaying(false);setMarks([]);setMarking(true)}}>{marks.length ? 'Restart calibration' : 'Mark stride scale'}</button>
+                {marking && <p role="status">Pause and click the {markLabels[marks.length]}.</p>}
+                <label className="mt-3 block">Peak elbow torque · reference only (N·m)
+                  <input className="input mt-1" type="number" min="0" step="any" value={torqueReference} placeholder="Optional lab value for this pitch" onChange={event=>setTorqueReference(event.target.value)} />
+                </label>
+                <p className="mt-1 text-xs">No validated phone torque estimate yet. An entered reference stays in this review.</p>
+              </details>
               <div className="flex flex-wrap items-center gap-3">
                 <button type="button" onClick={togglePlayback} className="btn-primary px-4 py-2">
                   {playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
