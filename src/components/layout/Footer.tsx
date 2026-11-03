@@ -6,6 +6,7 @@ const footerLinks = {
     { label: 'Shop', href: '/shop' },
     { label: 'Pricing', href: '/pricing' },
     { label: 'Pitch Tracking', href: '/pitch-metrics' },
+    { label: 'Tailored Development', href: '/tailored-development' },
     { label: 'Sample Report', href: '/sample-report' },
     { label: 'Camera Setup', href: '/camera-setup' },
     { label: 'Movement Screens', href: '/movement-screens' },

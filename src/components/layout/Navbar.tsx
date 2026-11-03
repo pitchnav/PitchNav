@@ -15,6 +15,7 @@ const NAV_LINKS = [
   { href: '/sample-report', label: 'Sample Report' },
   { href: '/pricing', label: 'Pricing' },
   { href: '/pitch-metrics', label: 'Pitch Tracking' },
+  { href: '/tailored-development', label: 'Tailored Development' },
   { href: '/faq', label: 'FAQ' },
   { href: '/shop', label: 'Shop' },
 ]
@@ -96,7 +97,7 @@ export function Navbar() {
           </Link>
 
           {/* Desktop nav */}
-          <div className="hidden md:flex items-center gap-6">
+          <div className="hidden xl:flex items-center gap-6">
             {NAV_LINKS.map((link) => (
               <Link
                 key={link.href}
@@ -114,7 +115,7 @@ export function Navbar() {
           </div>
 
           {/* Desktop CTA / User */}
-          <div className="hidden md:flex items-center gap-3">
+          <div className="hidden xl:flex items-center gap-3">
             {authUser ? (
               <>
                 {userProfile?.is_admin && (
@@ -180,7 +181,7 @@ export function Navbar() {
 
           {/* Mobile menu button */}
           <button
-            className="md:hidden flex h-11 w-11 items-center justify-center rounded-lg text-slate-400 hover:text-white hover:bg-surface-hover transition-colors"
+            className="xl:hidden flex h-11 w-11 items-center justify-center rounded-lg text-slate-400 hover:text-white hover:bg-surface-hover transition-colors"
             onClick={() => setIsOpen(!isOpen)}
             aria-label={isOpen ? 'Close menu' : 'Open menu'}
             aria-expanded={isOpen}
@@ -198,7 +199,7 @@ export function Navbar() {
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.2, ease: 'easeOut' }}
-            className="md:hidden overflow-hidden border-t border-surface-border bg-navy-900"
+            className="xl:hidden overflow-hidden border-t border-surface-border bg-navy-900"
           >
           <div className="px-4 py-4 space-y-1">
             {NAV_LINKS.map((link) => (

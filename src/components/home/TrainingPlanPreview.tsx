@@ -2,62 +2,48 @@ import { CalendarDays, ChevronDown, Dumbbell, FileBarChart2, Target } from 'luci
 
 const examples = [
   {
-    icon: FileBarChart2,
-    title: 'Assess',
-    description: 'Find what works in your delivery and what needs work.',
-    heading: 'A clear read on your delivery',
+    icon: FileBarChart2, title: 'Assess', description: 'Why does your fastball sail when you aim for the corner?',
+    heading: 'Your best fastball gives us a starting point',
     rows: [
-      ['Strength', 'You stay on line toward the plate.'],
-      ['Priority', 'Make your front-side finish more repeatable.'],
-      ['Next step', 'Review the marked frames with your coach and pick one cue for your next session.'],
+      ['Keep', 'Your stride takes you right at the catcher. That stays.'],
+      ['Work on', 'On the high misses, your chest slows down and your elbow straightens early. The last part of the throw looks pushy. On your best strike, your chest keeps turning as the ball comes out.'],
+      ['First move', 'Start with rocker throws. We want that same easy turn when you get back on the mound.'],
     ],
-    note: 'Fictional assessment excerpt. Your feedback comes from your own video.',
   },
   {
-    icon: Target,
-    title: 'Throw',
-    description: 'Take your drills and throwing plan to the field.',
-    heading: 'A bullpen with a purpose',
+    icon: Target, title: 'Throw', description: 'Take one adjustment from warmups into your regular delivery.',
+    heading: 'Wednesday bullpen before a Friday start',
     rows: [
-      ['Schedule', 'Wednesday command pen before a Friday outing.'],
-      ['Sample pitch mix', '10 fastballs · 6 changeups · 4 sliders'],
-      ['During the pen', 'Pitch 5 of 20 · Fastball · glove-side target'],
-      ['Effort & velo', 'Your coach sets the effort target and any pitch-specific velocity range.'],
+      ['Before the pen', 'Stand sideways in your stride stance with a baseball. Shift onto your front foot, rock back, then shift forward and throw to your partner in one motion. Make three easy throws at normal warmup effort.'],
+      ['What to feel', 'Let your shirt turn toward your partner as you throw. If you have to shove the ball to reach them, move closer.'],
+      ['On the mound', 'Start your planned pen with five fastballs to the same glove. Have your catcher count how many they receive without lifting the mitt. Those five count toward the pen total.'],
     ],
-    note: 'Illustrative session, not a throwing prescription. Planned tracking features are still in development.',
   },
   {
-    icon: Dumbbell,
-    title: 'Build',
-    description: 'Pair your throwing with lifting and mobility.',
-    heading: 'Training around your throwing',
+    icon: Dumbbell, title: 'Build', description: 'See why a coach might put a step-over med-ball throw in your lift.',
+    heading: 'Give your front leg something to turn against',
     rows: [
-      ['Strength', 'Monday: trap-bar deadlift paired with dumbbell bench. No trap bar? Use the dumbbell hinge in your plan.'],
-      ['Mobility', 'Your last block pairs a strength exercise with mobility for the same priority.'],
-      ['Around outings', 'With a Friday start and no pen, lift Monday and Wednesday. Add a Tuesday pen and the calendar looks for open days again.'],
+      ['Why it’s here', 'On the same high misses, your front knee keeps drifting toward the plate after your foot lands. On your best strike it takes your weight, then steadies while your chest turns.'],
+      ['Step-over throw', 'Stand sideways to a throwing wall with a light medicine ball at your chest. Step over a rolled towel with your lead foot. As that foot takes your weight, turn and toss the ball into the wall with both hands. Reset between reps.'],
+      ['Check the rep', 'Let the knee bend on landing. Can you finish facing the wall with your lead foot still planted? If you need a second step to catch yourself, shorten the stride. Without a ball, rehearse the same step and turn.'],
     ],
-    note: 'Example layout for Complete Development. Exercises, volume and timing depend on your assessment.',
   },
   {
-    icon: CalendarDays,
-    title: 'Review',
-    description: 'Save your sets and see what you lifted last time.',
-    heading: 'See how the session went',
+    icon: CalendarDays, title: 'Review', description: 'See what carried over when the drill was over.',
+    heading: 'What we’d take into the next pen',
     rows: [
-      ['Last Monday', 'Dumbbell bench · 40 lb per hand for 6 reps'],
-      ['This Monday', 'Pick the same exercise to see those weights beside today’s sets.'],
-      ['What RPE?', 'Enter your max and reps for an estimate of the weight to use.'],
-      ['Next session', 'Save midway through a lift or mark the whole workout complete.'],
+      ['Catcher’s log', 'Last Wednesday, two of five fastballs stayed at the glove. This Wednesday, three did. Both misses were still high.'],
+      ['Coach’s call', 'Keep the rocker in warmups for one more pen. Film a strike and a high miss from the same side angle. Compare what the chest does from foot plant until the ball leaves your hand.'],
+      ['In the weight room', 'Last lift: dumbbell bench, 40 lb per hand for six clean reps. Start there next time and log how the set feels.'],
     ],
-    note: 'Example from a Complete Development workout.',
   },
 ]
 
 export function TrainingPlanPreview() {
   return (
     <div className="my-8 space-y-4">
-      <p className="text-xs text-slate-500">Tap a step to see an example.</p>
-      {examples.map(({ icon: Icon, title, description, heading, rows, note }) => (
+      <p className="text-xs text-slate-500">Follow one fictional pitcher from assessment to his next bullpen. Tap any step.</p>
+      {examples.map(({ icon: Icon, title, description, heading, rows }) => (
         <details key={title} id={`plan-example-${title.toLowerCase()}`} className="group scroll-mt-24 overflow-hidden rounded-xl border border-transparent bg-navy-900 open:border-electric-blue/30">
           <summary className="cursor-pointer list-none p-5 transition-colors hover:bg-white/[0.025] focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-electric-blue-light [&::-webkit-details-marker]:hidden">
             <div className="flex items-center justify-between">
@@ -79,7 +65,6 @@ export function TrainingPlanPreview() {
                 </div>
               ))}
             </dl>
-            <p className="mt-5 text-xs leading-relaxed text-slate-500">{note}</p>
           </div>
         </details>
       ))}

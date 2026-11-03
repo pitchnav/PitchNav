@@ -16,7 +16,7 @@ export default function TailoredDevelopmentPage() {
       <section className="grid items-start gap-12 lg:grid-cols-2">
         <div>
           <p className="text-xs font-bold uppercase tracking-widest text-electric-blue-light">Pitch Nav · Tailored Development</p>
-          <h1 className="mt-5 text-4xl font-black tracking-tight text-white sm:text-6xl">A plan built<br />for your game.</h1>
+          <h1 className="mt-5 text-4xl font-black tracking-tight text-white sm:text-6xl">Tailored Development</h1>
           <p className="mt-6 text-lg leading-relaxed text-slate-300">Tell us when you play school, summer or fall ball. Send a pitch from the side. Your coach uses that delivery and your team dates to plan what comes next.</p>
           <div className="mt-8 flex flex-wrap gap-3"><Link href="/pricing" className="btn-primary">Choose your plan <ArrowRight className="h-4 w-4" /></Link><Link href="/sample-report" className="btn-secondary">See a sample assessment</Link></div>
           <p className="mt-6 text-sm text-slate-400">Coming to development plans: weekly schedule changes, equipment swaps and saved lifting weights. Explore a sample week below.</p>

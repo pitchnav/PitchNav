@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { ArrowRight, CheckCircle, AlertTriangle, Star } from 'lucide-react'
+import { ArrowRight, AlertTriangle } from 'lucide-react'
 import { ProgressBar } from '@/components/ui/ProgressBar'
 
 export const metadata: Metadata = {
@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 
 // Demo data — clearly labeled as fictional
 const DEMO_ATHLETE = {
-  name: 'Demo Athlete (Fictional)',
+  name: 'Sample assessment · High school right-hander',
   age: 16,
   height: '6\'1"',
   weight: 175,
@@ -22,65 +22,23 @@ const DEMO_ATHLETE = {
 }
 
 const SCORECARD = [
-  { category: 'Direction', score: 4, notes: 'Good hip-to-plate direction. Minor early rotation tendency at peak leg lift.' },
-  { category: 'Lower-Half Sequencing', score: 3, notes: 'Moderate hip-to-shoulder separation. Stride tends to shorten under game conditions.' },
-  { category: 'Upper-Half Timing', score: 4, notes: 'Good arm layback timing. Scapular loading is adequate.' },
-  { category: 'Front-Side Stability', score: 3, notes: 'Front knee collapses slightly at contact. Leads to early trunk rotation and a lower release point.' },
-  { category: 'Posture', score: 5, notes: 'Excellent posture throughout the delivery. Head stays on the target.' },
-  { category: 'Release Consistency', score: 4, notes: 'Consistent release point on fastball. Slight variation on off-speed.' },
+  { category: 'Direction', score: 4, notes: 'Your front foot lands on the same line on the strike and the high miss.' },
+  { category: 'Lower-half rhythm', score: 4, notes: 'You start moving down the mound as the lift knee comes down. There’s no extra gather before you stride.' },
+  { category: 'Arm timing', score: 3, notes: 'On the high miss, the elbow starts to straighten while the chest has barely turned past landing.' },
+  { category: 'Front leg', score: 3, notes: 'The knee takes your weight on both throws. It keeps sliding forward longer on the miss.' },
+  { category: 'Posture', score: 4, notes: 'Your head travels with your stride. You can keep that move while we work on the finish.' },
+  { category: 'Command', score: 3, notes: 'Two of the five fastballs in the first pen reached the glove. On the other three, the catcher had to reach up.' },
 ]
 
 const deliveryScore = SCORECARD.reduce((sum, c) => sum + c.score, 0)
 
-const POSITIONS = [
-  {
-    position: 'Peak Leg Lift',
-    image: null,
-    notes: 'Good balance at the peak. Slight early hip rotation beginning to show as the knee comes down.',
-    strength: 'Balanced and controlled at the top of the leg lift.',
-    opportunity: 'Delay hip rotation slightly longer to maximize hip-to-shoulder separation.',
-    cue: '"Hold the hip square until the knee starts to drive."',
-  },
-  {
-    position: 'Hand Separation',
-    image: null,
-    notes: 'Clean hand break. Ball comes out on time with a downward arc toward the power position.',
-    strength: 'Efficient hand break with good arm direction.',
-    opportunity: 'Ensure the glove stays firm at chest-height rather than pulling across the body.',
-    cue: '"Glove stays, arm goes."',
-  },
-  {
-    position: 'Lead-Foot Contact',
-    image: null,
-    notes: 'Stride is directed well toward the plate. Foot lands in line with the target.',
-    strength: 'Consistent landing direction. Front foot aligns with the target line.',
-    opportunity: 'Landing foot contact could be slightly firmer to improve the blocking action.',
-    cue: '"Land firm, not soft."',
-  },
-  {
-    position: 'Maximum External Rotation',
-    image: null,
-    notes: 'As the chest turns toward home, the throwing elbow comes forward and the forearm follows.',
-    strength: 'Elbow maintains proper height through layback.',
-    opportunity: 'Continue developing scapular stability to maintain this position under fatigue.',
-    cue: '"Stay back until the hip fires."',
-  },
-  {
-    position: 'Ball Release',
-    image: null,
-    notes: 'Release point is consistent but slightly early on some pitches, likely related to front-knee collapse.',
-    strength: 'Your throwing arm keeps moving across your body after release.',
-    opportunity: 'Compare the lead knee at landing and release on your next three fastballs.',
-    cue: '"Drive through the ball, not around it."',
-  },
-  {
-    position: 'Finish & Deceleration',
-    image: null,
-    notes: 'Arm finishes across the body well. Follow-through is complete on most pitches.',
-    strength: 'Good deceleration path. Arm swings all the way across and finishes near the opposite hip.',
-    opportunity: 'Engage the core through the follow-through more consistently.',
-    cue: '"Let the arm swing all the way through."',
-  },
+const phases = [
+  ['Leg lift', 'Your lift flows straight into the stride. Keep that tempo.'],
+  ['Hands separate', 'The ball leaves the glove as you move downhill. The strike and miss look alike here.'],
+  ['Front foot lands', 'You land in line with the catcher on both pitches. The difference comes after the shoe hits dirt.'],
+  ['Chest turns', 'On the strike, your front knee steadies and your throwing shoulder comes around. On the miss, the knee keeps traveling and the chest slows.'],
+  ['Ball comes out', 'On the miss, the elbow straightens early and the throw looks pushy. The catcher has to lift the glove. The strike comes out while you’re still turning.'],
+  ['Finish', 'Your arm swings across your body on both pitches. Leave the finish alone and spend your drill time on the move after landing.'],
 ]
 
 export default function SampleReportPage() {
@@ -142,6 +100,11 @@ export default function SampleReportPage() {
           <p className="text-xs text-slate-600 mt-2">Velocity is athlete-provided and not independently verified by Pitch Nav.</p>
         </div>
 
+        <section className="card mb-8">
+          <h2 className="text-xl font-bold text-white">Coach’s recap</h2>
+          <p className="mt-3 text-slate-300">Keep your stride. It gets you on line even when you miss. The fastball looks pushy when you try to guide it to the corner. On those throws your chest slows and your arm reaches out early. Your best strike gives us the move to chase. Start with rocker throws, then take that same turn into the first five fastballs of your next pen.</p>
+        </section>
+
         {/* Scorecard */}
         <div className="card mb-8">
           <h2 className="text-xl font-bold text-white mb-2">Mechanics Scorecard</h2>
@@ -167,163 +130,32 @@ export default function SampleReportPage() {
           </div>
         </div>
 
-        {/* Position breakdown */}
-        <div className="mb-8">
-          <h2 className="text-xl font-bold text-white mb-6">Six-Position Breakdown</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {POSITIONS.map(({ position, notes, strength, opportunity, cue }) => (
-              <div key={position} className="card">
-                {/* Annotated frames: hidden rather than shown as a grey
-                    "[Annotated screenshot — …]" box, which read as an unfinished
-                    page on the strongest sales asset on the site. The six
-                    position names below already match the frames to be pulled
-                    from a side-view video (peak leg lift, hand separation,
-                    lead-foot contact, max external rotation, ball release,
-                    finish), so real images drop straight in here once footage
-                    exists. Deliberately no stand-in image: a stock or generated
-                    frame on a sample report would misrepresent the product. */}
-                <h3 className="text-base font-bold text-white mb-2">{position}</h3>
-                <p className="text-xs text-slate-400 leading-relaxed mb-4">{notes}</p>
-                <div className="space-y-3">
-                  <div className="rounded-lg bg-accent-green/5 border border-accent-green/20 p-3">
-                    <p className="text-xs font-semibold text-accent-green mb-1">Strength</p>
-                    <p className="text-xs text-slate-300">{strength}</p>
-                  </div>
-                  <div className="rounded-lg bg-electric-blue/5 border border-electric-blue/20 p-3">
-                    <p className="text-xs font-semibold text-electric-blue-light mb-1">Development Opportunity</p>
-                    <p className="text-xs text-slate-300">{opportunity}</p>
-                  </div>
-                  <div className="rounded-lg bg-surface-hover p-3">
-                    <p className="text-xs font-semibold text-slate-400 mb-1">Coaching Cue</p>
-                    <p className="text-xs text-white italic">{cue}</p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        <section className="card mb-8">
+          <h2 className="text-xl font-bold text-white">The delivery, from lift to finish</h2>
+          <p className="mt-2 text-sm text-slate-400">Here’s how we’d compare a fastball at the glove with one that sailed.</p>
+          <dl className="mt-5 grid gap-5 sm:grid-cols-2">
+            {phases.map(([name, detail]) => <div key={name}><dt className="font-bold text-white">{name}</dt><dd className="mt-1 text-sm text-slate-300">{detail}</dd></div>)}
+          </dl>
+        </section>
 
-        {/* Strengths & Priorities */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          <div className="card">
-            <h2 className="text-lg font-bold text-white mb-4">Three Strengths</h2>
-            <ul className="space-y-3">
-              {[
-                'Excellent posture and head stability through the delivery',
-                'Good arm-path direction and elbow height at ball release',
-                'Clean hand break with efficient arm direction',
-              ].map((s, i) => (
-                <li key={i} className="flex items-start gap-3">
-                  <Star className="h-4 w-4 text-accent-green flex-shrink-0 mt-0.5" />
-                  <span className="text-sm text-slate-300">{s}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-          <div className="card">
-            <h2 className="text-lg font-bold text-white mb-4">Three Development Priorities</h2>
-            <ul className="space-y-3">
-              {[
-                'Front-knee stability at and after lead-foot contact',
-                'Hip-to-shoulder separation at hand separation',
-                'Glove-side control through ball release',
-              ].map((p, i) => (
-                <li key={i} className="flex items-start gap-3">
-                  <span className="text-electric-blue-light font-bold text-sm flex-shrink-0 w-5">{i + 1}.</span>
-                  <span className="text-sm text-slate-300">{p}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
+        <section className="card mb-8">
+          <h2 className="text-xl font-bold text-white">What goes in your plan</h2>
+          <h3 className="mt-5 font-bold text-white">Before you throw · Rocker throws</h3>
+          <p className="mt-2 text-slate-300">Face sideways with your feet already in your stride. Rock forward, back, then forward into an easy throw to your partner. Feel your chest carry your throwing shoulder around. Three easy reps, then throw from your normal delivery and see if you can get the same finish.</p>
+          <h3 className="mt-5 font-bold text-white">On lift day · Step-over med-ball throws</h3>
+          <p className="mt-2 text-slate-300">Stand sideways to a throwing wall. Hold a light medicine ball at your chest and step over a rolled towel with your lead foot. As it lands, turn and toss the ball into the wall with both hands. A good rep ends with your front foot planted and your chest facing the wall. Shorten the step if you stumble forward.</p>
+        </section>
 
-        {/* Drills */}
-        <div className="card mb-8">
-          <h2 className="text-xl font-bold text-white mb-6">Assigned Drills</h2>
-          <div className="space-y-6">
-            {[
-              {
-                name: 'Pivot Pickoff Drill',
-                category: 'Lead-Leg Stability',
-                sets: 3, reps: '6 reps',
-                cue: 'Land firm, not soft. Feel the front knee stay over the foot for 2 seconds.',
-                mistake: 'Collapsing the front knee or rushing out of the freeze position.',
-              },
-              {
-                name: 'Rocker Drill',
-                category: 'Direction / Hip Sequencing',
-                sets: 3, reps: '10 reps',
-                cue: 'Drive the hip directly at the plate on the third rock. Keep the glove side closed.',
-                mistake: 'Opening the hips before the knee reaches the balance point.',
-              },
-              {
-                name: 'Standing Decel Towel Drill',
-                category: 'Deceleration / Arm Care',
-                sets: 3, reps: '10 reps',
-                cue: 'Let the arm swing all the way across the body. Finish with the palm down near the opposite hip.',
-                mistake: 'Cutting the follow-through short.',
-              },
-            ].map((drill) => (
-              <div key={drill.name} className="rounded-xl border border-surface-border bg-surface-hover p-5">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
-                  <div>
-                    <h3 className="text-base font-bold text-white">{drill.name}</h3>
-                    <span className="text-xs text-electric-blue-light">{drill.category}</span>
-                  </div>
-                  <div className="text-sm text-slate-400">
-                    {drill.sets} sets × {drill.reps}
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                  <div>
-                    <p className="text-slate-500 mb-1 font-semibold">Coaching Cue</p>
-                    <p className="text-slate-300 italic">&quot;{drill.cue}&quot;</p>
-                  </div>
-                  <div>
-                    <p className="text-slate-500 mb-1 font-semibold">Common Mistake</p>
-                    <p className="text-slate-300">{drill.mistake}</p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Eight-week plan */}
-        <div className="card mb-8">
-          {/*
-            Heading says what is actually on screen. It previously read
-            "Eight-Week Focus Plan" above four weeks, which tells a parent
-            comparing plans that they are getting half of what the product
-            delivers. The real plan is eight weeks (see src/lib/throwing-plan.ts,
-            reassessed at 2/4/6/8) -- weeks 5-8 of this SAMPLE are simply not
-            written yet. Add real sample content for them and restore the
-            original heading; do not pad it with invented drill prescriptions.
-          */}
-          <h2 className="text-xl font-bold text-white mb-1">Focus Plan — First Four Weeks (Sample)</h2>
-          <p className="text-sm text-slate-400 mb-4">
-            Your full plan runs eight weeks, with a check-in every two weeks to adjust it. These are
-            the first four.
-          </p>
-          <div className="space-y-4">
-            {[
-              { week: 1, focus: 'Front-Leg Stability', detail: 'Pivot Pickoff Drill daily (3×6). Focus on the feeling of a firm front leg through release on every bullpen pitch. Video yourself from the open side at least once.' },
-              { week: 2, focus: 'Hip Sequencing & Direction', detail: 'Add Rocker Drill (3×10) before bullpen sessions. Aim to feel more hip-to-shoulder separation before hand separation.' },
-              { week: 3, focus: 'Integration', detail: 'Connect the front-leg feel and the hip sequencing in live bullpen sessions. Record a comparison pitch from the open side.' },
-              { week: 4, focus: 'Deceleration & Arm Care', detail: 'Introduce Towel Drill (3×10) at the end of bullpen sessions. Focus on complete follow-through on every pitch, especially when fatigued.' },
-            ].map(({ week, focus, detail }) => (
-              <div key={week} className="flex gap-4">
-                <div className="flex-shrink-0 w-12 h-12 rounded-full bg-electric-blue/10 flex items-center justify-center">
-                  <span className="text-sm font-black text-electric-blue-light">{week}</span>
-                </div>
-                <div>
-                  <p className="text-sm font-bold text-white">{focus}</p>
-                  <p className="text-sm text-slate-400 mt-1">{detail}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        <section className="card mb-8">
+          <h2 className="text-xl font-bold text-white">First four weeks of the sample development plan</h2>
+          <ol className="mt-5 space-y-4 text-slate-300">
+            <li><strong>Week 1 · Get a baseline.</strong> Use the first five fastballs in your scheduled pen. Keep one target and count how often the catcher has to lift the glove. Save a strike and a high miss.</li>
+            <li><strong>Week 2 · Try the rocker.</strong> Use three warmup throws for the drill. Repeat the five-fastball check at the same effort. In this example the pitcher went from two at the glove to three. Keep working before calling that progress.</li>
+            <li><strong>Week 3 · Mix your pitches.</strong> Call a changeup between fastballs. See if you can come back to the glove when you only get one shot at the fastball.</li>
+            <li><strong>Week 4 · Review the carryover.</strong> Compare regular pitches from weeks one and four. If the high miss keeps showing up, revisit the landing with your coach before adding another drill.</li>
+          </ol>
+          <Link href="/tailored-development" className="btn-secondary mt-6">Explore Tailored Development <ArrowRight className="h-4 w-4" /></Link>
+        </section>
 
         {/* CTA */}
         <div className="text-center">
