@@ -60,7 +60,7 @@ const POSITIONS = [
   {
     position: 'Maximum External Rotation',
     image: null,
-    notes: 'Good layback. Elbow is at shoulder height at ball release. Scap loading is adequate.',
+    notes: 'As the chest turns toward home, the throwing elbow comes forward and the forearm follows.',
     strength: 'Elbow maintains proper height through layback.',
     opportunity: 'Continue developing scapular stability to maintain this position under fatigue.',
     cue: '"Stay back until the hip fires."',
@@ -69,8 +69,8 @@ const POSITIONS = [
     position: 'Ball Release',
     image: null,
     notes: 'Release point is consistent but slightly early on some pitches, likely related to front-knee collapse.',
-    strength: 'Good finger pressure through the ball on most pitches.',
-    opportunity: 'Improving front-knee stability should bring the release point forward 2–4 inches.',
+    strength: 'Your throwing arm keeps moving across your body after release.',
+    opportunity: 'Compare the lead knee at landing and release on your next three fastballs.',
     cue: '"Drive through the ball, not around it."',
   },
   {

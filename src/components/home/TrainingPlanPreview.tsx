@@ -32,24 +32,24 @@ const examples = [
     description: 'Pair your throwing with lifting and mobility.',
     heading: 'Training around your throwing',
     rows: [
-      ['Strength', 'A lifting day with a split squat and a row selected for this sample athlete.'],
-      ['Mobility', 'Hip and upper-back work tied to the athlete’s movement checks.'],
-      ['Around outings', 'Your coach adjusts the day’s work around games and bullpen sessions.'],
+      ['Strength', 'Monday: trap-bar deadlift paired with dumbbell bench. No trap bar? Use the dumbbell hinge in your plan.'],
+      ['Mobility', 'Your last block pairs a strength exercise with mobility for the same priority.'],
+      ['Around outings', 'With a Friday start and no pen, lift Monday and Wednesday. Add a Tuesday pen and the calendar looks for open days again.'],
     ],
     note: 'Example layout for Complete Development. Exercises, volume and timing depend on your assessment.',
   },
   {
     icon: CalendarDays,
     title: 'Review',
-    description: 'Log your work and review your progress.',
+    description: 'Save your sets and see what you lifted last time.',
     heading: 'See how the session went',
     rows: [
-      ['Planned vs. actual', '20 pitches planned · 18 logged'],
-      ['Sample command recap', '12 of 16 scored pitches on target · 75%'],
-      ['Missing locations', '2 pitches unscored. They do not count as hits or misses.'],
-      ['Next session', 'Review the misses, effort check-in and upcoming schedule with your coach.'],
+      ['Last Monday', 'Dumbbell bench · 40 lb per hand for 6 reps'],
+      ['This Monday', 'Pick the same exercise to see those weights beside today’s sets.'],
+      ['What RPE?', 'Enter your max and reps for an estimate of the weight to use.'],
+      ['Next session', 'Save midway through a lift or mark the whole workout complete.'],
     ],
-    note: 'Illustrative numbers, not athlete results. Command compares location with the intended target.',
+    note: 'Example from a Complete Development workout.',
   },
 ]
 

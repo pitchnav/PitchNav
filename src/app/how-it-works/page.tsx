@@ -13,12 +13,12 @@ const steps = [
     icon: <CheckCircle className="h-8 w-8" />,
     number: '01',
     title: 'Tell Us About Your Game',
-    description: 'Create your account and tell us about your pitching background, current training and goals.',
+    description: 'Tell us when you play, where you train and what you want to improve.',
     details: [
       'Name, age, height, weight, and playing level',
       'Throwing handedness and primary position',
       'Current and goal velocity (clearly labeled as athlete-provided)',
-      'Secondary pitches, years of experience, coaching history',
+      'School, summer and fall dates, plus the equipment you can use',
       'Health and safety screening questions',
       'Parent or guardian consent for athletes under 18',
     ],
@@ -40,9 +40,23 @@ const steps = [
     note: 'Submit one clear, complete pitch from the open-side angle. The movement screens have their own guide.',
   },
   {
-    icon: <Upload className="h-8 w-8" />,
+    icon: <CreditCard className="h-8 w-8" />,
     number: '03',
-    title: 'Upload Your Video',
+    title: 'Check Out',
+    description: 'Choose your assessment or membership. Once payment clears, open the upload link to send your pitch.',
+    details: [
+      'Secure checkout powered by Stripe',
+      'Pitch Nav does not store your card number',
+      'See the pricing page for current plans and assessment fees',
+      'Order confirmation email sent immediately',
+      'Your coach can begin once your video is in',
+    ],
+    note: null,
+  },
+  {
+    icon: <Upload className="h-8 w-8" />,
+    number: '04',
+    title: 'Send Your Video',
     description: 'Upload a clear pitch from your camera roll. We accept MP4, MOV and other common video formats.',
     details: [
       'One open-side video (required)',
@@ -50,20 +64,6 @@ const steps = [
       'Video quality checklist before final submission',
     ],
     note: 'Your uploaded videos are private. You and your assigned reviewer can access them.',
-  },
-  {
-    icon: <CreditCard className="h-8 w-8" />,
-    number: '04',
-    title: 'Pay & Submit',
-    description: 'Check your order details and finish checkout. We confirm payment before reviewing your submission.',
-    details: [
-      'Secure checkout powered by Stripe',
-      'Pitch Nav does not store your card number',
-      'See the pricing page for current plans and assessment fees',
-      'Order confirmation email sent immediately',
-      'Your order goes straight into review',
-    ],
-    note: null,
   },
   {
     icon: <Clock className="h-8 w-8" />,
@@ -88,7 +88,7 @@ const steps = [
       'Position-by-position annotated breakdowns',
       'Three strengths and three development priorities',
       'Three personalized drills with sets, reps, and coaching cues',
-      'Eight-week focus plan',
+      'Development members get a throwing calendar. Complete adds seasonal lifts and mobility.',
       'Voice-over video walking you through the analysis',
       'Downloadable PDF report',
     ],
@@ -106,7 +106,7 @@ export default function HowItWorksPage() {
             Start Your Development Plan
           </h1>
           <p className="mt-4 text-lg text-slate-400 max-w-2xl mx-auto">
-            Send your delivery. Get feedback. Take your plan to the field. These steps cover mechanics assessments and training.
+            Here’s how to get your delivery reviewed and start training around your outings.
           </p>
         </div>
 

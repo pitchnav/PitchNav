@@ -20,7 +20,7 @@ const faqs = [
   },
   {
     q: 'Which membership includes Pitch Tracking?',
-    a: 'Throwing Development is $24.99/month and includes tailored throwing support. Complete Development is $39.99/month and adds lifting, mobility and access to Pitch Tracking when released. Standalone Pitch Tracking is $24.99/month with no paid assessment. Tracking is currently in development.',
+    a: 'Throwing Development is $24.99/month and includes mechanics drills and a throwing calendar. Complete Development is $39.99/month and adds seasonal lifting, equipment swaps, a workout log, mobility and access to Pitch Tracking when released. Standalone Pitch Tracking is $24.99/month with no paid assessment. Tracking is currently in development.',
   },
   {
     q: 'How do assessments and annual billing work?',

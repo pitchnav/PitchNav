@@ -45,7 +45,7 @@ export default function Catalog() {
       </div>
     </div>
     <ul className="grid grid-cols-2 gap-x-1 gap-y-7 lg:grid-cols-3">
-      {visible.map(product => <li key={product.image} className={product.recommended ? styles.recommendedProduct : styles.product}>
+      {visible.map(product => <li key={product.image} id={product.image} style={{ scrollMarginTop: 96 }} className={product.recommended ? styles.recommendedProduct : styles.product}>
         <div className="relative aspect-square overflow-hidden bg-white">
           <Image src={'/shop/' + (product.frontImage ?? product.image) + '.webp'} alt={product.name} fill sizes="(min-width: 1024px) 33vw, 50vw" className="object-contain" />
           <Image src={'/shop/' + product.image + '-angle.webp'} alt="" fill sizes="(min-width: 1024px) 33vw, 50vw" className={styles.angle} />

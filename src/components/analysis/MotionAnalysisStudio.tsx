@@ -1,9 +1,12 @@
 'use client'
 
+import { VideoRecorder } from '@/components/capture/VideoRecorder'
+
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Activity, AlertTriangle, Download, Pause, Play, RotateCcw, Upload, Video } from 'lucide-react'
 import type { NormalizedLandmark, PoseLandmarker } from '@mediapipe/tasks-vision'
 import { createClient } from '@/lib/supabase/client'
+import { equipmentSchema } from '@/lib/training-equipment'
 import { buildBaseballPerformancePlan } from '@/lib/performance-plan'
 import { buildEightWeekThrowingPlan } from '@/lib/throwing-plan'
 import { probeVideoFile, ACCEPTED_VIDEO_TYPES } from '@/lib/video-support'
@@ -291,7 +294,7 @@ export function buildCategoryFeedback(frames: FrameMetrics[], summary: ClipSumma
       category: 'Direction',
       score: 3,
       confidence: 'Low',
-      strength: 'Your full body stayed in the frame from leg lift through the finish. That gives us a clean look at the length and timing of your move down the mound.',
+      strength: 'This view shows your move down the mound. Landing direction still needs a marked target line.',
       development: 'This side view does not clearly show if your front foot drifts left or right of the target line. Do not force your stride to change from this score alone. At the two-week check, use a visible tape line from the rubber toward the target so your landing direction is easier to compare.',
       evidence: 'The lead foot is visible when it lands, but the target line is not marked in the video. That means we can see the stride happen without pretending we know the exact amount of side-to-side drift.',
     },
@@ -329,8 +332,8 @@ export function buildCategoryFeedback(frames: FrameMetrics[], summary: ClipSumma
       category: 'Upper-Half Timing',
       score: 3,
       confidence: 'Low',
-      strength: 'Your throwing shoulder, elbow, and wrist stayed visible through most of the arm action, so a coach can follow the arm from hand break into the forward throw.',
-      development: 'Arm timing means whether your arm reaches the same spot at the moment your front foot lands, and one clip cannot prove that. Do not change your arm path from this score. At the two-week check, record three pitches from the same spot and, if your phone offers it, use slow motion so the arm is sharp instead of blurred.',
+      strength: 'Use landing and release to judge the arm action. The elbow-angle range alone does not tell us whether the arm is on time.',
+      development: 'Next session, film three throws from the same spot in slow motion. Compare your hand and elbow at landing and release. Keep your normal arm action while we check the timing; do not force extra layback.',
       evidence: `A coach reviews the arm position at front-foot landing in the saved phase images. The automatic measurement of arm range (${Math.round(elbowSpread)} degrees in this clip) covers the whole delivery, from the hands together at the start to the arm fully straight after release, so it is expected to be large for every pitcher and is not used as a score.`,
     },
     {
@@ -351,11 +354,11 @@ export function buildCategoryFeedback(frames: FrameMetrics[], summary: ClipSumma
       score: kneeCollapse <= 15 ? 5 : kneeCollapse <= 30 ? 3 : 1,
       confidence: quality,
       strength: kneeCollapse <= 15
-        ? 'Your front leg holds its shape after landing instead of folding under you. That firm front side is what the rest of your body turns around.'
-        : 'Your front leg stayed visible from landing through the finish, so a coach can see exactly where the leg starts to give way.',
+        ? 'The tracked knee shows little extra bending after the landing estimate. Check that pattern at confirmed foot contact and release.'
+        : 'The tracked knee bends farther after the landing estimate. That gives us a front-side pattern to review, not proof that the leg is weak.',
       development: kneeCollapse > 15
-        ? 'Your front knee keeps bending after your foot lands instead of holding firm, so your chest travels around the front leg rather than over it. Use controlled lead-leg holds and single-leg step-downs, and stop before the knee locks hard or hurts.'
-        : 'Your front leg holds up well in this pitch, but one pitch does not prove it repeats when the effort goes up. Keep the same firm base without snapping the knee straight, and compare the landing again at the two-week check.',
+        ? 'Review the front knee at landing, release and the finish on three comparable throws. Check whether it starts straightening before release or keeps folding. Keep your normal delivery; do not try to snap the knee straight to fix a camera estimate.'
+        : 'Keep that pattern and check it on three comparable throws. Look for the knee accepting the landing and then holding or straightening through the throw. Do not force a locked knee.',
       evidence: `After your front foot lands, your front knee bends about ${Math.round(kneeCollapse)} more degrees before it firms up. Straightening after landing is the front leg doing its job, so only the extra bending counts here.`,
     },
     {
@@ -959,8 +962,9 @@ export function MotionAnalysisStudio({
   const [summary, setSummary] = useState<ClipSummary | null>(null)
   const [progress, setProgress] = useState(0)
   const [error, setError] = useState('')
+  const normalSpeedRecording = useRef(false)
   const [captureFps, setCaptureFps] = useState(() =>
-    initialVideo?.captureFps && [60, 120, 240].includes(initialVideo.captureFps)
+    initialVideo?.captureFps && [30, 60, 120, 240].includes(initialVideo.captureFps)
       ? initialVideo.captureFps
       : 240
   )
@@ -1181,7 +1185,7 @@ export function MotionAnalysisStudio({
     }
   }, [])
 
-  async function handleFile(file: File) {
+  async function handleFile(file: File, capture?: { normalSpeed: true; cameraFps?: number }) {
     if (!file.type.startsWith('video/')) {
       setError('Choose a supported video file.')
       return
@@ -1203,6 +1207,8 @@ export function MotionAnalysisStudio({
     }
     if (fileUrl) URL.revokeObjectURL(fileUrl)
     setVideoReady(false)
+    normalSpeedRecording.current = Boolean(capture?.normalSpeed)
+    if (capture?.normalSpeed) setCaptureFps(Math.round(capture.cameraFps || 30))
     setFileUrl(URL.createObjectURL(file))
     selectedFileRef.current = file
     renderedBlobRef.current = null
@@ -1224,7 +1230,7 @@ export function MotionAnalysisStudio({
     if (!initialVideo || initialVideoLoadedRef.current) return
     initialVideoLoadedRef.current = true
     setHandedness(initialVideo.handedness)
-    if (initialVideo.captureFps && [60, 120, 240].includes(initialVideo.captureFps)) {
+    if (initialVideo.captureFps && [30, 60, 120, 240].includes(initialVideo.captureFps)) {
       setCaptureFps(initialVideo.captureFps)
     }
     existingSourcePathRef.current = initialVideo.storagePath
@@ -1290,7 +1296,7 @@ export function MotionAnalysisStudio({
         // requestVideoFrameCallback measures the playback timeline. iPhone
         // Slo-mo commonly stores 240 captured frames on a 30 FPS playback
         // timeline, so it must not overwrite a confirmed camera capture rate.
-        if (!initialVideo?.captureFps) {
+        if (!initialVideo?.captureFps && !normalSpeedRecording.current) {
           if (fps >= 180) setCaptureFps(240)
           else if (fps >= 90) setCaptureFps(120)
           else if (fps >= 50) setCaptureFps(60)
@@ -1386,7 +1392,7 @@ export function MotionAnalysisStudio({
     // Real-world seconds converted into this file's timeline, so an iPhone
     // Slo-mo export (240 FPS captured, ~30 FPS timeline) searches the same
     // amount of actual movement rather than an eighth of it.
-    const timeScale = motionTimeScale(captureFps, detectedPlaybackFps ?? captureFps)
+    const timeScale = (normalSpeedRecording.current ? 1 : motionTimeScale(captureFps, detectedPlaybackFps ?? captureFps))
     const searchWindow = 0.6 * timeScale
     const framesAfterStride = widestStride
       ? frames.filter((frame) => frame.time >= widestStride.time && frame.time <= widestStride.time + searchWindow)
@@ -1705,7 +1711,7 @@ export function MotionAnalysisStudio({
     const releaseDetected = summary?.ballReleaseTime ?? null
     // Same conversion for the fallback offsets: 0.04s and 0.13s are real
     // foot-contact-to-release intervals, not timeline intervals.
-    const phaseScale = motionTimeScale(captureFps, detectedPlaybackFps ?? captureFps)
+    const phaseScale = (normalSpeedRecording.current ? 1 : motionTimeScale(captureFps, detectedPlaybackFps ?? captureFps))
     const maxExternalRotation = merDetected ?? stride + 0.04 * phaseScale
     const ballRelease = releaseDetected ?? stride + 0.13 * phaseScale
     const finish = ballRelease + 0.35 * phaseScale
@@ -1881,6 +1887,17 @@ export function MotionAnalysisStudio({
         'Your follow-up must use the same camera angle and a similar throwing effort. That is how the coach can tell whether the plan changed your movement instead of just changing the video.',
       ]
 
+      let equipment
+      let programTier
+      if (initialVideo?.orderId) {
+        const {data: order, error} = await supabase.from('orders').select('program_tier, athlete_profiles(training_equipment)')
+          .eq('id', initialVideo.orderId).single()
+        const athlete = Array.isArray(order?.athlete_profiles) ? order.athlete_profiles[0] : order?.athlete_profiles
+        programTier = order?.program_tier
+        if (error) throw error
+        equipment = equipmentSchema.safeParse(athlete?.training_equipment).data
+        if (programTier && !equipment) throw new Error('Finish the training equipment questions in your athlete assessment before starting a program.')
+      }
       let analysis: { id: string }
       if (existingAnalysisId) {
         analysis = { id: existingAnalysisId }
@@ -1928,10 +1945,10 @@ export function MotionAnalysisStudio({
           source_video_storage_path: sourcePath,
           tracked_video_storage_path: trackedPath,
           rendered_video_storage_path: renderedPath,
-          capture_fps: captureFps,
+          capture_fps: normalSpeedRecording.current ? null : captureFps,
           calibration_passed: setupConfirmed,
           mechanics_metrics: metrics ?? {},
-          clip_summary: summary,
+          clip_summary: normalSpeedRecording.current ? { ...summary, recording_source: 'browser_camera', normal_speed_recording: true, camera_fps_setting: captureFps, detected_playback_fps: detectedPlaybackFps } : summary,
           delivery_score: overallScore,
           category_scores: categoryFeedback,
           phase_snapshots: phaseSnapshots,
@@ -1947,27 +1964,27 @@ export function MotionAnalysisStudio({
         if (orderError) console.error('Could not advance order status to in_analysis', orderError)
       }
 
-      const weeks = buildEightWeekThrowingPlan(categoryFeedback, immediatePriorities)
-      // The $25 Throwing Development plan intentionally excludes lifting and
-      // mobility programming. Only paid $40 Complete Performance orders receive it.
-      const strengthMobilityWeeks = (initialVideo?.amountPaidCents ?? 0) >= 4000
-        ? buildBaseballPerformancePlan(categoryFeedback, immediatePriorities)
-        : []
-      const followUp = new Date()
-      followUp.setDate(followUp.getDate() + planWeeks * 7)
-      const { error: planError } = await supabase.from('training_plans').insert({
-        motion_analysis_id: analysis.id,
-        user_id: targetUserId,
-        duration_weeks: planWeeks,
-        title: `${planWeeks}-Week Pitching Development Plan`,
-        weeks,
-        strength_mobility_weeks: strengthMobilityWeeks,
-        starts_on: new Date().toISOString().slice(0, 10),
-        rolling_window_days: 14,
-        follow_up_date: followUp.toISOString().slice(0, 10),
-        published_at: null,
-      })
-      if (planError) throw planError
+      if (programTier && equipment) {
+        const weeks = buildEightWeekThrowingPlan(categoryFeedback, immediatePriorities, [], equipment)
+        const strengthMobilityWeeks = programTier === 'performance'
+          ? buildBaseballPerformancePlan(categoryFeedback, immediatePriorities, equipment)
+          : []
+        const followUp = new Date()
+        followUp.setDate(followUp.getDate() + planWeeks * 7)
+        const { error: planError } = await supabase.from('training_plans').insert({
+          motion_analysis_id: analysis.id,
+          user_id: targetUserId,
+          duration_weeks: planWeeks,
+          title: `${planWeeks}-Week Pitching Development Plan`,
+          weeks,
+          strength_mobility_weeks: strengthMobilityWeeks,
+          starts_on: new Date().toISOString().slice(0, 10),
+          rolling_window_days: 14,
+          follow_up_date: followUp.toISOString().slice(0, 10),
+          published_at: null,
+        })
+        if (planError) throw planError
+      }
       const notificationResponse = await fetch('/api/motion-lab/request-review', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -2123,6 +2140,8 @@ export function MotionAnalysisStudio({
           <span className="text-sm text-slate-300">I confirm this video follows the setup and shows the full delivery.</span>
         </label>
       </section>
+
+      {!loadingInitialVideo && !analyzing && !exporting && !savingAnalysis && <VideoRecorder purpose="your delivery" onUse={handleFile} />}
 
       {!fileUrl ? (
         <label className="flex min-h-80 cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-surface-border bg-surface-card p-8 text-center transition hover:border-electric-blue hover:bg-surface-hover">

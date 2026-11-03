@@ -1,5 +1,7 @@
 'use client'
 
+import { VideoRecorder } from '@/components/capture/VideoRecorder'
+
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AlertTriangle, Check, Upload, Video } from 'lucide-react'
 import type { PoseLandmarker } from '@mediapipe/tasks-vision'
@@ -320,10 +322,12 @@ export function MovementScreenStudio() {
           </div>
         </div>
 
+        <VideoRecorder key={stepKey(step)} purpose="this movement screen" disabled={measuring || saving} onUse={handleFile} />
+
         <label className="flex cursor-pointer flex-col items-center gap-2 rounded-2xl border-2 border-dashed border-slate-700 p-8 text-center transition hover:border-electric-blue/50">
           <Upload className="h-7 w-7 text-electric-blue-light" />
           <span className="font-semibold text-white">
-            {currentResult ? 'Record this screen again' : 'Upload your recording of this screen'}
+            {currentResult ? 'Upload another recording' : 'Or upload a saved video'}
           </span>
           <span className="text-xs text-slate-500">MP4 or WebM · a few seconds is enough</span>
           <input

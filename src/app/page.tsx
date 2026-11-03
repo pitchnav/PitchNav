@@ -21,7 +21,7 @@ function Hero() {
         <div className="mx-auto max-w-3xl text-center">
           <p className="text-xs font-bold uppercase tracking-[0.2em] text-electric-blue-light">Pitch Tracking + Tailored Development</p>
           <h1 className="mt-5 text-4xl font-black tracking-tight text-white sm:text-6xl">Track your pitches.<br /><span className="text-electric-blue-light">Build your game.</span></h1>
-          <p className="mt-6 text-lg leading-relaxed text-slate-400">Track your bullpen with your iPhone. Get a throwing and training plan built around your game.</p>
+          <p className="mt-6 text-lg leading-relaxed text-slate-400">Get ready for your next outing with a plan built around your season. Take a look at the iPhone bullpen tracker we’re testing.</p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <Link href="/pitch-metrics" className="btn-primary">Explore Pitch Tracking <ArrowRight className="h-4 w-4" /></Link>
             <Link href="/tailored-development" className="btn-primary">Explore Tailored Development <ArrowRight className="h-4 w-4" /></Link>
@@ -43,11 +43,11 @@ function Hero() {
           <article id="tailored-development" className="card flex flex-col scroll-mt-24 border-electric-blue/25">
             <p className="text-xs font-bold uppercase tracking-widest text-electric-blue-light">Develop your game · Staff-reviewed</p>
             <h2 className="mt-3 text-3xl font-black text-white">Tailored Development</h2>
-            <p className="mt-4 text-base leading-relaxed text-slate-300">Send us your delivery. We’ll review your mechanics and give you drills and a throwing plan. Add lifting and mobility with Complete Development.</p>
+            <p className="mt-4 text-base leading-relaxed text-slate-300">Send us a pitch. A coach breaks down your delivery and gives you something specific to work on next pen. Complete Development adds lifts and mobility around your throwing days.</p>
             <ul className="mt-5 space-y-2 text-sm text-slate-400">
-              <li>Mechanics feedback from the Pitch Nav staff</li>
-              <li>Throwing, lifting and mobility built for you</li>
-              <li>Follow your plan and check your progress</li>
+              <li>Drills picked from your assessment</li>
+              <li>Offseason training timed to your first team practice</li>
+              <li>In-season check-ins for games and bullpens</li>
             </ul>
             <Link href="/tailored-development" className="btn-secondary mt-6 justify-center">Explore development plans <ArrowRight className="h-4 w-4" /></Link>
             <div className="mt-8 flex flex-1 flex-col rounded-2xl border border-surface-border bg-navy-950 p-6">
@@ -74,13 +74,13 @@ function HowItWorks() {
       step: '01',
       icon: <Users className="h-6 w-6" />,
       title: 'Create Your Profile',
-      description: 'Tell us about your age, position, playing level, velocity history, and pitching goals.',
+      description: 'Tell us when your team starts practice, when your season ends and what equipment you can use.',
     },
     {
       step: '02',
       icon: <Camera className="h-6 w-6" />,
       title: 'Set Up & Film',
-      description: 'Follow our guided camera-setup wizard and submit one clear, complete pitch from the throwing-arm side.',
+      description: 'Set your phone on a tripod on your throwing-arm side. Film one full pitch, from leg lift through finish.',
     },
     {
       step: '03',
@@ -92,7 +92,7 @@ function HowItWorks() {
       step: '04',
       icon: <FileBarChart2 className="h-6 w-6" />,
       title: 'Receive Your Report',
-      description: 'The Pitch Nav staff analyzes your delivery frame by frame and delivers a full report, voice-over video, drills, and an eight-week focus plan.',
+      description: 'Your coach walks through your delivery and picks drills for your next session. Development members can open their training calendar alongside the report.',
     },
   ]
 
@@ -150,7 +150,7 @@ function WhatIsIncluded() {
     'Three identified strengths',
     'Three development priorities',
     'Three personalized drills with coaching cues',
-    'Eight-week focus plan',
+    'Throwing calendar with a development membership',
     'Voice-over video analysis',
     'Downloadable PDF report',
     'Follow-up analysis option',

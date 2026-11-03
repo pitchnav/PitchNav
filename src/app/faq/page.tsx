@@ -13,7 +13,7 @@ const FAQ_SECTIONS = [
     questions: [
       {
         q: 'What is Pitch Nav?',
-        a: "Pitch Nav combines pitching development with a phone-tracking system in development. Send us a mechanics video for staff feedback, drills and a throwing plan. Explore Pitch Tracking for our upcoming bullpen tools.",
+        a: "Start with a mechanics assessment. Choose Throwing Development for drills and a throwing plan, or Complete Development to add strength and mobility. Our iPhone pitch tracker is in testing.",
       },
       {
         q: 'Who is Pitch Nav for?',
@@ -38,7 +38,7 @@ const FAQ_SECTIONS = [
       },
       {
         q: 'Do I need a tripod?',
-        a: "Use a tripod or a secure phone mount. Keep the camera still through the whole pitch.",
+        a: "You’ll need access to a tripod for program setup. A borrowed tripod works.",
       },
       {
         q: 'What video angles do I need to submit?',
@@ -56,6 +56,15 @@ const FAQ_SECTIONS = [
         q: 'What if my video quality isn\'t perfect?',
         a: 'Our camera-setup wizard and video quality checklist will help you catch common issues before you submit. If your reviewer identifies a quality problem after submission, they will contact you and request a replacement video. You have 14 days to re-upload at no additional charge.',
       },
+    ],
+  },
+  {
+    category: 'Training through the season',
+    questions: [
+      {q: 'I play for two teams. Which dates should I enter?', a: 'Enter both. Count from your first required team day through your last one. If school and summer ball run back to back, your main offseason starts when summer ball ends.'},
+      {q: 'What if my coach moves my start?', a: 'Open the weekly check-in in your training calendar. Change the game or bullpen day and save. Complete Development looks for room on either side of mound work and schedules fewer lifts if the week is packed.'},
+      {q: 'Do I need plyo balls or a full weight room?', a: 'Tell us what you can use, including borrowed equipment. Plyos and bands are optional. If you train at home, your plan can use bodyweight exercises.'},
+      {q: 'Where do my weights go?', a: 'Open the workout, enter your reps and weight for each set, then save. The next time you choose that exercise, you can see what you used in your last completed session.'},
     ],
   },
   {

@@ -42,6 +42,10 @@ export default function PrivacyPage() {
             <h2 className="text-xl font-bold text-white mb-4">2. Information We Collect</h2>
             <div className="space-y-4 text-slate-400 text-sm leading-relaxed">
               <div>
+                <h3 className="text-white font-semibold mb-2">Training plans and workout history</h3>
+                <p>When you use a training plan, we store the team dates, bullpen and game days, and available equipment you enter. Saved workouts include your exercises, sets, reps, weights and completion status so you can pick up where you left off.</p>
+              </div>
+              <div>
                 <h3 className="text-white font-semibold mb-2">Account Information</h3>
                 <p>Email address, name, and password (stored as a secure hash by Supabase).</p>
               </div>

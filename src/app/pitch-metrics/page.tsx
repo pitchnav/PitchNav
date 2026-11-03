@@ -1,3 +1,4 @@
+import { checkoutPath } from '@/lib/individual-checkout'
 import { PitchTrackingHUD } from '@/components/pricing/PitchTrackingHUD'
 import type { Metadata } from 'next'
 import Link from 'next/link'
@@ -16,17 +17,17 @@ export default function PitchMetricsPage() {
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.2em] text-electric-blue-light">Pitch Nav Tracking · Single-camera pitching system</p>
           <h1 className="mt-5 text-4xl font-black tracking-tight text-white sm:text-6xl">Your bullpen.<br />Tracked with your iPhone.</h1>
-          <p className="mt-6 max-w-xl text-lg text-slate-300">Set your iPhone behind the mound. Get your velo and pitch locations, then watch the throw back with a ball tracer.</p>
+          <p className="mt-6 max-w-xl text-lg text-slate-300">We’re testing a way to film from behind the mound and see where each pitch crossed, how fast it traveled and how it got there.</p>
           <p className="mt-4 text-sm text-slate-400">Pitch Tracking is in testing and is not open to the public yet. We’re checking accuracy before launch.</p>
-          <div className="mt-8 flex flex-wrap gap-3"><Link className="btn-primary" href="/contact">Ask about beta access <ArrowRight className="h-4 w-4" /></Link><Link className="btn-secondary" href="/pricing#teams">For teams &amp; programs</Link></div>
+          <div className="mt-8 flex flex-wrap gap-3"><Link className="btn-primary" href={checkoutPath('metrics', 'monthly')}>Subscribe monthly <ArrowRight className="h-4 w-4" /></Link><Link className="btn-secondary" href="/pricing#teams">For teams &amp; programs</Link></div>
         </div>
         <div className="card border-electric-blue/30">
           <p className="text-xs font-semibold uppercase tracking-widest text-electric-blue-light">Standalone launch pricing</p>
           <p className="mt-5 text-5xl font-black text-white">{money(price.firstMonth)}</p><p className="mt-2 text-slate-300">first month, then {money(price.monthly)}/month</p>
           <div className="my-6 border-t border-surface-border" />
           <p className="text-2xl font-bold text-white">{money(price.annual)}<span className="text-sm font-normal text-slate-400"> / year, paid upfront</span></p>
-          <p className="mt-4 text-sm text-slate-400">No assessment fee. Pay yearly or take the first-month offer. Prices are USD before tax. Contact us about access; this page does not take payment.</p>
-          <p className="mt-6 text-sm text-slate-300">Included with Complete Development when it launches. No extra tracking subscription.</p>
+          <p className="mt-4 text-sm text-slate-400">No assessment fee. Pay yearly or take the first-month offer. Prices are USD before tax. Subscriptions open when tracking is ready; no payment is taken during testing.</p>
+          <Link className="btn-secondary mt-5" href={checkoutPath('metrics', 'annual')}>Subscribe annually · save</Link><p className="mt-6 text-sm text-slate-300">Included with Complete Development when it launches. No extra tracking subscription.</p>
         </div>
       </section>
       <section className="mt-20 grid items-center gap-12 lg:grid-cols-2" aria-labelledby="tracking-hud-title">
@@ -51,7 +52,7 @@ export default function PitchMetricsPage() {
         </div>
         <p className="mt-6 text-sm text-slate-400">Spin, movement and Stuff+ are not ready yet. We’ll add them only when testing supports the results.</p>
       </section>
-      <section className="mt-16 card flex flex-wrap items-center justify-between gap-6"><div><h2 className="text-2xl font-bold text-white">Put Your Bullpen Work to Use</h2><p className="mt-2 text-slate-400">Get throwing, lifting and mobility plans, plus Pitch Tracking when it launches.</p></div><Link className="btn-primary" href="/pricing">Compare memberships</Link></section>
+      <section className="mt-16 card flex flex-wrap items-center justify-between gap-6"><div><h2 className="text-2xl font-bold text-white">Put Your Bullpen Work to Use</h2><p className="mt-2 text-slate-400">Want a plan for your next pen? Development members get a throwing calendar. Complete adds lifting around outings and includes Pitch Tracking at launch.</p></div><Link className="btn-primary" href="/pricing">Compare memberships</Link></section>
     </div>
   </main>
 }

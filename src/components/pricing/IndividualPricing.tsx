@@ -1,13 +1,14 @@
 'use client'
 
 import { useState } from 'react'
+import { checkoutPath } from '@/lib/individual-checkout'
 import Link from 'next/link'
 import { CheckCircle } from 'lucide-react'
 import { INDIVIDUAL_PLANS, STANDALONE_ASSESSMENT_CENTS, money, type Billing } from '@/lib/pricing-catalog'
 
 const features = {
   throwing: ['Tailored throwing plan', 'Staff-reviewed mechanics feedback', 'Drills and progress tracking'],
-  complete: ['Initial tailored assessment', 'Throwing, lifting and mobility plans', 'Pitch Tracking included when released'],
+  complete: ['Initial tailored assessment', 'Seasonal lifts, mobility and a workout log', 'Pitch Tracking included when released'],
   metrics: ['Track your pitches with your iPhone', 'Pitch maps, tracers and history in development', 'No assessment required'],
 }
 export function IndividualPricing() {
@@ -27,14 +28,14 @@ export function IndividualPricing() {
           <p className="mt-2 text-sm text-slate-300">{billing === 'annual' ? 'per year, paid upfront' : `first month, then ${money(plan.monthly)}/month`}</p>
           <p className="mt-2 text-sm text-slate-400">{plan.assessment ? `+ ${money(plan.assessment)} initial assessment` : 'No assessment fee'}</p>
           <ul className="my-6 flex-1 space-y-3">{features[key].map(item => <li className="flex gap-2 text-sm text-slate-300" key={item}><CheckCircle className="h-4 w-4 shrink-0 text-electric-blue-light mt-0.5" />{item}</li>)}</ul>
-          <Link className="btn-primary justify-center" href={key === 'metrics' ? '/pitch-metrics' : '/contact'}>{key === 'metrics' ? 'Explore Pitch Tracking' : 'Ask about this plan'}</Link>
+          <Link className="btn-primary justify-center" href={checkoutPath(key, billing)}>Subscribe {billing === 'annual' ? 'annually' : 'monthly'}</Link>
         </article>
       })}
     </div>
     <article className="card mt-6 flex flex-wrap items-center justify-between gap-6 text-left">
-      <div className="max-w-xl"><p className="text-xs font-bold uppercase tracking-widest text-electric-blue-light">One-time option</p><h3 className="mt-2 text-xl font-bold text-white">Standalone Pitching Assessment</h3><p className="mt-3 text-sm text-slate-300">Get a mechanics review, a written report and your first throwing plan. One payment. No subscription or ongoing updates.</p><p className="mt-2 text-xs text-slate-400">Starting a Throwing or Complete plan? Your assessment is $49.99. The standalone assessment does not include Pitch Tracking.</p></div>
-      <div><p className="text-4xl font-black text-white">{money(STANDALONE_ASSESSMENT_CENTS)}</p><p className="mt-1 text-sm text-slate-400">one time · no recurring charge</p><Link className="btn-secondary mt-4" href="/contact">Request an assessment</Link></div>
+      <div className="max-w-xl"><p className="text-xs font-bold uppercase tracking-widest text-electric-blue-light">One-time option</p><h3 className="mt-2 text-xl font-bold text-white">Standalone Pitching Assessment</h3><p className="mt-3 text-sm text-slate-300">Get a mechanics review, a written report and drills to take to practice. One payment. No subscription or ongoing updates.</p><p className="mt-2 text-xs text-slate-400">Starting a Throwing or Complete plan? Your assessment is $49.99. The standalone assessment does not include Pitch Tracking.</p></div>
+      <div><p className="text-4xl font-black text-white">{money(STANDALONE_ASSESSMENT_CENTS)}</p><p className="mt-1 text-sm text-slate-400">one time · no recurring charge</p><Link className="btn-secondary mt-4" href={checkoutPath('assessment')}>Buy assessment</Link></div>
     </article>
-    <p className="mt-5 text-sm text-slate-400">Contact us to start a new plan. Pitch Tracking is still in testing. Annual pricing replaces the first-month offer. Prices are USD before tax.</p>
+    <p className="mt-5 text-sm text-slate-400">Individual plans use online checkout. Pitch Tracking subscriptions open when testing is complete. Annual pricing replaces the first-month offer. Prices are USD before tax.</p>
   </div>
 }

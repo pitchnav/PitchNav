@@ -10,7 +10,7 @@ export const metadata: Metadata = {
     template: '%s | Pitch Nav',
   },
   description:
-    'Get a staff-reviewed mechanics assessment and a throwing plan built for you. Explore Pitch Nav’s upcoming iPhone pitch tracking system.',
+    'Get your delivery reviewed and plan your throwing and lifting around school, summer and fall ball. Explore Pitch Nav’s upcoming iPhone pitch tracking system.',
   keywords: [
     'pitching analysis',
     'pitching mechanics',
@@ -28,7 +28,7 @@ export const metadata: Metadata = {
     siteName: 'Pitch Nav',
     title: 'Pitch Nav | Pitch Tracking & Baseball Training',
     description:
-      'Understand your delivery. Follow a throwing and training plan built for you. Explore Pitch Tracking, now in development.',
+      'See what to work on next pen and where your lifts fit between outings. Explore Pitch Tracking, now in development.',
     images: [
       {
         url: '/og-image.png',
@@ -42,7 +42,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Pitch Nav | Pitch Tracking & Baseball Training',
     description:
-      'Send us your delivery. Get a mechanics review, drills and a throwing plan from the Pitch Nav staff.',
+      'Get feedback on your delivery and a development plan that fits your baseball season.',
     images: ['/og-image.png'],
   },
   robots: {
