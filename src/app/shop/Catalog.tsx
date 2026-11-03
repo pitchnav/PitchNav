@@ -9,7 +9,7 @@ const products = [
   { name: 'Training hoodie', image: 'hoodie', category: 'Apparel', price: 54.99, variant: 'White' },
   { name: 'Training tee', image: 'tee', category: 'Apparel', price: 29.99, variant: 'Light blue' },
   { name: 'Mesh-back cap', image: 'cap', category: 'Apparel', price: 29.99, variant: 'White mesh' },
-  { name: 'Bullpen backpack', image: 'backpack', category: 'Accessories', price: 49.99, variant: 'Black' },
+  { name: 'Bullpen backpack', image: 'backpack', frontImage: 'backpack-front', category: 'Accessories', price: 49.99, variant: 'Black' },
   { name: 'Arm care bands', image: 'bands', category: 'Training gear', price: 29.99, variant: 'Wrist cuff pair' },
   { name: 'Plyo ball set', image: 'plyos', category: 'Training gear', price: 49.99, recommended: true, variant: 'Six weights · Bag included' },
   { name: 'Phone tripod', image: 'tripod', category: 'Accessories', price: 34.99, variant: 'Clamp and case included' },
@@ -47,7 +47,7 @@ export default function Catalog() {
     <ul className="grid grid-cols-2 gap-x-1 gap-y-7 lg:grid-cols-3">
       {visible.map(product => <li key={product.image} className={styles.product}>
         <div className="relative aspect-square overflow-hidden bg-white">
-          <Image src={'/shop/' + product.image + '.webp'} alt={product.name} fill sizes="(min-width: 1024px) 33vw, 50vw" className="object-contain" />
+          <Image src={'/shop/' + (product.frontImage ?? product.image) + '.webp'} alt={product.name} fill sizes="(min-width: 1024px) 33vw, 50vw" className="object-contain" />
           <Image src={'/shop/' + product.image + '-angle.webp'} alt="" fill sizes="(min-width: 1024px) 33vw, 50vw" className={styles.angle} />
           {product.recommended && <span className="absolute bottom-2 right-2 rounded-sm bg-navy-950 px-2 py-1 text-xs font-semibold text-white sm:bottom-4 sm:right-4">Recommended</span>}
         </div>
