@@ -23,3 +23,9 @@
     transition-delay: 0s, 1s;
   }
 }
+
+.recommendedProduct {
+  composes: product;
+  border: 2px solid #4496ff;
+  padding-bottom: 0.75rem;
+}

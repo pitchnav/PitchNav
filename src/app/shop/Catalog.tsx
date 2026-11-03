@@ -6,13 +6,13 @@ import { useState } from 'react'
 import { SlidersHorizontal } from 'lucide-react'
 
 const products = [
-  { name: 'Training hoodie', image: 'hoodie', category: 'Apparel', price: 54.99, variant: 'White' },
-  { name: 'Training tee', image: 'tee', category: 'Apparel', price: 29.99, variant: 'Light blue' },
-  { name: 'Mesh-back cap', image: 'cap', category: 'Apparel', price: 29.99, variant: 'White mesh' },
-  { name: 'Bullpen backpack', image: 'backpack', frontImage: 'backpack-front', category: 'Accessories', price: 49.99, variant: 'Black' },
-  { name: 'Arm care bands', image: 'bands', category: 'Training gear', price: 29.99, variant: 'Wrist cuff pair' },
-  { name: 'Plyo ball set', image: 'plyos', category: 'Training gear', price: 49.99, recommended: true, variant: 'Six weights · Bag included' },
-  { name: 'Phone tripod', image: 'tripod', category: 'Accessories', price: 34.99, variant: 'Clamp and case included' },
+  { name: 'Weighted Velocity Ball Set', image: 'plyos', category: 'Training gear', price: 49.99, recommended: true, variant: 'Six weights · Bag included' },
+  { name: 'Pro Arm Care Bands', image: 'bands', category: 'Training gear', price: 29.99, variant: 'Wrist cuff pair' },
+  { name: 'Pro Capture Tripod', image: 'tripod', category: 'Accessories', price: 34.99, variant: 'Clamp and case included' },
+  { name: 'Everyday Trucker Hat', image: 'cap', category: 'Apparel', price: 29.99, variant: 'White mesh' },
+  { name: 'Performance Pullover Hoodie', image: 'hoodie', category: 'Apparel', price: 54.99, variant: 'White' },
+  { name: 'Lightweight Performance Tee', image: 'tee', category: 'Apparel', price: 29.99, variant: 'Light blue' },
+  { name: 'Everyday Performance Backpack', image: 'backpack', frontImage: 'backpack-front', category: 'Accessories', price: 49.99, variant: 'Black' },
 ]
 
 export default function Catalog() {
@@ -45,7 +45,7 @@ export default function Catalog() {
       </div>
     </div>
     <ul className="grid grid-cols-2 gap-x-1 gap-y-7 lg:grid-cols-3">
-      {visible.map(product => <li key={product.image} className={styles.product}>
+      {visible.map(product => <li key={product.image} className={product.recommended ? styles.recommendedProduct : styles.product}>
         <div className="relative aspect-square overflow-hidden bg-white">
           <Image src={'/shop/' + (product.frontImage ?? product.image) + '.webp'} alt={product.name} fill sizes="(min-width: 1024px) 33vw, 50vw" className="object-contain" />
           <Image src={'/shop/' + product.image + '-angle.webp'} alt="" fill sizes="(min-width: 1024px) 33vw, 50vw" className={styles.angle} />
