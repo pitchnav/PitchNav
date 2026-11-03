@@ -6,7 +6,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Activity, AlertTriangle, Download, Pause, Play, RotateCcw, Upload, Video } from 'lucide-react'
 import type { NormalizedLandmark, PoseLandmarker } from '@mediapipe/tasks-vision'
 import { createClient } from '@/lib/supabase/client'
-import { equipmentSchema } from '@/lib/training-equipment'
 import { buildBaseballPerformancePlan } from '@/lib/performance-plan'
 import { buildEightWeekThrowingPlan } from '@/lib/throwing-plan'
 import { probeVideoFile, ACCEPTED_VIDEO_TYPES } from '@/lib/video-support'
@@ -1887,17 +1886,6 @@ export function MotionAnalysisStudio({
         'Your follow-up must use the same camera angle and a similar throwing effort. That is how the coach can tell whether the plan changed your movement instead of just changing the video.',
       ]
 
-      let equipment
-      let programTier
-      if (initialVideo?.orderId) {
-        const {data: order, error} = await supabase.from('orders').select('program_tier, athlete_profiles(training_equipment)')
-          .eq('id', initialVideo.orderId).single()
-        const athlete = Array.isArray(order?.athlete_profiles) ? order.athlete_profiles[0] : order?.athlete_profiles
-        programTier = order?.program_tier
-        if (error) throw error
-        equipment = equipmentSchema.safeParse(athlete?.training_equipment).data
-        if (programTier && !equipment) throw new Error('Finish the training equipment questions in your athlete assessment before starting a program.')
-      }
       let analysis: { id: string }
       if (existingAnalysisId) {
         analysis = { id: existingAnalysisId }
@@ -1964,27 +1952,27 @@ export function MotionAnalysisStudio({
         if (orderError) console.error('Could not advance order status to in_analysis', orderError)
       }
 
-      if (programTier && equipment) {
-        const weeks = buildEightWeekThrowingPlan(categoryFeedback, immediatePriorities, [], equipment)
-        const strengthMobilityWeeks = programTier === 'performance'
-          ? buildBaseballPerformancePlan(categoryFeedback, immediatePriorities, equipment)
-          : []
-        const followUp = new Date()
-        followUp.setDate(followUp.getDate() + planWeeks * 7)
-        const { error: planError } = await supabase.from('training_plans').insert({
-          motion_analysis_id: analysis.id,
-          user_id: targetUserId,
-          duration_weeks: planWeeks,
-          title: `${planWeeks}-Week Pitching Development Plan`,
-          weeks,
-          strength_mobility_weeks: strengthMobilityWeeks,
-          starts_on: new Date().toISOString().slice(0, 10),
-          rolling_window_days: 14,
-          follow_up_date: followUp.toISOString().slice(0, 10),
-          published_at: null,
-        })
-        if (planError) throw planError
-      }
+      const weeks = buildEightWeekThrowingPlan(categoryFeedback, immediatePriorities)
+      // The $25 Throwing Development plan intentionally excludes lifting and
+      // mobility programming. Only paid $40 Complete Performance orders receive it.
+      const strengthMobilityWeeks = (initialVideo?.amountPaidCents ?? 0) >= 4000
+        ? buildBaseballPerformancePlan(categoryFeedback, immediatePriorities)
+        : []
+      const followUp = new Date()
+      followUp.setDate(followUp.getDate() + planWeeks * 7)
+      const { error: planError } = await supabase.from('training_plans').insert({
+        motion_analysis_id: analysis.id,
+        user_id: targetUserId,
+        duration_weeks: planWeeks,
+        title: `${planWeeks}-Week Pitching Development Plan`,
+        weeks,
+        strength_mobility_weeks: strengthMobilityWeeks,
+        starts_on: new Date().toISOString().slice(0, 10),
+        rolling_window_days: 14,
+        follow_up_date: followUp.toISOString().slice(0, 10),
+        published_at: null,
+      })
+      if (planError) throw planError
       const notificationResponse = await fetch('/api/motion-lab/request-review', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
