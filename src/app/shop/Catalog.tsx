@@ -1,17 +1,18 @@
 'use client'
 
+import styles from './Catalog.module.css'
 import Image from 'next/image'
 import { useState } from 'react'
 import { SlidersHorizontal } from 'lucide-react'
 
 const products = [
-  { name: 'Training hoodie', image: 'hoodie', category: 'Apparel', price: 54.99, detail: 'White pullover with the Pitch Nav chest mark.' },
-  { name: 'Training tee', image: 'tee', category: 'Apparel', price: 29.99, detail: 'Light blue short sleeve for the field or weight room.' },
-  { name: 'Mesh-back cap', image: 'cap', category: 'Apparel', price: 29.99, detail: 'White mesh back with a blue embroidered front mark.' },
-  { name: 'Bullpen backpack', image: 'backpack', category: 'Accessories', price: 49.99, detail: 'A bag for your gear on bullpen days. Front zip pocket and mesh side pockets.' },
-  { name: 'Arm care bands', image: 'bands', category: 'Training gear', price: 29.99, detail: 'Wrist cuffs and a clip for your pre-throw band work.' },
-  { name: 'Plyo ball set', image: 'plyos', category: 'Training gear', price: 49.99, recommended: true, detail: 'Six marked training weights with a drawstring bag.' },
-  { name: 'Phone tripod', image: 'tripod', category: 'Accessories', price: 34.99, detail: 'A phone clamp and carrying case for filming your delivery.' },
+  { name: 'Training hoodie', image: 'hoodie', category: 'Apparel', price: 54.99, variant: 'White' },
+  { name: 'Training tee', image: 'tee', category: 'Apparel', price: 29.99, variant: 'Light blue' },
+  { name: 'Mesh-back cap', image: 'cap', category: 'Apparel', price: 29.99, variant: 'White mesh' },
+  { name: 'Bullpen backpack', image: 'backpack', category: 'Accessories', price: 49.99, variant: 'Black' },
+  { name: 'Arm care bands', image: 'bands', category: 'Training gear', price: 29.99, variant: 'Wrist cuff pair' },
+  { name: 'Plyo ball set', image: 'plyos', category: 'Training gear', price: 49.99, recommended: true, variant: 'Six weights · Bag included' },
+  { name: 'Phone tripod', image: 'tripod', category: 'Accessories', price: 34.99, variant: 'Clamp and case included' },
 ]
 
 export default function Catalog() {
@@ -44,15 +45,15 @@ export default function Catalog() {
       </div>
     </div>
     <ul className="grid grid-cols-2 gap-x-1 gap-y-7 lg:grid-cols-3">
-      {visible.map(product => <li key={product.image}>
-        <div className="relative aspect-square bg-white">
+      {visible.map(product => <li key={product.image} className={styles.product}>
+        <div className="relative aspect-square overflow-hidden bg-white">
           <Image src={'/shop/' + product.image + '.webp'} alt={product.name} fill sizes="(min-width: 1024px) 33vw, 50vw" className="object-contain" />
           {product.recommended && <span className="absolute bottom-2 right-2 rounded-sm bg-navy-950 px-2 py-1 text-xs font-semibold text-white sm:bottom-4 sm:right-4">Recommended</span>}
         </div>
-        <div className="px-3 pt-3 sm:px-5">
-          <h2 className="font-bold sm:text-xl">{product.name}</h2>
-          <p className="mt-1 text-sm text-slate-300">{product.detail}</p>
-          <p className="mt-2 font-semibold">${product.price.toFixed(2)}</p>
+        <div className="space-y-0.5 px-3 pt-3 font-['Helvetica_Neue',Arial,sans-serif] text-[15px] font-normal leading-snug sm:px-5 sm:text-base">
+          <h2 className="font-normal tracking-tight text-slate-50">{product.name}</h2>
+          <p className="text-slate-400">{product.variant}</p>
+          <p className="text-slate-300 tabular-nums">${product.price.toFixed(2)}</p>
         </div>
       </li>)}
     </ul>
