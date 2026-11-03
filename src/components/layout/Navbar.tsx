@@ -4,13 +4,13 @@ import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
-import { Menu, X, ChevronDown, User, LogOut, LayoutDashboard, Settings } from 'lucide-react'
+import { Menu, X, ChevronDown, User, LogOut, Settings } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
 import type { Profile } from '@/types/database'
 import type { User as AuthUser } from '@supabase/supabase-js'
 
-const NAV_LINKS = [
+const PUBLIC_LINKS = [
   { href: '/how-it-works', label: 'How It Works' },
   { href: '/sample-report', label: 'Sample Report' },
   { href: '/pricing', label: 'Pricing' },
@@ -20,15 +20,23 @@ const NAV_LINKS = [
   { href: '/shop', label: 'Shop' },
 ]
 
+const ATHLETE_LINKS = [
+  { href: '/dashboard', label: 'Dashboard' },
+  { href: '/dashboard/motion-lab', label: 'Video Review' },
+  { href: '/dashboard/pitch-data', label: 'Pitch Data' },
+  { href: '/shop', label: 'Shop' },
+]
+
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false)
   const [userProfile, setUserProfile] = useState<Profile | null>(null)
-  const [authUser, setAuthUser] = useState<AuthUser | null>(null)
+  const [authUser, setAuthUser] = useState<AuthUser | null>()
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const pathname = usePathname()
   const router = useRouter()
   const supabase = useMemo(() => createClient(), [])
+  const links = authUser === undefined ? [] : authUser ? ATHLETE_LINKS : PUBLIC_LINKS
   const prefersReducedMotion = useReducedMotion()
 
   useEffect(() => {
@@ -38,28 +46,23 @@ export function Navbar() {
   }, [])
 
   useEffect(() => {
-    async function loadUser() {
-      const { data: { user } } = await supabase.auth.getUser()
-      setAuthUser(user)
-      if (user) {
-        const { data } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .single()
-        setUserProfile(data)
-      } else {
-        setUserProfile(null)
-      }
-    }
-    loadUser()
-
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setAuthUser(session?.user ?? null)
-      loadUser()
     })
     return () => subscription.unsubscribe()
-  }, [supabase, pathname])
+  }, [supabase])
+
+  const userId = authUser?.id
+  useEffect(() => {
+    let current = true
+    setUserProfile(null)
+    if (userId) {
+      supabase.from('profiles').select('*').eq('id', userId).single().then(({ data }) => {
+        if (current) setUserProfile(data)
+      })
+    }
+    return () => { current = false }
+  }, [supabase, userId])
 
   async function handleSignOut() {
     await supabase.auth.signOut()
@@ -85,7 +88,7 @@ export function Navbar() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 group">
+          <Link href={authUser ? "/dashboard" : "/"} className="flex items-center gap-2 group">
             <div className="flex items-center">
               <span className="text-2xl font-black tracking-tight text-white group-hover:text-electric-blue-light transition-colors">
                 Pitch
@@ -98,7 +101,7 @@ export function Navbar() {
 
           {/* Desktop nav */}
           <div className="hidden xl:flex items-center gap-6">
-            {NAV_LINKS.map((link) => (
+            {links.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
@@ -116,7 +119,7 @@ export function Navbar() {
 
           {/* Desktop CTA / User */}
           <div className="hidden xl:flex items-center gap-3">
-            {authUser ? (
+            {authUser === undefined ? null : authUser ? (
               <>
                 {userProfile?.is_admin && (
                   <Link
@@ -142,13 +145,6 @@ export function Navbar() {
 
                   {userMenuOpen && (
                     <div className="absolute right-0 top-full mt-2 w-56 rounded-xl border border-surface-border bg-navy-800 shadow-card py-1 z-50">
-                      <Link
-                        href="/dashboard"
-                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-300 hover:text-white hover:bg-surface-hover transition-colors"
-                        onClick={() => setUserMenuOpen(false)}
-                      >
-                        <LayoutDashboard className="h-4 w-4" /> Dashboard
-                      </Link>
                       <Link
                         href="/dashboard/profile"
                         className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-300 hover:text-white hover:bg-surface-hover transition-colors"
@@ -202,7 +198,7 @@ export function Navbar() {
             className="xl:hidden overflow-hidden border-t border-surface-border bg-navy-900"
           >
           <div className="px-4 py-4 space-y-1">
-            {NAV_LINKS.map((link) => (
+            {links.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
@@ -217,7 +213,7 @@ export function Navbar() {
               </Link>
             ))}
 
-            {authUser ? (
+            {authUser === undefined ? null : authUser ? (
               <>
                 {userProfile?.is_admin && (
                   <Link
@@ -228,10 +224,10 @@ export function Navbar() {
                   </Link>
                 )}
                 <Link
-                  href="/dashboard"
+                  href="/dashboard/profile"
                   className="block rounded-lg px-4 py-3 text-base font-medium text-slate-400 hover:bg-surface-card hover:text-white transition-colors"
                 >
-                  Dashboard
+                  Profile Settings
                 </Link>
                 <button
                   onClick={handleSignOut}
