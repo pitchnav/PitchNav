@@ -1,3 +1,5 @@
+import { drillFitsEquipment, type TrainingEquipment } from './training-equipment'
+
 export type ThrowingAssessment = {
   category: string
   score: number
@@ -112,7 +114,8 @@ function confidencePenalty(confidence?: string) {
 export function buildEightWeekThrowingPlan(
   categories: ThrowingAssessment[],
   priorities: string[] = [],
-  drills: DrillOption[] = []
+  drills: DrillOption[] = [],
+  equipment?: TrainingEquipment
 ): ThrowingPlanWeek[] {
   const ranked = [...categories]
     .filter((item) => Number.isFinite(item.score))
@@ -122,8 +125,19 @@ export function buildEightWeekThrowingPlan(
   const primaryCategory = primary?.category || 'delivery repeatability'
   const primaryFix = primary?.development || priorities[0] || 'Repeat the same delivery from leg lift through finish.'
   const causeLabel = primary?.likely_cause ? CAUSE_LABELS[primary.likely_cause] : undefined
-  const primaryDrill = pickDrill(primaryCategory, drills)
-  const repeatabilityDrill = pickDrill(primaryCategory, drills, primaryDrill ? [primaryDrill.name] : [])
+  const available = equipment ? drills.filter(drill => drillFitsEquipment(drill.name + ' ' + drill.description, equipment)) : drills
+  const primaryDrill = pickDrill(primaryCategory, available)
+  const repeatabilityDrill = pickDrill(primaryCategory, available, primaryDrill ? [primaryDrill.name] : [])
+  const dryOptions: Record<string, [string,string]> = {
+    Direction: ['Stride toward a fixed target and hold your landing', 'Walk into a dry stride along the same line'],
+    'Lower-Half Sequencing': ['Rock into the back hip and stride', 'Step behind into a dry delivery'],
+    'Front-Side Stability': ['Hold your landing in a split stance', 'Step onto the lead leg and hold your finish'],
+    'Upper-Half Timing': ['Turn through a dry delivery from a split stance', 'Rehearse the turn from a short stride'],
+    Posture: ['Rock back and stride with your head over your base', 'Hold your usual landing posture'],
+    'Release Consistency': ['Rehearse your delivery toward a fixed target', 'Repeat from a short stride to the same target'],
+  }
+  const dry = dryOptions[primaryCategory] ?? dryOptions.Direction
+  const alternate = (index: number) => equipment ? ' Equipment-free option: ' + dry[index] + '. Choose one drill for this slot.' : ''
   const primaryFixWithCause = causeLabel ? `${primaryFix} This is likely connected to ${causeLabel}.` : primaryFix
 
   return WEEK_BLOCKS.map((block, index) => {
@@ -144,7 +158,8 @@ export function buildEightWeekThrowingPlan(
           day: 'Monday',
           focus: `${primaryCategory} drill work`,
           work: primaryDrill
-            ? `Warm up, then perform ${primaryDrill.name}: ${primaryDrill.sets ?? 3} sets of ${primaryDrill.reps ?? '5 reps'}. ${primaryDrill.description} Your main correction is: ${primaryFixWithCause}`
+            ? `Warm up, then perform ${primaryDrill.name}: ${primaryDrill.sets ?? 3} sets of ${primaryDrill.reps ?? '5 reps'}. ${primaryDrill.description} Your main correction is: ${primaryFixWithCause}${alternate(0)}`
+            : equipment ? `Choose one: ${dry[0]} or ${dry[1]}. Use controlled dry reps within your assigned drill volume.`
             : `Warm up, then complete 3 sets of 5 controlled reps. Your main correction is: ${primaryFixWithCause}`,
         },
         {
@@ -161,8 +176,9 @@ export function buildEightWeekThrowingPlan(
           day: 'Thursday',
           focus: 'Repeatability session',
           work: repeatabilityDrill
-            ? `Perform ${repeatabilityDrill.name}: ${repeatabilityDrill.sets ?? 3} sets of ${repeatabilityDrill.reps ?? '5 reps'}. ${repeatabilityDrill.description} Reset between reps and stop the set when the movement changes.`
-            : `Complete 3 sets of 5 reps for ${primaryCategory.toLowerCase()}. Reset between reps and stop the set when the movement changes.`
+            ? `Perform ${repeatabilityDrill.name}: ${repeatabilityDrill.sets ?? 3} sets of ${repeatabilityDrill.reps ?? '5 reps'}. ${repeatabilityDrill.description} Reset between reps and stop the set when the movement changes.${alternate(1)}`
+            : equipment ? `Choose one: ${dry[1]} or ${dry[0]}. Reset between dry reps.`
+            : `Complete 3 sets of 5 reps for ${primaryCategory.toLowerCase()}. Reset between reps and stop the set when the movement changes.${alternate(1)}`
         },
         {
           day: 'Friday',

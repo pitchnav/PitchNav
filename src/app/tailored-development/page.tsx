@@ -19,6 +19,7 @@ export default function TailoredDevelopmentPage() {
           <h1 className="mt-5 text-4xl font-black tracking-tight text-white sm:text-6xl">A plan built<br />for your game.</h1>
           <p className="mt-6 text-lg leading-relaxed text-slate-300">Tell us when you play school, summer or fall ball. Send a pitch from the side. Your coach uses that delivery and your team dates to plan what comes next.</p>
           <div className="mt-8 flex flex-wrap gap-3"><Link href="/pricing" className="btn-primary">Choose your plan <ArrowRight className="h-4 w-4" /></Link><Link href="/sample-report" className="btn-secondary">See a sample assessment</Link></div>
+          <p className="mt-6 text-sm text-slate-400">Coming to development plans: weekly schedule changes, equipment swaps and saved lifting weights. Explore a sample week below.</p>
           <div className="mt-10 space-y-6">
             {[
               { icon: Target, title: 'Start with your delivery', text: 'Your assessment breaks down what you do well, what needs work and the drills to take into your next session.' },

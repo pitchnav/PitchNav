@@ -1,3 +1,6 @@
+import { liftingCalendar } from './season-calendar'
+import { adaptExercise, type TrainingEquipment } from './training-equipment'
+
 export type LikelyCause =
   | 'hamstring_tightness_or_weakness'
   | 'hip_mobility_limitation'
@@ -176,9 +179,13 @@ function normalizedConfidence(confidence?: string) {
   return 0.65
 }
 
-function resolveMatch(category: string, cause?: string) {
+function resolveMatch(category: string, cause?: string, equipment?: TrainingEquipment) {
   const causeMatch = cause ? CAUSE_INTERVENTIONS[cause as LikelyCause] : undefined
-  return causeMatch ?? TRAINING_MATCHES[category] ?? TRAINING_MATCHES.Posture
+  const match = causeMatch ?? TRAINING_MATCHES[category] ?? TRAINING_MATCHES.Posture
+  if (!equipment) return match
+  return {...match, primaryLift: adaptExercise(match.primaryLift, equipment),
+    secondaryLift: adaptExercise(match.secondaryLift, equipment), power: adaptExercise(match.power, equipment),
+    mobility: adaptExercise(match.mobility, equipment)}
 }
 
 /**
@@ -189,7 +196,9 @@ function resolveMatch(category: string, cause?: string) {
  */
 export function buildBaseballPerformancePlan(
   categories: CategoryAssessment[],
-  priorities: string[] = []
+  priorities: string[] = [],
+  equipment?: TrainingEquipment,
+  startsOn = new Date().toISOString().slice(0, 10)
 ): PerformanceWeek[] {
   const ranked = [...categories]
     .filter((item) => Number.isFinite(item.score))
@@ -200,8 +209,8 @@ export function buildBaseballPerformancePlan(
     ?? { category: 'Lower-Half Sequencing', score: 3, development: priorities[1] }
   const primaryCause = primaryCategory.likely_cause as LikelyCause | undefined
   const secondaryCause = secondaryCategory.likely_cause as LikelyCause | undefined
-  const primary = resolveMatch(primaryCategory.category, primaryCause)
-  const secondary = resolveMatch(secondaryCategory.category, secondaryCause)
+  const primary = resolveMatch(primaryCategory.category, primaryCause, equipment)
+  const secondary = resolveMatch(secondaryCategory.category, secondaryCause, equipment)
   const primaryCauseLabel = primaryCause ? CAUSE_LABELS[primaryCause] : undefined
   const secondaryCauseLabel = secondaryCause ? CAUSE_LABELS[secondaryCause] : undefined
 
@@ -224,27 +233,90 @@ export function buildBaseballPerformancePlan(
     },
   ]
 
+  const weekMs = 7 * 86400000
+  const planStart = Date.parse(startsOn.slice(0, 10))
+  const liftingStart = equipment?.offseasonStart ? Date.parse(equipment.offseasonStart) : planStart
+  const opener = equipment?.firstGame ? Date.parse(equipment.firstGame) : undefined
+
+  // Baseball plyometric programs improved long jump and side-step performance
+  // (PMID 35510439). A pitcher trial also measured ball speed (PMID 42907284).
+  // These findings concern whole programs. The pairings and doses here are coaching choices.
+  const linearPower = {
+    goal: 'Lower-body power', first: 'Broad jump or squat jump', second: 'Two-foot ankle hops',
+    cue: 'Jump hard, stick the landing and reset. Compare standing broad-jump distance across the block.',
+  }
+  const lateralPower = {
+    goal: 'Lateral power', first: 'Lateral bound or lateral hop over a line', second: 'Two-foot zigzag hops',
+    cue: 'Push sideways and land quietly. Use the same line and spacing when comparing reps.',
+  }
+  // Rotational medicine-ball work improved rotational strength and throw-test
+  // performance in baseball players (PMID 17685676). It requires a safe throwing space.
+  const rotationPower = {
+    goal: 'Rotational power', first: 'Rotational medicine-ball scoop toss or rotational shot put',
+    second: 'Split-stance rotational medicine-ball throw',
+    cue: 'Turn from the hips and throw through the target. Compare throws using the same ball, stance and distance.',
+  }
   return Array.from({ length: 8 }, (_, index) => {
     const week = index + 1
-    const phase = week === 8 ? 'Final reassessment + season reprogramming' : week % 2 === 0 ? 'Two-week reassessment' : week <= 2 ? 'Movement foundation' : week <= 4 ? 'Baseball strength' : week <= 6 ? 'Strength-to-power transfer' : 'Deload'
-    const strengthPrescription = week === 7 ? '2 × 6 at RPE 4–5' : week <= 2 ? '3 × 8 at RPE 5–6' : week <= 4 ? '3 × 6 at RPE 6–7' : '4 × 4 at RPE 6–7'
-    const accessoryPrescription = week === 7 ? '2 × 8 each side' : '3 × 6–8 each side'
-    const powerPrescription = week <= 2 ? '3 × 3 at low-to-moderate intent' : week === 7 ? '2 × 3, crisp and easy' : '4 × 3 with full rest'
+    const date = planStart + index * weekMs
+    const beforeStart = equipment?.season === 'offseason' && date + weekMs <= liftingStart
+    const trainingWeek = Math.max(0, Math.floor((date - liftingStart) / weekMs))
+    const remaining = opener === undefined ? Infinity : Math.ceil((opener - date) / weekMs)
+    const maintenance = equipment?.season !== 'offseason' || remaining <= 0
+    const taper = !maintenance && remaining <= 2
+    // Longer offseasons repeat six loading weeks and a recovery week between peaks.
+    const cycle = trainingWeek % 7
+    const deload = cycle === 6 || taper
+    const rpe = maintenance ? 6 : taper ? (remaining === 1 ? 5 : 6) : [6, 7, 8, 9, 9, 9, 6][cycle]
+    const sets = maintenance || deload ? 2 : 3
+    const fallbackPhase = beforeStart ? 'Before lifting starts' : maintenance ? 'Strength maintenance' : taper ? 'Preseason taper' : cycle === 6 ? 'Offseason deload' : rpe === 9 ? 'Offseason peak' : 'Offseason on-ramp'
+    const seasonAt = (time:number) => equipment?.playingSeasons?.length
+      ? liftingCalendar(equipment.playingSeasons,time,equipment.offseasonStart)
+      : {phase:fallbackPhase,rpe,sets,maintenance}
+    const phase = seasonAt(date).phase
+    const choice = (name: string) => equipment ? adaptExercise(name, equipment) : name
+    const liftDay = (day: string, title: string, power: typeof linearPower, strength: string, pairedLift: string): PerformanceDay => {
+      const weekday = day === 'Monday' ? 1 : day === 'Wednesday' ? 3 : 5
+      const offset = (weekday - new Date(date).getUTCDay() + 7) % 7
+      const {phase:sessionPhase,rpe,sets,maintenance} = seasonAt(date + offset*86400000)
+      if (maintenance && day === 'Friday' && sets) return {
+        day, focus:'Throwing readiness',work:'Follow your game or bullpen plan.',cues:['Place lifts around your throwing schedule.'],common_mistake:'Making up a lift before a start.',
+      }
+      if (!sets || (!equipment?.playingSeasons && !maintenance && date + offset * 86400000 < liftingStart)) return {
+        day, focus: 'Before lifting starts', work: 'Follow your current schedule until the lifting start date.',
+        cues: [], common_mistake: 'Making up sessions from before your start date.',
+      }
+      const mainLift = choice(strength)
+      const individualLift = mainLift === primary.primaryLift ? primary.secondaryLift : primary.primaryLift
+      const mobility = resolveMatch(primaryCategory.category, primaryCause).mobility.split(' and ')[0]
+      return {
+        day, focus: title,
+        work: [
+          sessionPhase + ' · Do exercise 1, then exercise 2. Rest after the pair and finish all rounds before starting the next block.',
+          `A · ${power.goal} · ${sets} rounds
+A1 · ${power.first} · 3 reps
+A2 · ${power.second} · 3 reps. Rest between rounds. ${power.cue}`,
+          `B · Strength · ${sets} rounds
+B1 · ${mainLift} · ${sets} × ${rpe === 9 ? 3 : 5} at RPE ${rpe}/10, one set per round${strength.includes('lunge') ? ' per side' : ''}
+B2 · ${choice(pairedLift)} · 6 reps at RPE ${Math.min(rpe, 7)}/10 (each side for single-arm work). Rest until ready for the next main set.`,
+          `C · ${primaryCategory.category} · 2 rounds
+C1 · ${individualLift} · 6 controlled reps or a 15-second hold for an isometric
+C2 · ${choice(mobility)} · 5 slow reps per side.`,
+        ].join('\n\n'),
+        cues: ['Where two options are listed, pick one for that slot and keep it across the block.', 'B1 follows the weekly strength target. Keep B2 at the listed effort so both lifts stay clean.'],
+        common_mistake: 'Rushing the next set before your jumps or lifts feel sharp again.',
+        correlation: primary.rationale,
+      }
+    }
 
+    if (!equipment?.playingSeasons && beforeStart) return {week, phase, tailored_focus: 'Your lifting block starts on ' + equipment?.offseasonStart + '.', correlations: [], days: []}
     return {
       week,
       phase,
       tailored_focus: `Primary: ${primaryCategory.category} (${primaryCategory.score}/5). Supporting: ${secondaryCategory.category} (${secondaryCategory.score}/5). ${week % 2 === 0 ? `Use the week-${week} video and workload check to adjust the next two weeks.` : 'Build the physical capacity that supports the current video priorities.'} ${week === 8 ? 'After this review, replace the program with in-season, preseason, or offseason work instead of repeating week 1.' : ''}`,
       correlations,
       days: [
-        {
-          day: 'Monday',
-          focus: `${primaryCategory.category} strength`,
-          work: `${primary.primaryLift}: ${strengthPrescription}; ${primary.secondaryLift}: ${accessoryPrescription}; calf/soleus raise: 3 × 10.`,
-          cues: ['Leave 3–4 quality repetitions in reserve', 'Stop the set if position or tempo changes'],
-          common_mistake: 'Adding load to chase fatigue instead of clean movement.',
-          correlation: primary.rationale,
-        },
+        liftDay('Monday', 'Lift 1 · Hinge and press', linearPower, 'Trap-bar deadlift', 'Dumbbell bench press'),
         {
           day: 'Tuesday',
           focus: 'Primary mobility + recovery',
@@ -253,14 +325,7 @@ export function buildBaseballPerformancePlan(
           common_mistake: 'Forcing range or using mobility to work through pain.',
           correlation: `Mobility emphasis selected from the ${primaryCategory.category.toLowerCase()} assessment.`
         },
-        {
-          day: 'Wednesday',
-          focus: `${secondaryCategory.category} strength`,
-          work: `${secondary.primaryLift}: ${strengthPrescription}; ${secondary.secondaryLift}: ${accessoryPrescription}; dead bug with full exhale: 3 × 6/side.`,
-          cues: ['Keep ribs and pelvis organized', 'Control the return on every repetition'],
-          common_mistake: 'Turning accessory work into a maximal-effort session.',
-          correlation: secondary.rationale,
-        },
+        liftDay('Wednesday', 'Lift 2 · Squat and pull', lateralPower, 'Barbell back squat', 'Chest-supported one-arm row'),
         {
           day: 'Thursday',
           focus: 'Supporting mobility',
@@ -269,18 +334,11 @@ export function buildBaseballPerformancePlan(
           common_mistake: 'Adding aggressive stretching before high-intent throwing.',
           correlation: `Mobility emphasis selected from the ${secondaryCategory.category.toLowerCase()} assessment.`
         },
-        {
-          day: 'Friday',
-          focus: 'Baseball power transfer',
-          work: `${primary.power}: ${powerPrescription}; ${secondary.power}: ${powerPrescription}; full recovery between sets.`,
-          cues: ['Fast intent with low fatigue', 'Finish balanced and reset between repetitions'],
-          common_mistake: 'Using high-volume medicine-ball work as conditioning.',
-          correlation: `Power exercises connect the ${primaryCategory.category.toLowerCase()} and ${secondaryCategory.category.toLowerCase()} priorities to explosive, baseball-relevant movement.`
-        },
+        liftDay('Friday', 'Lift 3 · Lunge and angled press', equipment?.gear.includes('medicineBall') ? rotationPower : linearPower, 'Barbell reverse lunge', 'Half-kneeling landmine press'),
         {
           day: 'Saturday',
           focus: 'Throwing-day preparation',
-          work: 'Dynamic warm-up, light carries, and only pain-free mobility. Coordinate this work around the athlete’s bullpen and game schedule.',
+          work: 'Dynamic warm-up and pain-free mobility. Coordinate this work around the athlete’s bullpen and game schedule.',
           cues: ['Keep volume low', 'Prioritize readiness for throwing'],
           common_mistake: 'Heavy lower-body loading immediately before high-intent throwing.',
           correlation: 'Preserves the weekly baseball workload instead of treating lifting as a separate, competing program.'

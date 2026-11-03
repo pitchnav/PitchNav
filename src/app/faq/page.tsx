@@ -59,12 +59,12 @@ const FAQ_SECTIONS = [
     ],
   },
   {
-    category: 'Training through the season',
+    category: 'Coming to your training calendar',
     questions: [
       {q: 'I play for two teams. Which dates should I enter?', a: 'Enter both. Count from your first required team day through your last one. If school and summer ball run back to back, your main offseason starts when summer ball ends.'},
-      {q: 'What if my coach moves my start?', a: 'Open the weekly check-in in your training calendar. Change the game or bullpen day and save. Complete Development looks for room on either side of mound work and schedules fewer lifts if the week is packed.'},
+      {q: 'What if my coach moves my start?', a: 'When weekly check-ins launch, open your training calendar. Change the game or bullpen day and save. Complete Development looks for room on either side of mound work and schedules fewer lifts if the week is packed.'},
       {q: 'Do I need plyo balls or a full weight room?', a: 'Tell us what you can use, including borrowed equipment. Plyos and bands are optional. If you train at home, your plan can use bodyweight exercises.'},
-      {q: 'Where do my weights go?', a: 'Open the workout, enter your reps and weight for each set, then save. The next time you choose that exercise, you can see what you used in your last completed session.'},
+      {q: 'Where do my weights go?', a: 'When workout logging launches, open the workout, enter your reps and weight for each set, then save. The next time you choose that exercise, you can see what you used in your last completed session.'},
     ],
   },
   {
