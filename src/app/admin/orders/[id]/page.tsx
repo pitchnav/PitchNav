@@ -1,5 +1,6 @@
 'use client'
 
+import { AssessmentReviewGuide } from '@/components/admin/AssessmentReviewGuide'
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -907,6 +908,7 @@ export default function AdminOrderDetailPage() {
           {/* Narrative fields */}
           <div className="card space-y-4">
             <h2 className="text-base font-semibold text-white mb-2">Analysis Narrative</h2>
+            <AssessmentReviewGuide />
             {[
               { label: 'Overall Assessment', key: 'reportNotes', val: reportNotes, set: setReportNotes },
               { label: 'Velocity Notes', key: 'velocityNotes', val: velocityNotes, set: setVelocityNotes },

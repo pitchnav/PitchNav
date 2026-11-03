@@ -1,3 +1,4 @@
+import { assessmentReview } from '@/lib/assessment-review'
 import { NextResponse } from 'next/server'
 import { createAdminClient, createClient } from '@/lib/supabase/server'
 import { buildBaseballPerformancePlan, type CategoryAssessment } from '@/lib/performance-plan'
@@ -25,11 +26,11 @@ const schema = {
   type: 'object', additionalProperties: false,
   required: ['overall_assessment', 'delivery_score', 'strengths', 'development_priorities', 'categories', 'phase_notes', 'biggest_opportunity'],
   properties: {
-    overall_assessment: { type: 'string', minLength: 300 },
+    overall_assessment: { type: 'string', minLength: 1 },
     delivery_score: { type: 'integer', minimum: 6, maximum: 30 },
-    strengths: { type: 'array', minItems: 3, maxItems: 3, items: { type: 'string', minLength: 100 } },
-    development_priorities: { type: 'array', minItems: 3, maxItems: 3, items: { type: 'string', minLength: 140 } },
-    biggest_opportunity: { type: 'object', additionalProperties: false, required: ['title', 'observation', 'why_it_matters', 'coaching_cue'], properties: { title: { type: 'string', minLength: 12 }, observation: { type: 'string', minLength: 100 }, why_it_matters: { type: 'string', minLength: 100 }, coaching_cue: { type: 'string', minLength: 60 } } },
+    strengths: { type: 'array', minItems: 3, maxItems: 3, items: { type: 'string', minLength: 1 } },
+    development_priorities: { type: 'array', minItems: 3, maxItems: 3, items: { type: 'string', minLength: 1 } },
+    biggest_opportunity: { type: 'object', additionalProperties: false, required: ['title', 'observation', 'why_it_matters', 'coaching_cue'], properties: { title: { type: 'string', minLength: 12 }, observation: { type: 'string', minLength: 1 }, why_it_matters: { type: 'string', minLength: 1 }, coaching_cue: { type: 'string', minLength: 1 } } },
     categories: {
       type: 'array', minItems: 6, maxItems: 6,
       items: {
@@ -38,9 +39,9 @@ const schema = {
         properties: {
           category: { type: 'string', enum: CATEGORIES },
           score: { type: 'integer', minimum: 1, maximum: 5 },
-          strength: { type: 'string', minLength: 100 },
-          development: { type: 'string', minLength: 180 },
-          evidence: { type: 'string', minLength: 100 },
+          strength: { type: 'string', minLength: 1 },
+          development: { type: 'string', minLength: 1 },
+          evidence: { type: 'string', minLength: 1 },
           confidence: { type: 'string', enum: ['High', 'Moderate', 'Limited'] },
           // Coarse tag retained only so the existing program mapping keeps
           // working. The real reasoning lives in physical_hypothesis, which
@@ -52,8 +53,8 @@ const schema = {
             properties: {
               // Free text on purpose. Athletes vary far too much to force
               // every physical explanation into a fixed enum.
-              limitation: { type: 'string', minLength: 25 },
-              mechanism: { type: 'string', minLength: 120 },
+              limitation: { type: 'string', minLength: 1 },
+              mechanism: { type: 'string', minLength: 1 },
               // Forces differential thinking instead of committing to the
               // first plausible story. This is the main guard against
               // confident-sounding nonsense.
@@ -63,22 +64,22 @@ const schema = {
                   type: 'object', additionalProperties: false,
                   required: ['explanation', 'why_less_likely'],
                   properties: {
-                    explanation: { type: 'string', minLength: 20 },
-                    why_less_likely: { type: 'string', minLength: 40 },
+                    explanation: { type: 'string', minLength: 1 },
+                    why_less_likely: { type: 'string', minLength: 1 },
                   },
                 },
               },
               // Declares out loud whether this rests on a real measurement or
               // is still an inference from video.
               evidence_basis: { type: 'string', enum: ['measured_screen', 'video_inference'] },
-              confirming_screen: { type: 'string', minLength: 10 },
+              confirming_screen: { type: 'string', minLength: 1 },
               confidence: { type: 'string', enum: ['High', 'Moderate', 'Limited'] },
             },
           },
         },
       },
     },
-    phase_notes: { type: 'array', minItems: 6, maxItems: 6, items: { type: 'object', additionalProperties: false, required: ['key', 'strength', 'opportunity', 'coaching_cue', 'confidence_note'], properties: { key: { type: 'string', enum: ['peak_leg_lift', 'hand_separation', 'lead_foot_contact', 'maximum_external_rotation', 'ball_release', 'finish'] }, strength: { type: 'string', minLength: 80 }, opportunity: { type: 'string', minLength: 120 }, coaching_cue: { type: 'string', minLength: 50 }, confidence_note: { type: 'string', minLength: 50 } } } },
+    phase_notes: { type: 'array', minItems: 6, maxItems: 6, items: { type: 'object', additionalProperties: false, required: ['key', 'strength', 'opportunity', 'coaching_cue', 'confidence_note'], properties: { key: { type: 'string', enum: ['peak_leg_lift', 'hand_separation', 'lead_foot_contact', 'maximum_external_rotation', 'ball_release', 'finish'] }, strength: { type: 'string', minLength: 1 }, opportunity: { type: 'string', minLength: 1 }, coaching_cue: { type: 'string', minLength: 1 }, confidence_note: { type: 'string', minLength: 1 } } } },
   },
 }
 
@@ -190,14 +191,10 @@ How to use this cross-check:
 
 Write every athlete-facing field so an eighth grader can understand it on the first read. Use short, direct sentences and familiar body words. If a baseball term is necessary, explain it in the same sentence. Do not use vague handoffs such as “staff should confirm,” “review whether,” “a basic directional check is possible,” or “use this as a starting point.” Do not use unexplained phrases such as “plate-line direction,” “lateral drift,” “frontal plane,” or “kinetic chain.”
 
-Give the athlete enough value for a paid detailed review:
-- The overall assessment must be 5–7 sentences. Start with the clearest pattern, state the main problem, explain why it matters, and end with the first action and the two-week reassessment goal.
-- Each category strength must be 2–3 sentences: say exactly what body part did well, when it happened, and why it helps.
-- Each category development field must be 3–4 sentences: plainly state what the athlete is not doing well, when it happens, why it matters, and one specific cue or drill goal. Do not soften the weakness into a non-answer.
-- Each evidence field must be 2–3 sentences tied to a visible phase, time, or supplied measurement. Explain what the evidence means in plain language.
-- Each top-level strength and priority must be at least 2 complete sentences.
-- When the camera truly cannot show a movement, do not invent a fault. Name the exact thing that is hidden in plain language, say what can still be seen, and give a specific setup or comparison for the next two-week video check.
-- The eight-week plan is reassessed at weeks 2, 4, 6, and 8. The week-8 review leads to a new program based on the athlete’s in-season, preseason, or offseason workload.
+Use the Pitch Nav assessment standard:
+${assessmentReview.join('\n')}
+Write overall_assessment as a short coach-to-pitcher recap. Use the six phase notes for detail. Tie each category to a frame, timestamp or supplied measurement. Put missing evidence in confidence_note. If the evidence supports no change in a phase, say what to keep. Never invent a miss direction, target, command tally, second pitch, weakness or drill result. Only discuss a change in command when both the intended target and outcome are supplied. Otherwise describe a future command check. Choose the priority from THIS delivery. A pushy arm or a soft landing are possible findings, never defaults.
+The eight-week plan is reassessed at weeks 2, 4, 6, and 8.
 
 Every development priority must name an observable weakness and the phase/evidence supporting it, because verified category weaknesses will be mapped directly to baseball throwing, strength, and mobility work. Do not prescribe a lift as a guaranteed mechanics correction.
 
@@ -210,7 +207,7 @@ For every category, reason out the physical explanation in physical_hypothesis. 
 
 Rules for physical_hypothesis:
 - limitation: name the movement-capacity limitation in plain language (for example, "the lead hip does not rotate inward far enough to let the pelvis clear the front leg"). Describe capacity and control only. Never name a diagnosis, injury, or anatomical pathology — no labrum, no UCL, no impingement, no tears, no inflammation. If you find yourself naming a body-part injury, you have gone too far; describe the movement limitation instead.
-- mechanism: explain why that limitation would produce this specific fault at this specific phase. If you cannot construct that chain, your hypothesis is probably wrong — pick a different one.
+- mechanism: explain why that limitation would produce this specific fault at this specific phase. When no physical explanation is supported, write that no limitation has been established. A measured screen can support a hypothesis without proving the cause of a pitch outcome.
 - competing_explanations: name at least one other credible explanation for the same visible fault, and say why you consider it less likely here. This is required. A fault almost always has more than one possible cause, and the second-best explanation is often the right one.
 - evidence_basis: "measured_screen" only if a measured movement screen above actually supports it. If you are reasoning from the pitch video alone, it is "video_inference" — say so honestly. A single camera watching a fast rotational movement cannot establish a physical limitation on its own.
 - confirming_screen: name the specific screen or test that would confirm or rule this out at the next check.
@@ -220,7 +217,7 @@ Also set likely_cause to the closest coarse tag from this list purely for progra
 
 Reflect that same reasoning in the category's development field using this shape, in your own words and specific to what you observed:
 1. Name the visible pattern and when in the delivery it happens (for example, a lead leg that keeps traveling forward instead of blocking at foot strike).
-2. Name the plausible physical reason in plain language (for example, tightness or a strength gap in the hamstrings, or limited hip mobility) — match this to the likely_cause you selected.
+2. Explain the coaching significance of that observation. Keep unconfirmed physical causes in physical_hypothesis. A routing tag is never evidence.
 3. Say what the plan does about it this week (for example, focusing on hip-hinge strength work and hamstring mobility) so the athlete understands why their specific plan looks the way it does.
 ${athleteContext.promptBlock}
 
@@ -229,7 +226,7 @@ Clip summary: ${JSON.stringify(analysis.clip_summary ?? {})}
 2D pose metrics: ${JSON.stringify(analysis.mechanics_metrics ?? {})}
 Deterministic candidates (supporting data only): ${JSON.stringify(analysis.category_scores ?? [])}`
     const model = process.env.OPENAI_MECHANICS_MODEL || 'gpt-5.4-mini'
-    const response = await fetch('https://api.openai.com/v1/responses', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${process.env.OPENAI_API_KEY}` }, body: JSON.stringify({ model, reasoning: { effort: 'medium' }, input: [{ role: 'user', content: [{ type: 'input_text', text: prompt }, ...images] }], text: { verbosity: 'high', format: { type: 'json_schema', name: 'pitch_nav_mechanics_draft', strict: true, schema } } }) })
+    const response = await fetch('https://api.openai.com/v1/responses', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${process.env.OPENAI_API_KEY}` }, body: JSON.stringify({ model, reasoning: { effort: 'medium' }, input: [{ role: 'user', content: [{ type: 'input_text', text: prompt }, ...images] }], text: { verbosity: 'medium', format: { type: 'json_schema', name: 'pitch_nav_mechanics_draft', strict: true, schema } } }) })
     const payload = await response.json() as Record<string, unknown>
     if (!response.ok) return NextResponse.json({ error: (payload.error as { message?: string } | undefined)?.message || 'OpenAI could not generate the draft.' }, { status: 502 })
     const output = getOutputText(payload)
