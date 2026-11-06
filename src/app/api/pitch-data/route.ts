@@ -13,7 +13,6 @@ import { createClient } from '@/lib/supabase/server'
 
 // Postgres "relation does not exist" — migration 032 has not been applied yet.
 const MISSING_TABLE_CODE = '42P01'
-const MIGRATION_FILE = 'supabase/migrations/032_pitch_data.sql'
 
 // A bullpen is tens of pitches; a season export might be hundreds. The cap is
 // well clear of real use and exists only to bound a single request.
@@ -114,7 +113,7 @@ export async function POST(request: NextRequest) {
   if (sessionError || !session) {
     if (sessionError?.code === MISSING_TABLE_CODE) {
       return NextResponse.json(
-        { error: `Pitch Data needs one setup step: run ${MIGRATION_FILE} in the Supabase SQL editor once.` },
+        { error: 'Pitch Data is being set up. Please check back later.' },
         { status: 503 },
       )
     }

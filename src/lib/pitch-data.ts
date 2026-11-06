@@ -20,8 +20,8 @@ export type PitchDataSource = 'trackman' | 'rapsodo' | 'manual'
  * not verified the reading.
  */
 export const SOURCE_LABELS: Record<PitchDataSource, string> = {
-  trackman: 'TrackMan, athlete-uploaded',
-  rapsodo: 'Rapsodo, athlete-uploaded',
+  trackman: 'Radar tracking data, athlete-uploaded',
+  rapsodo: 'Camera-assisted tracking data, athlete-uploaded',
   manual: 'Athlete-entered',
 }
 

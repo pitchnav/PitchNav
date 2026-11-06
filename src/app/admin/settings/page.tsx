@@ -13,14 +13,14 @@ interface Setting {
 const SETTING_DESCRIPTIONS: Record<string, { label: string; description: string; type?: string }> = {
   business_name:          { label: 'Business Name', description: 'Displayed in emails and the site header.' },
   contact_email:          { label: 'Support Email', description: 'Used in contact page and outbound emails.' },
-  from_email_name:        { label: 'From Name (Emails)', description: 'The "from" name for Resend emails.' },
+  from_email_name:        { label: 'From Name (Emails)', description: 'The sender name for account emails.' },
   delivery_estimate_text: { label: 'Delivery Estimate Wording', description: 'Shown on order detail pages. E.g. "Estimated delivery: one business day."' },
   max_weekly_orders:      { label: 'Max Weekly Orders', description: 'Leave blank to disable the cap.', type: 'number' },
   video_retention_days:   { label: 'Video Retention (Days)', description: 'How long uploaded videos are kept after analysis completion.', type: 'number' },
   follow_up_price_cents:  { label: 'Follow-Up Price (cents)', description: 'E.g. 2500 = $25.00.', type: 'number' },
-  instagram_url:          { label: 'Instagram URL', description: 'Full URL including https://.' },
-  twitter_url:            { label: 'Twitter / X URL', description: 'Full URL including https://.' },
-  youtube_url:            { label: 'YouTube URL', description: 'Full URL including https://.' },
+  instagram_url:          { label: 'Photo profile URL', description: 'Full URL including https://.' },
+  twitter_url:            { label: 'Social updates URL', description: 'Full URL including https://.' },
+  youtube_url:            { label: 'Video channel URL', description: 'Full URL including https://.' },
   analysis_available:     { label: 'Analysis Available', description: 'Set to "true" to accept new orders, "false" to pause.', type: 'boolean' },
 }
 
@@ -125,11 +125,7 @@ export default function AdminSettingsPage() {
       </div>
 
       <p className="text-xs text-slate-600 mt-8">
-        Stripe product and price IDs are configured via environment variables (
-        <code className="font-mono text-slate-500">STRIPE_PRODUCT_ID</code>,{' '}
-        <code className="font-mono text-slate-500">STRIPE_THROWING_PRICE_ID</code>, and{' '}
-        <code className="font-mono text-slate-500">STRIPE_PERFORMANCE_PRICE_ID</code>). Update{' '}
-        <code className="font-mono text-slate-500">.env.local</code> and redeploy to change them.
+        Billing configuration is managed through the deployment settings.
       </p>
     </div>
   )

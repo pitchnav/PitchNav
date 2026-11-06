@@ -1666,7 +1666,7 @@ export function MotionAnalysisStudio({
     const canvas = canvasRef.current
     if (!video || !canvas || !summary) return null
     if (!('MediaRecorder' in window)) {
-      setError('This browser cannot export the overlay. Try Chrome on a desktop computer.')
+      setError('This browser cannot export the overlay. Try a different desktop browser.')
       return null
     }
     if (!landmarkerRef.current && !(await initializeModel())) return null

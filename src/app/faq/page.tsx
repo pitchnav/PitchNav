@@ -135,7 +135,7 @@ const FAQ_SECTIONS = [
     questions: [
       {
         q: 'What payment methods are accepted?',
-        a: 'Pitch Nav accepts all major credit and debit cards through Stripe. We do not accept cash, checks, or cryptocurrency. Pitch Nav does not store your card number — it is handled securely by Stripe.',
+        a: 'You can pay by credit or debit card. Our payment processor handles your card details.',
       },
       {
         q: 'Can I get a refund?',

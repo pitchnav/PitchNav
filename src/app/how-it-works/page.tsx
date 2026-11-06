@@ -45,7 +45,7 @@ const steps = [
     title: 'Check Out',
     description: 'Choose your assessment or membership. Once payment clears, open the upload link to send your pitch.',
     details: [
-      'Secure checkout powered by Stripe',
+      'Secure card checkout',
       'Pitch Nav does not store your card number',
       'See the pricing page for current plans and assessment fees',
       'Order confirmation email sent immediately',

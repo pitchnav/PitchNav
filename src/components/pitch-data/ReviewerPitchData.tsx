@@ -129,9 +129,7 @@ export function ReviewerPitchData({ userId, athleteProfileId }: Props) {
 
       {state === 'needs-setup' && (
         <p className="text-sm text-slate-400">
-          Pitch Data needs one setup step: run{' '}
-          <code className="text-slate-300">supabase/migrations/032_pitch_data.sql</code> in the Supabase SQL
-          editor once.
+          Pitch Data is being set up. Please check back later.
         </p>
       )}
 
@@ -142,7 +140,7 @@ export function ReviewerPitchData({ userId, athleteProfileId }: Props) {
       {state === 'ready' && sessions.length === 0 && (
         <p className="text-sm text-slate-500">
           This athlete has not added any device pitch data. Nothing here is estimated, so there is nothing
-          to show until they upload a TrackMan or Rapsodo export or enter a pitch.
+          to show until they upload a pitch CSV or enter a pitch.
         </p>
       )}
 

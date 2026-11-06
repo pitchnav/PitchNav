@@ -132,10 +132,10 @@ export const PLAYING_LEVEL_LABELS: Record<PlayingLevel, string> = {
 }
 
 export const VELOCITY_SOURCE_LABELS: Record<VelocitySource, string> = {
-  pocket_radar: 'Pocket Radar',
-  stalker: 'Stalker Radar',
-  rapsodo: 'Rapsodo',
-  trackman: 'TrackMan',
+  pocket_radar: 'Compact radar gun',
+  stalker: 'Handheld radar gun',
+  rapsodo: 'Camera-assisted tracking system',
+  trackman: 'Radar tracking system',
   stadium_radar: 'Stadium Radar',
   coach_provided: 'Coach-Provided Reading',
   estimated: 'Estimated',

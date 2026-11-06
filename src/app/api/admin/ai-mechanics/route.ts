@@ -228,7 +228,7 @@ Deterministic candidates (supporting data only): ${JSON.stringify(analysis.categ
     const model = process.env.OPENAI_MECHANICS_MODEL || 'gpt-5.4-mini'
     const response = await fetch('https://api.openai.com/v1/responses', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${process.env.OPENAI_API_KEY}` }, body: JSON.stringify({ model, reasoning: { effort: 'medium' }, input: [{ role: 'user', content: [{ type: 'input_text', text: prompt }, ...images] }], text: { verbosity: 'medium', format: { type: 'json_schema', name: 'pitch_nav_mechanics_draft', strict: true, schema } } }) })
     const payload = await response.json() as Record<string, unknown>
-    if (!response.ok) return NextResponse.json({ error: (payload.error as { message?: string } | undefined)?.message || 'OpenAI could not generate the draft.' }, { status: 502 })
+    if (!response.ok) return NextResponse.json({ error: (payload.error as { message?: string } | undefined)?.message || 'The coaching draft could not be generated.' }, { status: 502 })
     const output = getOutputText(payload)
     if (!output) return NextResponse.json({ error: 'The AI response did not contain a report.' }, { status: 502 })
     const draft = JSON.parse(output) as { overall_assessment: string; delivery_score: number; strengths: string[]; development_priorities: string[]; biggest_opportunity: Record<string, string>; categories: unknown[]; phase_notes: Array<Record<string, string>> }

@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
         order_id: orderId,
         old_status: 'awaiting_payment',
         new_status: 'submitted',
-        note: 'Payment confirmed via Stripe webhook',
+        note: 'Payment confirmed by the payment processor',
       })
 
       // Send confirmation emails
@@ -128,7 +128,7 @@ export async function POST(request: NextRequest) {
         await supabase.from('order_status_history').insert({
           order_id: orderId,
           new_status: 'refunded',
-          note: 'Refund processed via Stripe',
+          note: 'Refund confirmed by the payment processor',
         })
       }
       break

@@ -47,7 +47,7 @@ export default function PrivacyPage() {
               </div>
               <div>
                 <h3 className="text-white font-semibold mb-2">Account Information</h3>
-                <p>Email address, name, and password (stored as a secure hash by Supabase).</p>
+                <p>Email address, name, and password (stored as a secure hash by our authentication provider).</p>
               </div>
               <div>
                 <h3 className="text-white font-semibold mb-2">Athlete Profile Information</h3>
@@ -84,8 +84,8 @@ export default function PrivacyPage() {
               <div>
                 <h3 className="text-white font-semibold mb-2">Payment Information</h3>
                 <p>
-                  Payments are processed by Stripe. Pitch Nav does not store your full card number
-                  or CVV. We receive a payment confirmation and amount from Stripe after a successful
+                  Our payment processor handles card payments. Pitch Nav does not store your full card number
+                  or CVV. We receive a payment confirmation and amount from the processor after a successful
                   transaction.
                 </p>
               </div>
@@ -107,7 +107,7 @@ export default function PrivacyPage() {
               <li>To communicate with you about your order and account</li>
               <li>To send transactional emails (order confirmation, status updates, completion notice)</li>
               <li>To respond to support requests</li>
-              <li>To process payments through Stripe</li>
+              <li>To process payments through our payment processor</li>
               <li>To flag health-screening responses for reviewer awareness</li>
               <li>To process data-deletion requests</li>
               <li>To improve our service (without identifying individual athletes)</li>
@@ -121,7 +121,7 @@ export default function PrivacyPage() {
           <section className="card">
             <h2 className="text-xl font-bold text-white mb-4">4. Video Storage and Retention</h2>
             <p className="text-sm text-slate-400 leading-relaxed">
-              Videos you submit are stored in a private Supabase storage bucket using access
+              Videos you submit are stored in a private storage bucket using access
               controls that prevent any user other than you and your assigned reviewer from
               accessing your files. After your analysis is complete, raw videos are retained for
               [PLACEHOLDER — configurable retention period, e.g., &quot;one year&quot;] to support potential
@@ -142,9 +142,9 @@ export default function PrivacyPage() {
             </p>
             <ul className="space-y-2 text-sm text-slate-400 leading-relaxed mt-3 list-disc pl-4">
               <li><strong className="text-white">Assigned reviewer:</strong> Your submitted videos and intake information are accessible to your assigned reviewer for the purpose of completing your analysis.</li>
-              <li><strong className="text-white">Supabase:</strong> Our database and file storage provider. Data is stored on Supabase infrastructure.</li>
-              <li><strong className="text-white">Stripe:</strong> Our payment processor. We share your email and order information with Stripe to process payments.</li>
-              <li><strong className="text-white">Resend:</strong> Our transactional email provider. We share your email address with Resend to deliver order and status emails.</li>
+              <li><strong className="text-white">Database and file storage:</strong> Our hosting provider stores account records and uploaded files.</li>
+              <li><strong className="text-white">Payments:</strong> We share your email and order information with our payment processor to process payments.</li>
+              <li><strong className="text-white">Email delivery:</strong> We share your email address with our email provider to deliver order and status emails.</li>
               <li><strong className="text-white">Legal requirements:</strong> We may disclose information when required by law or to protect the rights and safety of users and third parties.</li>
             </ul>
           </section>
@@ -205,7 +205,7 @@ export default function PrivacyPage() {
             <p className="text-sm text-slate-400 leading-relaxed">
               We use industry-standard security measures including encrypted connections (HTTPS),
               access-controlled storage buckets, row-level security on our database, and secure
-              authentication through Supabase. However, no system is perfectly secure. If you
+              authentication through our account provider. However, no system is perfectly secure. If you
               become aware of a security issue, please contact support@pitchnav.com immediately.
             </p>
           </section>

@@ -50,7 +50,7 @@ export default function TermsPage() {
             },
             {
               title: '7. Payment and Refunds',
-              content: '[PLACEHOLDER — add full refund policy language, chargeback policy, and billing terms with attorney guidance before launch.] Payment is collected at checkout via Stripe. Orders are created only after payment is confirmed. If submitted videos are unusable and a replacement cannot be obtained, we will issue a full refund. Completed analyses are not eligible for refunds. Contact support@pitchnav.com for billing concerns.',
+              content: '[PLACEHOLDER — add full refund policy language, chargeback policy, and billing terms with attorney guidance before launch.] Payment is collected by our payment processor at checkout. Orders are created only after payment is confirmed. If submitted videos are unusable and a replacement cannot be obtained, we will issue a full refund. Completed analyses are not eligible for refunds. Contact support@pitchnav.com for billing concerns.',
             },
             {
               title: '8. Intellectual Property',

@@ -138,7 +138,7 @@ export function StepPitching({ initialData, athleteProfileId, onComplete, onBack
 
         <div>
           <label htmlFor="throwingProgram" className="label">Current Throwing Program</label>
-          <input id="throwingProgram" type="text" className="input" placeholder="e.g., Tread Athletics, Driveline, None" {...register('throwingProgram')} />
+          <input id="throwingProgram" type="text" className="input" placeholder="e.g., Team throwing plan, individual plan, or none" {...register('throwingProgram')} />
         </div>
 
         <div>

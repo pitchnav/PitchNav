@@ -39,7 +39,7 @@ function PageHeader() {
 function MigrationNeededNotice({ tail }: { tail: string }) {
   return (
     <p className="mt-2 text-sm text-slate-400">
-      This screen needs one more step: open the Supabase SQL editor for this project and run the file{' '}
+      This screen needs one more step: open the database editor for this project and run the file{' '}
       <code className="text-slate-300">{MIGRATION_FILE}</code> once. As soon as that finishes, {tail}.
     </p>
   )

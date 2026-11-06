@@ -20,7 +20,7 @@ export type VideoProbeResult = {
 }
 
 const UNSUPPORTED_MESSAGE =
-  'This browser could not read that video. It is most likely an HEVC recording, which Chrome cannot decode. On iPhone go to Settings → Camera → Formats and choose "Most Compatible", then re-record. You can also open the clip in QuickTime and export it, or send any MP4.'
+  'This browser could not read that video. Export the clip as an H.264 MP4 and upload it again.'
 
 export async function probeVideoFile(file: File, timeoutMs = 8000): Promise<VideoProbeResult> {
   if (typeof document === 'undefined') return { ok: true }

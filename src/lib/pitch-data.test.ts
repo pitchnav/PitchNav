@@ -243,8 +243,8 @@ describe('velocityOverTime', () => {
 
 describe('source labelling', () => {
   it('names the device and says the athlete supplied it', () => {
-    expect(sourceLabel('trackman')).toBe('TrackMan, athlete-uploaded')
-    expect(sourceLabel('rapsodo')).toBe('Rapsodo, athlete-uploaded')
+    expect(sourceLabel('trackman')).toBe('Radar tracking data, athlete-uploaded')
+    expect(sourceLabel('rapsodo')).toBe('Camera-assisted tracking data, athlete-uploaded')
     expect(sourceLabel('manual')).toBe('Athlete-entered')
   })
 

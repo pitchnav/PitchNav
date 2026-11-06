@@ -520,7 +520,7 @@ function FAQPreview() {
     },
     {
       q: 'What phone do I need?',
-      a: 'Any modern smartphone that can record video at 120 fps or higher. Most iPhones from the last several years and many Android devices support this in their native camera app.',
+      a: 'Any modern smartphone that can record video at 120 fps or higher. Look for slow motion in your camera settings.',
     },
     {
       q: 'How long does the analysis take?',

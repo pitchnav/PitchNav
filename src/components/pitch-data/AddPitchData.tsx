@@ -65,7 +65,7 @@ export function AddPitchData() {
 
     if (result.pitches.length === 0 && result.pitchers.length === 0) {
       setError(
-        'No pitch columns were recognised in that file. A TrackMan export should contain columns like RelSpeed, SpinRate and TaggedPitchType.',
+        'No pitch columns were recognised in that file. Use a CSV with pitch columns such as RelSpeed, SpinRate and TaggedPitchType.',
       )
       setParsed(null)
       return
@@ -187,7 +187,7 @@ export function AddPitchData() {
       {mode === 'upload' ? (
         <div>
           <label className="block">
-            <span className="label">TrackMan or Rapsodo CSV export</span>
+            <span className="label">Pitch data file (CSV)</span>
             <input
               type="file"
               accept=".csv,text/csv"
@@ -220,8 +220,8 @@ export function AddPitchData() {
                     value={device}
                     onChange={(event) => setDevice(event.target.value as 'trackman' | 'rapsodo')}
                   >
-                    <option value="trackman">TrackMan</option>
-                    <option value="rapsodo">Rapsodo</option>
+                    <option value="trackman">Radar tracking system</option>
+                    <option value="rapsodo">Camera-assisted tracking system</option>
                   </select>
                 </label>
 

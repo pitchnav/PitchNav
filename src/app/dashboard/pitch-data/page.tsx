@@ -15,14 +15,13 @@ import {
 
 export const metadata: Metadata = {
   title: 'Pitch Data',
-  description: 'Ball-flight numbers from your own TrackMan or Rapsodo sessions, or entered by hand.',
+  description: 'Review your pitch measurements from uploaded files and manual entries.',
 }
 
 // Postgres "relation does not exist" — the specific signal that migration 032
 // has not been applied yet. Any other error is a real fault and must say so,
 // rather than sending the owner to re-run a migration he already ran.
 const MISSING_TABLE_CODE = '42P01'
-const MIGRATION_FILE = 'supabase/migrations/032_pitch_data.sql'
 
 type SessionRow = {
   id: string
@@ -74,9 +73,7 @@ function PageHeader() {
         <h1 className="text-2xl font-bold text-white">Pitch Data</h1>
       </div>
       <p className="mt-2 max-w-2xl text-sm text-slate-400">
-        Ball-flight numbers measured by a real device. Upload a TrackMan or Rapsodo export, or type in a
-        pitch by hand. Every number here keeps the source it came from, and nothing on this page is
-        estimated by Pitch Nav.
+        Keep your bullpen sessions in one place. Upload a pitch CSV or enter your measurements by hand.
       </p>
     </div>
   )
@@ -102,9 +99,7 @@ export default async function PitchDataPage() {
           <h2 className="font-bold text-white">{missingTable ? 'One setup step left' : 'Could not load your pitch data'}</h2>
           {missingTable ? (
             <p className="mt-2 text-sm text-slate-400">
-              This screen needs its database tables created once. Open the Supabase SQL editor for this
-              project and run <code className="text-slate-300">{MIGRATION_FILE}</code>. As soon as that
-              finishes, this page will work.
+              Pitch Data is being set up. Please check back later.
             </p>
           ) : (
             <>
@@ -176,8 +171,7 @@ export default async function PitchDataPage() {
           <Gauge className="mx-auto h-10 w-10 text-electric-blue-light" />
           <h2 className="mt-4 text-xl font-black text-white">No pitch data yet</h2>
           <p className="mx-auto mt-2 max-w-md text-sm text-slate-400">
-            Add a TrackMan or Rapsodo export, or enter a single pitch by hand. Your averages and velocity
-            trend will appear here once there is something to show.
+            Upload a pitch CSV or enter a pitch by hand to see your averages and velocity trend.
           </p>
         </div>
       ) : (

@@ -1,3 +1,4 @@
+import { VELOCITY_SOURCE_LABELS } from './utils'
 /**
  * Athlete context for the assessment.
  *
@@ -163,7 +164,7 @@ export function buildAthleteContext(
     `- Playing level: ${source.playing_level ?? 'not provided'}`,
     `- Throws: ${source.throwing_hand ?? 'not provided'}`,
     `- Velocity: typical ${avgVelocity ?? 'not provided'} mph, best ${maxVelocity ?? 'not provided'} mph, goal ${goalVelocity ?? 'not provided'} mph`,
-    `- How that velocity was obtained: ${source.velocity_source ? `${source.velocity_source.replaceAll('_', ' ')}${velocityIsMeasured ? ' (a measuring device or coach reading)' : ' (the athlete\'s own estimate, not measured)'}` : 'not provided'}${velocityAgeDays !== null ? `, recorded ${velocityAgeDays} days ago` : ''}`,
+    `- How that velocity was obtained: ${source.velocity_source ? `${VELOCITY_SOURCE_LABELS[source.velocity_source as keyof typeof VELOCITY_SOURCE_LABELS] ?? 'Other'}${velocityIsMeasured ? ' (a measuring device or coach reading)' : ' (the athlete\'s own estimate, not measured)'}` : 'not provided'}${velocityAgeDays !== null ? `, recorded ${velocityAgeDays} days ago` : ''}`,
     `- Current throwing program: ${source.throwing_program ?? 'not provided'}`,
     `- Current strength program: ${source.strength_program ?? 'not provided'}`,
     `- Bullpen intensity: ${source.bullpen_intensity ?? 'not provided'}; pitches per week: ${source.pitches_per_week ?? 'not provided'}`,

@@ -149,7 +149,7 @@ export function TrackerStudio() {
     const canvas = canvasRef.current
     if (!video || !canvas || !fileUrl) return
     if (!('MediaRecorder' in window)) {
-      setError('This browser cannot record the overlay. Use Chrome on a desktop computer.')
+      setError('This browser cannot record the overlay. Try a different desktop browser.')
       return
     }
     setBusy(true)

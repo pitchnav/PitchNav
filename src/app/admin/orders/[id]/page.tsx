@@ -389,7 +389,7 @@ export default function AdminOrderDetailPage() {
 
   async function markPaidOverride(tier: 'throwing' | 'performance') {
     if (order?.payment_confirmed_at) return
-    if (!window.confirm(`Mark this order paid as a ${tier === 'performance' ? '$40 Complete Performance' : '$25 Throwing Development'} admin/testing override? This bypasses Stripe and should only be used for testing.`)) return
+    if (!window.confirm(`Mark this order paid as a ${tier === 'performance' ? '$40 Complete Performance' : '$25 Throwing Development'} admin/testing override? This bypasses the payment processor and should only be used for testing.`)) return
     setSaving(true)
     try {
       const now = new Date().toISOString()
@@ -873,7 +873,7 @@ export default function AdminOrderDetailPage() {
           <div className="card">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-base font-semibold text-white">Position Screenshots</h2>
-              <p className="text-xs text-slate-500">Upload via Supabase Storage → analysis-assets bucket</p>
+              <p className="text-xs text-slate-500">Upload via private file storage → analysis-assets bucket</p>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
               {Object.entries(PITCH_POSITION_LABELS).map(([pos, label]) => {

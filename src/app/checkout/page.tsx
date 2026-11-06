@@ -255,7 +255,7 @@ function CheckoutContent() {
 
               <div className="flex items-center justify-center gap-2 text-xs text-slate-600">
                 <Shield className="h-3.5 w-3.5" />
-                Secured by Stripe · Pitch Nav does not store your card
+                Secure checkout · Pitch Nav does not store your card
               </div>
 
               <hr className="my-4 border-surface-border" />
