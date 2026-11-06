@@ -15,6 +15,7 @@ const PUBLIC_LINKS = [
   { href: '/sample-report', label: 'Sample Report' },
   { href: '/pricing', label: 'Pricing' },
   { href: '/pitch-metrics', label: 'Pitch Tracking' },
+  { href: '/arsenal', label: 'Arsenal' },
   { href: '/tailored-development', label: 'Tailored Development' },
   { href: '/faq', label: 'FAQ' },
   { href: '/shop', label: 'Shop' },
@@ -24,6 +25,7 @@ const ATHLETE_LINKS = [
   { href: '/dashboard', label: 'Dashboard' },
   { href: '/dashboard/motion-lab', label: 'Video Review' },
   { href: '/dashboard/pitch-data', label: 'Pitch Data' },
+  { href: '/arsenal', label: 'Arsenal Preview' },
   { href: '/shop', label: 'Shop' },
 ]
 

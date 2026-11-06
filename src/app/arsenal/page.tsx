@@ -1,0 +1,24 @@
+import type { Metadata } from 'next'
+import { MovementChart } from '@/components/arsenal/MovementChart'
+import type { ArsenalPitch } from '@/lib/arsenal'
+
+export const metadata: Metadata = { title: 'Arsenal Analysis', description: 'Explore a sample pitching arsenal and compare velocity and movement by pitch type.' }
+const example: ArsenalPitch[] = [
+  { id: 'example-fastball', pitchType: 'Four-seam fastball', velocity: 90, ivb: 18, hb: 10, spin: 2200, count: 20, releaseHeight: null, releaseSide: null, extension: null, source: 'Illustrative example — not athlete data' },
+  { id: 'example-slider', pitchType: 'Slider', velocity: 83, ivb: 3, hb: -4, spin: 2400, count: 12, releaseHeight: null, releaseSide: null, extension: null, source: 'Illustrative example — not athlete data' },
+  { id: 'example-changeup', pitchType: 'Changeup', velocity: 85, ivb: 10, hb: 14, spin: 1700, count: 12, releaseHeight: null, releaseSide: null, extension: null, source: 'Illustrative example — not athlete data' },
+]
+export default function ArsenalPreviewPage() {
+  return <main className="min-h-screen bg-navy-950 pb-20 pt-28 text-white"><div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <div className="grid items-center gap-10 lg:grid-cols-[0.8fr_1.2fr]">
+      <div><h1 className="text-4xl font-black leading-tight tracking-tight sm:text-5xl">Every pitch has a shape.<br />See how yours fit.</h1><p className="mt-6 max-w-lg text-lg leading-8 text-slate-300">Compare this pitcher’s fastball, slider and changeup. Select a pitch on the chart to see its velocity and movement.</p><div className="mt-8 border-t border-slate-700 pt-5"><p className="text-sm font-semibold text-sky-200">Illustrative right-handed arsenal</p><p className="mt-2 text-sm leading-6 text-slate-400">All numbers and findings in this preview are fictional examples. They are not measurements from a Pitch Nav video assessment.</p></div></div>
+      <MovementChart pitches={example} handedness="RHP" />
+    </div>
+    <div className="mt-10 grid gap-5 md:grid-cols-3">
+      <section className="rounded-xl border border-slate-700 bg-navy-900 p-6"><h2 className="text-lg font-bold">A relationship worth checking</h2><p className="mt-3 text-sm leading-7 text-slate-300">In this example, the changeup is only 5 mph slower than the fastball. Evaluate whether its lower vertical movement and extra arm-side movement create enough separation in practice.</p></section>
+      <section className="rounded-xl border border-slate-700 bg-navy-900 p-6"><h2 className="text-lg font-bold">A shape worth testing</h2><p className="mt-3 text-sm leading-7 text-slate-300">A firmer cutter with a little glove-side movement could offer another option. Compare it with the existing slider before adding it. Command and hitter response decide whether it earns a place.</p></section>
+      <section className="rounded-xl border border-sky-600/60 bg-navy-900 p-6"><h2 className="text-lg font-bold">Go deeper when you&apos;re ready</h2><p className="mt-3 text-sm leading-7 text-slate-300">Planned pricing is $6.99 for one Full Arsenal Assessment or $35/month for unlimited reports with Pro. Checkout opens after billing launches.</p></section>
+    </div>
+    <p className="mt-8 max-w-3xl text-sm leading-7 text-slate-400">Horizontal break is shown from the pitcher’s view. Positive values move to the pitcher’s right. Vertical break is measured in inches.</p>
+  </div></main>
+}
