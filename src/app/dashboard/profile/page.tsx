@@ -1,171 +1,120 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
-import { Trash2, AlertTriangle } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
+import Link from 'next/link'
+import { missingDatabaseFunction } from '@/lib/athlete-eligibility'
 import { createClient } from '@/lib/supabase/client'
 
+type Scope = 'videos' | 'all'
+
 export default function ProfilePage() {
-  const [profile, setProfile] = useState<{ full_name: string | null; email: string } | null>(null)
-  const [fullName, setFullName] = useState('')
-  const [saving, setSaving] = useState(false)
-  const [saved, setSaved] = useState(false)
-  const [deletionRequested, setDeletionRequested] = useState(false)
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
-  const [deleteType, setDeleteType] = useState<'videos' | 'all' | null>(null)
   const supabase = useMemo(() => createClient(), [])
+  const [userId, setUserId] = useState('')
+  const [email, setEmail] = useState('')
+  const [fullName, setFullName] = useState('')
+  const [canSaveReminder, setCanSaveReminder] = useState(false)
+  const [reminders, setReminders] = useState(false)
+  const [pending, setPending] = useState<Scope[]>([])
+  const [confirm, setConfirm] = useState<Scope | null>(null)
+  const [busy, setBusy] = useState(false)
+  const [notice, setNotice] = useState('')
+  const [error, setError] = useState('')
 
   useEffect(() => {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-      const { data } = await supabase.from('profiles').select('full_name, email').eq('id', user.id).single()
-      if (data) {
-        setProfile(data)
-        setFullName(data.full_name ?? '')
-      }
+      if (!user) throw new Error()
+      const [profile, requests, preference] = await Promise.all([
+        supabase.from('profiles').select('full_name,email').eq('id', user.id).single(),
+        supabase.from('deletion_requests').select('request_type').eq('user_id', user.id).is('processed_at', null),
+        supabase.from('profiles').select('retest_email_opt_in').eq('id', user.id).single(),
+      ])
+      if (profile.error || requests.error) throw new Error()
+      setFullName(profile.data.full_name ?? '')
+      setEmail(profile.data.email)
+      setCanSaveReminder(!preference.error)
+      setReminders(preference.data?.retest_email_opt_in === true)
+      setPending(requests.data.map(item => item.request_type))
+      setUserId(user.id)
     }
-    load()
-  }, [])
+    void load().catch(() => setError('Could not load profile settings. Reload the page or contact support.'))
+  }, [supabase])
 
-  async function saveProfile() {
-    setSaving(true)
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
-    await supabase.from('profiles').update({ full_name: fullName }).eq('id', user.id)
-    setSaving(false)
-    setSaved(true)
-    setTimeout(() => setSaved(false), 3000)
+  async function saveProfile(event: React.FormEvent) {
+    event.preventDefault()
+    setBusy(true)
+    setError('')
+    setNotice('')
+    try {
+      const { error } = await supabase.from('profiles')
+        .update({ full_name: fullName.trim(), ...(canSaveReminder ? { retest_email_opt_in: reminders } : {}) }).eq('id', userId).select('id').single()
+      if (error) throw error
+      setNotice('Changes saved.')
+    } catch {
+      setError('Could not save these changes. Please try again.')
+    } finally { setBusy(false) }
   }
 
-  async function requestDeletion(type: 'videos' | 'all') {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
-    await supabase.from('deletion_requests').insert({
-      user_id: user.id,
-      request_type: type,
-      notes: `Requested from profile settings page`,
-    })
-    setDeletionRequested(true)
-    setShowDeleteConfirm(false)
+  async function requestDeletion(scope: Scope) {
+    setBusy(true)
+    setError('')
+    setNotice('')
+    try {
+      const { error } = await supabase.rpc('request_account_deletion', { requested_scope: scope })
+      if (missingDatabaseFunction(error)) {
+        const receipt = await supabase.from('deletion_requests')
+          .insert({ user_id: userId, request_type: scope }).select('id').single()
+        if (receipt.error || !receipt.data) throw new Error()
+      } else if (error) throw error
+      setPending(previous => [...previous, scope])
+      setConfirm(null)
+      setNotice('Your deletion request was recorded for staff review.')
+    } catch {
+      setError('Could not record the request. Try again or contact support.')
+    } finally { setBusy(false) }
   }
 
-  return (
-    <div className="max-w-2xl mx-auto">
-      <h1 className="text-3xl font-black text-white mb-8">Profile Settings</h1>
+  return <div className="mx-auto max-w-2xl space-y-6">
+    <h1 className="text-3xl font-black text-white">Profile Settings</h1>
+    <form className="card space-y-4" onSubmit={saveProfile}>
+      <h2 className="text-lg font-semibold text-white">Account and email preferences</h2>
+      <label className="block"><span className="label">Full name</span>
+        <input className="input" autoComplete="name" maxLength={120} value={fullName} onChange={e => setFullName(e.target.value)} /></label>
+      <p className="text-sm text-slate-300">Account email: {email || 'Loading…'}</p>
+      {canSaveReminder && <>
+      <label className="flex items-start gap-3 text-sm text-slate-300">
+        <input type="checkbox" checked={reminders} onChange={e => setReminders(e.target.checked)} className="mt-1 h-4 w-4 accent-electric-blue" />
+        Email me a reminder when my development plan is due for a retest (optional).
+      </label>
+      <p className="text-sm text-slate-400">Account, billing and report updates relate to your service. Change this checkbox and save to stop future retest reminders.</p>
+      </>}
+      <button className="btn-primary" disabled={busy || !userId}>Save changes</button>
+      <Link href="/forgot-password" className="ml-4 text-sm text-electric-blue-light underline">Reset password</Link>
+    </form>
 
-      {/* Account info */}
-      <div className="card mb-6">
-        <h2 className="text-lg font-semibold text-white mb-4">Account Information</h2>
-        <div className="space-y-4">
-          <div>
-            <label htmlFor="fullName" className="label">Full Name</label>
-            <input
-              id="fullName"
-              type="text"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              className="input"
-            />
-          </div>
-          <div>
-            <label className="label">Email Address</label>
-            <input type="email" value={profile?.email ?? ''} disabled className="input opacity-50 cursor-not-allowed" />
-            <p className="text-xs text-slate-500 mt-1">Contact support to change your email address.</p>
-          </div>
-          <button
-            onClick={saveProfile}
-            disabled={saving}
-            className="btn-primary"
-          >
-            {saved ? '✓ Saved!' : saving ? 'Saving...' : 'Save Changes'}
-          </button>
-        </div>
-      </div>
+    <section className="card space-y-3">
+      <h2 className="text-lg font-semibold text-white">Your data and permissions</h2>
+      <p className="text-sm text-slate-300">Request a copy or correction of your information, change a permission, or contact us on behalf of a minor. We may ask for details to verify the request.</p>
+      <p><Link href="/contact?topic=privacy" className="text-electric-blue-light underline">Contact privacy support</Link></p>
+      <p><Link href="/start-analysis" className="text-electric-blue-light underline">Edit athlete intake and optional permissions</Link></p>
+      <p><Link href="/contact?topic=cancellation" className="text-electric-blue-light underline">Request subscription cancellation</Link></p>
+    </section>
 
-      {/* Password */}
-      <div className="card mb-6">
-        <h2 className="text-lg font-semibold text-white mb-2">Password</h2>
-        <p className="text-sm text-slate-400 mb-4">
-          To reset your password, click the button below. A reset link will be sent to your email.
-        </p>
-        <a href="/forgot-password" className="btn-secondary text-sm">
-          Reset Password
-        </a>
-      </div>
-
-      {/* Marketing preferences */}
-      <div className="card mb-6">
-        <h2 className="text-lg font-semibold text-white mb-2">Communication Preferences</h2>
-        <p className="text-sm text-slate-400">
-          Pitch Nav sends transactional emails only (order confirmation, status updates, analysis complete).
-          We do not send marketing emails without your explicit consent.
-        </p>
-      </div>
-
-      {/* Data & deletion */}
-      <div className="card border-red-500/20">
-        <div className="flex items-start gap-3 mb-6">
-          <AlertTriangle className="h-5 w-5 text-red-400 flex-shrink-0 mt-0.5" />
-          <div>
-            <h2 className="text-lg font-semibold text-white mb-1">Data & Account Deletion</h2>
-            <p className="text-sm text-slate-400">
-              You can request deletion of your uploaded videos or your entire account.
-              Deletions are processed within 30 days. Completed analysis reports may be retained
-              per our data retention policy.
-            </p>
-          </div>
-        </div>
-
-        {deletionRequested ? (
-          <div className="rounded-lg bg-accent-green/10 border border-accent-green/20 p-4">
-            <p className="text-sm text-accent-green font-semibold">Deletion request received.</p>
-            <p className="text-xs text-slate-400 mt-1">
-              You&apos;ll receive a confirmation email. Our team will process your request within 30 days.
-            </p>
-          </div>
-        ) : (
-          <div className="flex flex-col sm:flex-row gap-3">
-            <button
-              onClick={() => { setDeleteType('videos'); setShowDeleteConfirm(true) }}
-              className="btn-secondary text-sm border-red-500/30 text-red-400 hover:border-red-500 hover:text-red-300"
-            >
-              <Trash2 className="h-4 w-4" /> Delete My Videos
-            </button>
-            <button
-              onClick={() => { setDeleteType('all'); setShowDeleteConfirm(true) }}
-              className="btn-secondary text-sm border-red-500/30 text-red-400 hover:border-red-500 hover:text-red-300"
-            >
-              <Trash2 className="h-4 w-4" /> Delete My Account
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* Confirm modal */}
-      {showDeleteConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-          <div className="card max-w-sm w-full">
-            <h3 className="text-lg font-bold text-white mb-3">Confirm Deletion Request</h3>
-            <p className="text-sm text-slate-400 mb-6">
-              {deleteType === 'all'
-                ? 'This will request deletion of your account and all associated data, including videos and reports.'
-                : 'This will request deletion of your uploaded pitching videos.'}
-              {' '}This action cannot be undone once processed.
-            </p>
-            <div className="flex gap-3">
-              <button className="btn-secondary flex-1 justify-center" onClick={() => setShowDeleteConfirm(false)}>
-                Cancel
-              </button>
-              <button
-                className="flex-1 rounded-lg bg-red-500 text-white font-semibold py-2 px-4 hover:bg-red-600 transition-colors"
-                onClick={() => deleteType && requestDeletion(deleteType)}
-              >
-                Submit Request
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  )
+    <section className="card space-y-4">
+      <h2 className="text-lg font-semibold text-white">Request deletion</h2>
+      <p className="text-sm text-slate-300">Choose your uploaded videos or your entire account and associated athlete data. Staff reviews the request. To stop recurring charges, use the cancellation link above.</p>
+      {pending.includes('all') && <p className="text-accent-green">Account deletion request pending.</p>}
+      {pending.includes('videos') && <p className="text-accent-green">Video deletion request pending.</p>}
+      {confirm ? <div className="space-y-3" aria-label="Confirm deletion request">
+        <p>Send a request to delete {confirm === 'all' ? 'your account and associated data' : 'your uploaded videos'}?</p>
+        <button type="button" disabled={busy} onClick={() => setConfirm(null)} className="btn-secondary">Go back</button>
+        <button type="button" disabled={busy} onClick={() => void requestDeletion(confirm)} className="btn-primary ml-3">Submit deletion request</button>
+      </div> : <div className="flex flex-wrap gap-3">
+        <button type="button" disabled={busy || !userId || pending.includes('all') || pending.includes('videos')} onClick={() => setConfirm('videos')} className="btn-secondary">Delete my videos</button>
+        <button type="button" disabled={busy || !userId || pending.includes('all')} onClick={() => setConfirm('all')} className="btn-secondary">Delete my account</button>
+      </div>}
+    </section>
+    <p role="status" className="text-accent-green">{notice}</p>
+    {error && <p role="alert" className="text-red-300">{error} <Link href="/contact?topic=privacy" className="underline">Contact support</Link></p>}
+  </div>
 }

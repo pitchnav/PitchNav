@@ -29,7 +29,6 @@ export function StepPitching({ initialData, athleteProfileId, onComplete, onBack
       fastballType: initialData.fastballType,
       secondaryPitches: initialData.secondaryPitches ?? [],
       yearsPitching: initialData.yearsPitching,
-      currentCoach: initialData.currentCoach,
       throwingProgram: initialData.throwingProgram,
       strengthProgram: initialData.strengthProgram,
       mainGoal: initialData.mainGoal,
@@ -49,7 +48,6 @@ export function StepPitching({ initialData, athleteProfileId, onComplete, onBack
           fastball_type: data.fastballType ?? null,
           secondary_pitches: data.secondaryPitches ?? [],
           years_pitching: data.yearsPitching ?? null,
-          current_coach: data.currentCoach ?? null,
           throwing_program: data.throwingProgram ?? null,
           strength_program: data.strengthProgram ?? null,
           main_goal: data.mainGoal ?? null,
@@ -108,6 +106,7 @@ export function StepPitching({ initialData, athleteProfileId, onComplete, onBack
                 return (
                   <button
                     key={pitch}
+                    aria-pressed={checked}
                     type="button"
                     onClick={() => {
                       const current = field.value ?? []
@@ -131,11 +130,6 @@ export function StepPitching({ initialData, athleteProfileId, onComplete, onBack
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-        <div>
-          <label htmlFor="currentCoach" className="label">Current Pitching Coach (optional)</label>
-          <input id="currentCoach" type="text" className="input" placeholder="Coach name or 'None'" {...register('currentCoach')} />
-        </div>
-
         <div>
           <label htmlFor="throwingProgram" className="label">Current Throwing Program</label>
           <input id="throwingProgram" type="text" className="input" placeholder="e.g., Team throwing plan, individual plan, or none" {...register('throwingProgram')} />

@@ -67,7 +67,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         </aside>
 
         {/* Main content */}
-        <main className="flex-1 lg:ml-64 min-h-screen">
+        <div className="flex-1 lg:ml-64 min-h-screen">
           <div className="lg:hidden border-b border-surface-border bg-navy-900 px-4 py-3 flex gap-3 overflow-x-auto">
             {ADMIN_NAV.map(({ href, label, icon: Icon }) => (
               <Link
@@ -81,7 +81,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             ))}
           </div>
           <div className="p-6 lg:p-8">{children}</div>
-        </main>
+        </div>
       </div>
     </div>
   )

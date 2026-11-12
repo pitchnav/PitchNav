@@ -38,6 +38,7 @@ export function StepVelocity({ initialData, athleteProfileId, onComplete, onBack
     setLoading(true)
     setServerError('')
     try {
+      if (radarEvidence && radarEvidence.size > 10 * 1024 * 1024) throw new Error('Choose a radar file no larger than 10 MB.')
       const response = await fetch('/api/athlete/velocity', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ athleteProfileId, ...data, velocityMeasuredAt: data.velocityMeasuredAt || null, bullpenIntensity: data.bullpenIntensity || null, pitchesPerWeek: Number.isFinite(data.pitchesPerWeek) ? data.pitchesPerWeek : null }),
@@ -57,7 +58,10 @@ export function StepVelocity({ initialData, athleteProfileId, onComplete, onBack
           reported_velocity: data.currentMaxVelocity, reported_source: data.velocitySource,
           verification_label: data.velocitySource === 'coach_provided' ? 'coach_reported' : 'athlete_reported',
         })
-        if (evidenceError) throw evidenceError
+        if (evidenceError) {
+          await supabase.storage.from('radar-screenshots').remove([path])
+          throw evidenceError
+        }
       }
       onComplete(data)
     } catch (error) {
@@ -79,6 +83,7 @@ export function StepVelocity({ initialData, athleteProfileId, onComplete, onBack
 
       <div className="rounded-xl border border-surface-border bg-navy-950 p-4">
         <label className="label" htmlFor="radarEvidence">Radar screenshot or radar-backed video (optional)</label>
+        <p className="mb-2 text-sm text-slate-300">You may attach a radar image or short video up to 10 MB. Continuing saves the original file in Supabase for staff review. Crop out bystanders, names and unrelated details.</p>
         <input id="radarEvidence" type="file" accept="image/jpeg,image/png,image/webp,video/mp4,video/quicktime" className="input" onChange={(event) => setRadarEvidence(event.target.files?.[0] ?? null)} />
         <p className="mt-2 text-xs text-slate-500">Uploads begin as athlete- or coach-reported. An authorized reviewer must confirm the visible device reading before the label changes to Radar verified. Video-derived ranges remain labeled Video estimate.</p>
       </div>

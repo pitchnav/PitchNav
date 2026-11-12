@@ -16,7 +16,7 @@ const SETTING_DESCRIPTIONS: Record<string, { label: string; description: string;
   from_email_name:        { label: 'From Name (Emails)', description: 'The sender name for account emails.' },
   delivery_estimate_text: { label: 'Delivery Estimate Wording', description: 'Shown on order detail pages. E.g. "Estimated delivery: one business day."' },
   max_weekly_orders:      { label: 'Max Weekly Orders', description: 'Leave blank to disable the cap.', type: 'number' },
-  video_retention_days:   { label: 'Video Retention (Days)', description: 'How long uploaded videos are kept after analysis completion.', type: 'number' },
+  video_retention_days:   { label: 'Video Retention (Days)', description: 'Target for staff retention reviews after analysis completion. Changing this value does not delete files.', type: 'number' },
   follow_up_price_cents:  { label: 'Follow-Up Price (cents)', description: 'E.g. 2500 = $25.00.', type: 'number' },
   instagram_url:          { label: 'Photo profile URL', description: 'Full URL including https://.' },
   twitter_url:            { label: 'Social updates URL', description: 'Full URL including https://.' },

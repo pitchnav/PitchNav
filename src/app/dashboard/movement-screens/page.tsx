@@ -1,3 +1,4 @@
+import { getEligibleAthlete } from '@/lib/athlete-eligibility'
 import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { MovementScreenStudio } from '@/components/screens/MovementScreenStudio'
@@ -12,6 +13,9 @@ export default async function MovementScreensPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login?redirectTo=/dashboard/movement-screens')
+
+  const { data: athleteProfileId } = await getEligibleAthlete(supabase, user.id, null)
+  if (!athleteProfileId) redirect('/start-analysis')
 
   // Previous completed sessions, so the athlete can see change over time.
   // If the movement-screens migration has not been applied yet this simply
@@ -61,7 +65,7 @@ export default async function MovementScreensPage() {
         </div>
       )}
 
-      <MovementScreenStudio />
+      <MovementScreenStudio athleteProfileId={athleteProfileId} />
     </div>
   )
 }

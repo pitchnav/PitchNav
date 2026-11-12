@@ -25,6 +25,7 @@ export default function StartAnalysisPage() {
   const [formData, setFormData] = useState<Partial<IntakeFormData>>({})
   const [athleteProfileId, setAthleteProfileId] = useState<string | null>(null)
   const [userId, setUserId] = useState<string | null>(null)
+  const [canSaveOptionalPermissions, setCanSaveOptionalPermissions] = useState(false)
   const [loading, setLoading] = useState(true)
   const [membershipPlan, setMembershipPlan] = useState<'throwing' | 'performance'>('throwing')
   const router = useRouter()
@@ -33,12 +34,12 @@ export default function StartAnalysisPage() {
   useEffect(() => {
     const requestedPlan = new URLSearchParams(window.location.search).get('plan')
     const selectedPlan = requestedPlan === 'performance' ? 'performance' : requestedPlan === 'throwing' ? 'throwing' : null
-    if (selectedPlan) {
-      localStorage.setItem('pitch-nav-membership-plan', selectedPlan)
-      setMembershipPlan(selectedPlan)
-    } else if (localStorage.getItem('pitch-nav-membership-plan') === 'performance') {
-      setMembershipPlan('performance')
-    }
+    if (selectedPlan) setMembershipPlan(selectedPlan)
+    try {
+      localStorage.removeItem('pitch-nav-membership-plan') // Older versions kept this across accounts.
+      if (selectedPlan) sessionStorage.setItem('pitch-nav-membership-plan', selectedPlan)
+      else if (sessionStorage.getItem('pitch-nav-membership-plan') === 'performance') setMembershipPlan('performance')
+    } catch { /* The intake works without browser storage. */ }
 
     async function checkAuth() {
       const { data: { user } } = await supabase.auth.getUser()
@@ -47,20 +48,27 @@ export default function StartAnalysisPage() {
         return
       }
       setUserId(user.id)
-      const { data: saved } = await supabase.from('athlete_profiles').select('*').eq('user_id', user.id).order('updated_at', { ascending: false }).limit(1).maybeSingle()
+      const { data: base } = await supabase.from('athlete_profiles').select('id,athlete_full_name,athlete_email,phone_number,date_of_birth,communication_pref,guardian_name,guardian_email,guardian_consented,consent_anonymous_clips,consent_athlete_name,consent_testimonial,consent_before_after,height_feet,height_inches,weight_lbs,throwing_hand,primary_position,school_org,graduation_year,playing_level,current_avg_velocity,current_max_velocity,goal_velocity,velocity_source,velocity_measured_at,bullpen_intensity,pitches_per_week,health_notes,fastball_type,secondary_pitches,years_pitching,throwing_program,strength_program,main_goal,mechanical_concern,previous_feedback,upcoming_deadline').eq('user_id', user.id).order('updated_at', { ascending: false }).limit(1).maybeSingle()
+      let choices = supabase.from('athlete_profiles').select('consent_ai_draft,public_permission_version').eq('user_id', user.id)
+      choices = base ? choices.eq('id', base.id) : choices.limit(0)
+      const permission = await choices.maybeSingle()
+      setCanSaveOptionalPermissions(!permission.error)
+      const saved = base && { ...base, consent_ai_draft: permission.data?.consent_ai_draft, public_permission_version: permission.data?.public_permission_version }
       if (saved) {
         setAthleteProfileId(saved.id)
         setFormData({
           athleteFullName: saved.athlete_full_name,
           athleteEmail: saved.athlete_email,
           phoneNumber: saved.phone_number ?? '', dateOfBirth: saved.date_of_birth,
-          city: saved.city ?? '', state: saved.state ?? '', communicationPref: saved.communication_pref ?? 'email',
+          communicationPref: saved.communication_pref ?? 'email',
           guardianName: saved.guardian_name ?? '', guardianEmail: saved.guardian_email ?? '', guardianConsented: saved.guardian_consented,
-          consentAnonymousClips: saved.consent_anonymous_clips ?? false, consentAthleteName: saved.consent_athlete_name ?? false, consentTestimonial: saved.consent_testimonial ?? false, consentBeforeAfter: saved.consent_before_after ?? false,
+          consentAiDraft: saved.consent_ai_draft === true,
+          consentAnonymousClips: saved.public_permission_version === 1 && saved.consent_anonymous_clips === true, consentAthleteName: saved.public_permission_version === 1 && saved.consent_athlete_name === true, consentTestimonial: saved.public_permission_version === 1 && saved.consent_testimonial === true, consentBeforeAfter: saved.public_permission_version === 1 && saved.consent_before_after === true,
           heightFeet: saved.height_feet ?? undefined, heightInches: saved.height_inches ?? undefined, weightLbs: saved.weight_lbs ?? undefined,
           throwingHand: saved.throwing_hand ?? undefined, primaryPosition: saved.primary_position ?? undefined, schoolOrg: saved.school_org ?? '', graduationYear: saved.graduation_year ?? undefined, playingLevel: saved.playing_level ?? undefined,
           currentAvgVelocity: saved.current_avg_velocity ?? undefined, currentMaxVelocity: saved.current_max_velocity ?? undefined, goalVelocity: saved.goal_velocity ?? undefined, velocitySource: saved.velocity_source ?? undefined, velocityMeasuredAt: saved.velocity_measured_at ?? '', bullpenIntensity: saved.bullpen_intensity ?? undefined, pitchesPerWeek: saved.pitches_per_week ?? undefined,
-          fastballType: saved.fastball_type ?? '', secondaryPitches: saved.secondary_pitches ?? [], yearsPitching: saved.years_pitching ?? undefined, currentCoach: saved.current_coach ?? '', throwingProgram: saved.throwing_program ?? '', strengthProgram: saved.strength_program ?? '', mainGoal: saved.main_goal ?? '', mechanicalConcern: saved.mechanical_concern ?? '', previousFeedback: saved.previous_feedback ?? '', upcomingDeadline: saved.upcoming_deadline ?? '',
+          healthNotes: saved.health_notes ?? '',
+          fastballType: saved.fastball_type ?? '', secondaryPitches: saved.secondary_pitches ?? [], yearsPitching: saved.years_pitching ?? undefined, throwingProgram: saved.throwing_program ?? '', strengthProgram: saved.strength_program ?? '', mainGoal: saved.main_goal ?? '', mechanicalConcern: saved.mechanical_concern ?? '', previousFeedback: saved.previous_feedback ?? '', upcomingDeadline: saved.upcoming_deadline ?? '',
         })
       }
       setLoading(false)
@@ -115,6 +123,7 @@ export default function StartAnalysisPage() {
         <div className="card">
           {currentStep === 1 && (
             <StepContact
+              canSaveOptionalPermissions={canSaveOptionalPermissions}
               initialData={formData}
               userId={userId!}
               existingProfileId={athleteProfileId}

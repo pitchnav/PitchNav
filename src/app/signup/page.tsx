@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -31,7 +30,7 @@ export default function SignUpPage() {
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
   const [serverError, setServerError] = useState('')
-  const router = useRouter()
+  const [ageBand, setAgeBand] = useState('')
   const supabase = createClient()
 
   const {
@@ -41,6 +40,7 @@ export default function SignUpPage() {
   } = useForm<FormData>({ resolver: zodResolver(schema) })
 
   async function onSubmit(data: FormData) {
+    if (ageBand !== 'adult' && ageBand !== 'teen') return
     setLoading(true)
     setServerError('')
     try {
@@ -48,7 +48,7 @@ export default function SignUpPage() {
         email: data.email,
         password: data.password,
         options: {
-          data: { full_name: data.fullName },
+          data: { full_name: data.fullName, eligibility_attestation: ageBand, terms_accepted: true },
           emailRedirectTo: `${window.location.origin}/auth/callback`,
         },
       })
@@ -72,8 +72,7 @@ export default function SignUpPage() {
             account and start your first analysis.
           </p>
           <p className="text-sm text-slate-500">
-            Didn&apos;t receive it? Check your spam folder or{' '}
-            <button className="text-electric-blue-light hover:underline">resend</button>.
+            Didn&apos;t receive it? Check your spam folder or <Link href="/contact" className="text-electric-blue-light underline">contact support</Link>.
           </p>
         </div>
       </div>
@@ -93,8 +92,16 @@ export default function SignUpPage() {
         </div>
 
         <div className="card">
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>
+          <label htmlFor="signup-age" className="label">How old is the person creating this account?</label>
+          <select id="signup-age" className="input mb-4" value={ageBand} onChange={event => setAgeBand(event.target.value)}>
+            <option value="">Choose an age range</option><option value="under13">Under 13</option>
+            <option value="teen">13–17</option><option value="adult">18 or older</option>
+          </select>
+          {ageBand === 'under13' && <p role="status" className="text-sm text-slate-300">Pitch Nav is available for athletes aged 13 and older.</p>}
+          {ageBand === 'teen' && <p className="mb-4 text-sm text-slate-300">A parent or legal guardian must complete athlete permissions before you submit videos or measurements.</p>}
+          {(ageBand === 'teen' || ageBand === 'adult') && <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>
             <div>
+              <p className="mb-4 text-sm text-slate-300">Pitch Nav uses Supabase to create your account and send sign-in and verification messages.</p>
               <label htmlFor="fullName" className="label">Full Name</label>
               <input
                 id="fullName"
@@ -195,7 +202,7 @@ export default function SignUpPage() {
               {loading ? 'Creating Account...' : 'Create Account'}
               {!loading && <ArrowRight className="h-4 w-4" />}
             </button>
-          </form>
+          </form>}
         </div>
 
         <p className="mt-6 text-center text-sm text-slate-500">

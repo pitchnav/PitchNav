@@ -4,6 +4,7 @@ import * as Network from 'expo-network'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   ActivityIndicator,
+  Alert,
   BackHandler,
   Platform,
   Pressable,
@@ -12,13 +13,14 @@ import {
   View,
 } from 'react-native'
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context'
+import { isHostedPurchase } from './navigation'
 import { WebView } from 'react-native-webview'
 import type {
   ShouldStartLoadRequest,
   WebViewNavigation,
 } from 'react-native-webview/lib/WebViewTypes'
 
-const DEFAULT_APP_URL = 'https://pitch-nav.vercel.app'
+const DEFAULT_APP_URL = 'https://pitchnav.com'
 const APP_URL = (process.env.EXPO_PUBLIC_WEB_APP_URL || DEFAULT_APP_URL).replace(/\/$/, '')
 
 function getHost(url: string) {
@@ -38,10 +40,10 @@ function isAllowedInApp(url: string) {
 
   const host = getHost(url)
   return (
-    host === APP_HOST ||
+    url.startsWith('https://') && (host === APP_HOST ||
     host.endsWith('.supabase.co') ||
     host === 'checkout.stripe.com' ||
-    host.endsWith('.stripe.com')
+    host.endsWith('.stripe.com'))
   )
 }
 
@@ -78,7 +80,7 @@ function OfflineState({ onRetry }: { onRetry: () => void }) {
       </View>
       <Text style={styles.offlineTitle}>Connection interrupted</Text>
       <Text style={styles.offlineText}>
-        Check your internet connection, then try again. Your saved Pitch Nav account data is safe.
+        Check your internet connection, then try again.
       </Text>
       <Pressable
         accessibilityRole="button"
@@ -152,6 +154,10 @@ function PitchNavApp() {
   const handleRequest = useCallback((request: ShouldStartLoadRequest) => {
     const url = request.url
 
+    if ((Platform.OS === 'ios' || Platform.OS === 'android') && isHostedPurchase(url)) {
+      Alert.alert('Purchase unavailable', 'New purchases are not available in this mobile app.')
+      return false
+    }
     if (isAllowedInApp(url)) return true
 
     if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('mailto:') || url.startsWith('tel:')) {
@@ -159,7 +165,7 @@ function PitchNavApp() {
       return false
     }
 
-    return true
+    return false
   }, [])
 
   const webSource = useMemo(() => ({ uri: initialUrl }), [initialUrl])
@@ -192,12 +198,12 @@ function PitchNavApp() {
             if (nativeEvent.statusCode >= 500) setHasError(true)
           }}
           onFileDownload={({ nativeEvent }) => {
-            Linking.openURL(nativeEvent.downloadUrl).catch(() => undefined)
+            if (/^https:\/\//i.test(nativeEvent.downloadUrl) && !((Platform.OS === 'ios' || Platform.OS === 'android') && isHostedPurchase(nativeEvent.downloadUrl))) Linking.openURL(nativeEvent.downloadUrl).catch(() => undefined)
           }}
           renderLoading={() => <BrandedLoader />}
           startInLoadingState
-          sharedCookiesEnabled
-          thirdPartyCookiesEnabled
+          sharedCookiesEnabled={false}
+          thirdPartyCookiesEnabled={false}
           domStorageEnabled
           cacheEnabled
           incognito={false}
@@ -206,11 +212,10 @@ function PitchNavApp() {
           allowsInlineMediaPlayback
           allowsFullscreenVideo
           mediaPlaybackRequiresUserAction={false}
-          javaScriptCanOpenWindowsAutomatically
           setSupportMultipleWindows={false}
           mixedContentMode="never"
-          applicationNameForUserAgent="PitchNavMobile/1.0"
-          mediaCapturePermissionGrantType="grantIfSameHostElsePrompt"
+          applicationNameForUserAgent={Platform.OS === 'ios' ? 'PitchNavIOS/1.0' : 'PitchNavAndroid/1.0'}
+          mediaCapturePermissionGrantType="prompt"
         />
       )}
     </SafeAreaView>
@@ -319,14 +324,14 @@ const styles = StyleSheet.create({
     marginTop: 28,
     paddingHorizontal: 28,
     borderRadius: 14,
-    backgroundColor: '#2f6df6',
+    backgroundColor: '#ff5e00',
   },
   retryPressed: {
     opacity: 0.8,
     transform: [{ scale: 0.98 }],
   },
   retryText: {
-    color: '#ffffff',
+    color: '#07182e',
     fontSize: 17,
     fontWeight: '800',
   },

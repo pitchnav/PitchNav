@@ -12,6 +12,7 @@ export function VideoRecorder({ onUse, disabled = false, purpose }: { onUse: (fi
   const url = useRef('')
   const cameraFps = useRef<number | undefined>(undefined)
   const [state, setState] = useState<'idle' | 'opening' | 'ready' | 'recording' | 'review' | 'using'>('idle')
+  const [reviewSrc, setReviewSrc] = useState('')
   const [file, setFile] = useState<File | null>(null)
   const [error, setError] = useState('')
   const [format, setFormat] = useState('')
@@ -79,7 +80,7 @@ export function VideoRecorder({ onUse, disabled = false, purpose }: { onUse: (fi
         const type = rec.mimeType || chunks[0]?.type || 'video/webm'
         const clip = new File(chunks, `pitch-nav-${Date.now()}.${type.includes('mp4') ? 'mp4' : 'webm'}`, { type })
         if (!clip.size) { setError('No video was recorded. Try again.'); setState('idle'); return }
-        url.current = URL.createObjectURL(clip); setFile(clip); setState('review')
+        url.current = URL.createObjectURL(clip); setReviewSrc(url.current); setFile(clip); setState('review')
       }
       rec.start(250); setState('recording')
       timer.current = setTimeout(() => { if (rec.state === 'recording') rec.stop() }, 60000)
@@ -89,7 +90,7 @@ export function VideoRecorder({ onUse, disabled = false, purpose }: { onUse: (fi
     <div><h3 className="text-lg font-bold text-white">Record {purpose}</h3><p className="mt-2 text-sm text-slate-400">Set the phone down, keep your full body in frame, and record one rep. Review it before using it. Camera only, no microphone. Clips stop after one minute.</p></div>
     <video ref={preview} hidden={!['opening','ready','recording'].includes(state)} autoPlay muted playsInline className="max-h-96 w-full rounded-xl bg-black" />
     {['ready','recording'].includes(state) && <p className="text-xs text-slate-400">{format}</p>}
-    {state === 'review' && <video controls playsInline src={url.current} className="max-h-96 w-full rounded-xl bg-black" />}
+    {state === 'review' && <video controls playsInline src={reviewSrc} className="max-h-96 w-full rounded-xl bg-black" />}
     <div className="flex flex-wrap gap-3">
       {state === 'idle' && <button type="button" disabled={disabled} onClick={openCamera} className="btn-primary">Open camera</button>}
       {state === 'opening' && <p role="status">Opening camera…</p>}
@@ -99,8 +100,8 @@ export function VideoRecorder({ onUse, disabled = false, purpose }: { onUse: (fi
       {state === 'using' && <p role="status">Preparing your recording…</p>}
       {['opening','ready','recording','review'].includes(state) && <button type="button" className="btn-secondary" onClick={() => { reset(); setFile(null); setState('idle') }}>Cancel</button>}
     </div>
-    {state === 'idle' && <label className="inline-block cursor-pointer text-sm font-semibold text-electric-blue-light">Use phone camera<input aria-label={`Record ${purpose} with phone camera`} className="sr-only" type="file" accept="video/*" capture="environment" disabled={disabled} onChange={event => { const next = event.target.files?.[0]; event.currentTarget.value = ''; if (next) void Promise.resolve(onUse(next)).catch(() => setError('Could not use that recording. Try a saved video.')) }} /></label>}
-    <p className="text-xs text-slate-400">For detailed arm timing, record slow motion in your phone’s Camera app and upload it. Browser recording does not guarantee 120 or 240 fps. Recording here does not submit a report.</p>
+    {state === 'idle' && <label className="inline-block cursor-pointer rounded focus-within:outline focus-within:outline-2 focus-within:outline-sky-300 text-sm font-semibold text-electric-blue-light">Use phone camera<input aria-label={`Record ${purpose} with phone camera`} className="sr-only" type="file" accept="video/*" capture="environment" disabled={disabled} onChange={event => { const next = event.target.files?.[0]; event.currentTarget.value = ''; if (next) void Promise.resolve(onUse(next)).catch(() => setError('Could not use that recording. Try a saved video.')) }} /></label>}
+    <p className="text-xs text-slate-400">For detailed arm timing, record slow motion in your phone’s Camera app and upload it. The browser records without sound. You can also choose a saved video without granting camera access. Browser recording does not guarantee 120 or 240 fps. Recording here does not submit a report.</p>
     {error && <p role="alert" className="text-sm text-red-300">{error}</p>}
   </section>
 }

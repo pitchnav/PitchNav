@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 }
 export default function PitchMetricsPage() {
   const price = INDIVIDUAL_PLANS.metrics
-  return <main className="min-h-screen bg-navy-950 pt-28 pb-20">
+  return <div className="min-h-screen bg-navy-950 pt-28 pb-20">
     <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
       <section className="grid items-center gap-10 lg:grid-cols-[1.3fr_1fr]">
         <div>
@@ -19,7 +19,7 @@ export default function PitchMetricsPage() {
           <h1 className="mt-5 text-4xl font-black tracking-tight text-white sm:text-6xl">Your bullpen.<br />Tracked with your iPhone.</h1>
           <p className="mt-6 max-w-xl text-lg text-slate-300">We’re testing a way to film from behind the mound and see where each pitch crossed, how fast it traveled and how it got there.</p>
           <p className="mt-4 text-sm text-slate-400">Pitch Tracking is in testing and is not open to the public yet. We’re checking accuracy before launch.</p>
-          <div className="mt-8 flex flex-wrap gap-3"><Link className="btn-primary" href={checkoutPath('metrics', 'monthly')}>Subscribe monthly <ArrowRight className="h-4 w-4" /></Link><Link className="btn-secondary" href="/pricing#teams">For teams &amp; programs</Link></div>
+          <div className="mt-8 flex flex-wrap gap-3"><Link className="btn-primary" href={checkoutPath('metrics', 'monthly')}>View monthly plan details <ArrowRight className="h-4 w-4" /></Link><Link className="btn-secondary" href="/pricing#teams">For teams &amp; programs</Link></div>
         </div>
         <div className="card border-electric-blue/30">
           <p className="text-xs font-semibold uppercase tracking-widest text-electric-blue-light">Standalone launch pricing</p>
@@ -27,17 +27,17 @@ export default function PitchMetricsPage() {
           <div className="my-6 border-t border-surface-border" />
           <p className="text-2xl font-bold text-white">{money(price.annual)}<span className="text-sm font-normal text-slate-400"> / year, paid upfront</span></p>
           <p className="mt-4 text-sm text-slate-400">No assessment fee. Pay yearly or take the first-month offer. Prices are USD before tax. Subscriptions open when tracking is ready; no payment is taken during testing.</p>
-          <Link className="btn-secondary mt-5" href={checkoutPath('metrics', 'annual')}>Subscribe annually · save</Link><p className="mt-6 text-sm text-slate-300">Included with Complete Development when it launches. No extra tracking subscription.</p>
+          <Link className="btn-secondary mt-5" href={checkoutPath('metrics', 'annual')}>View annual plan details</Link><p className="mt-6 text-sm text-slate-300">Included with Complete Development when it launches. No extra tracking subscription.</p>
         </div>
       </section>
       <section className="mt-20 grid items-center gap-12 lg:grid-cols-2" aria-labelledby="tracking-hud-title">
-        <div><p className="text-xs font-bold uppercase tracking-widest text-electric-blue-light">The tracking interface</p><h2 id="tracking-hud-title" className="mt-4 text-3xl font-black text-white sm:text-4xl">Numbers first.<br />Replay when you’re ready.</h2><p className="mt-5 text-lg leading-relaxed text-slate-300">Throw your pitch, check the numbers, and get ready for the next one. Your pitch map keeps the strikes and the misses.</p><p className="mt-4 text-sm leading-relaxed text-slate-400">Watch your pitch with a ball tracer after processing. We’ll only show metrics the recording can support.</p></div>
+        <div><p className="text-xs font-bold uppercase tracking-widest text-electric-blue-light">The tracking interface</p><h2 id="tracking-hud-title" className="mt-4 text-3xl font-black text-white sm:text-4xl">Numbers first.<br />Replay when you’re ready.</h2><p className="mt-5 text-lg leading-relaxed text-slate-300">Throw your pitch, check the numbers, and get ready for the next one. The sample pitch map shows both strikes and misses.</p><p className="mt-4 text-sm leading-relaxed text-slate-400">The sample replay illustrates a planned ball tracer. Camera angle, calibration and visibility affect which estimates a recording can support.</p></div>
         <PitchTrackingHUD />
       </section>
       <section className="mt-20 card border-electric-blue/25" aria-labelledby="session-library-title">
         <Database className="h-7 w-7 text-electric-blue-light" />
         <h2 id="session-library-title" className="mt-4 text-3xl font-black text-white">A home for every session.</h2>
-        <p className="mt-4 max-w-3xl text-lg text-slate-300">Keep your bullpen data organized by pitcher and date. Pull up past sessions and see how your pitches have changed.</p>
+        <p className="mt-4 max-w-3xl text-lg text-slate-300">The planned session library would group bullpen data by pitcher and date so you could compare sessions.</p>
         <div className="mt-6"><div><h3 className="font-bold text-white">Phone sync · coming later</h3><p className="mt-2 text-sm text-slate-400">We’re building phone-to-website sync so your sessions stay together. Automatic uploads and video storage are not ready yet.</p></div></div>
       </section>
       <section className="mt-20">
@@ -54,5 +54,5 @@ export default function PitchMetricsPage() {
       </section>
       <section className="mt-16 card flex flex-wrap items-center justify-between gap-6"><div><h2 className="text-2xl font-bold text-white">Put Your Bullpen Work to Use</h2><p className="mt-2 text-slate-400">Want a plan for your next pen? Development members get a throwing calendar. Complete adds lifting around outings and includes Pitch Tracking at launch.</p></div><Link className="btn-primary" href="/pricing">Compare memberships</Link></section>
     </div>
-  </main>
+  </div>
 }

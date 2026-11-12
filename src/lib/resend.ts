@@ -6,7 +6,7 @@ const resendApiKey = process.env.RESEND_API_KEY?.trim()
 export const isResendConfigured = Boolean(resendApiKey)
 export const resend = new Resend(resendApiKey || 're_missing_configuration')
 
-const FROM = process.env.RESEND_FROM_EMAIL ?? 'Pitch Nav <noreply@pitchnav.com>'
+export const resendFrom = process.env.RESEND_FROM_EMAIL ?? 'Pitch Nav <noreply@pitchnav.com>'
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://pitchnav.com'
 
 interface SendEmailOptions {
@@ -25,7 +25,7 @@ async function sendEmail({ to, subject, html, orderId, userId }: SendEmailOption
 
   try {
     const { data, error } = await resend.emails.send({
-      from: FROM,
+      from: resendFrom,
       to,
       subject,
       html,
@@ -119,7 +119,7 @@ export async function sendPaymentConfirmationEmail(
         <p style="color:#64748b;margin:0 0 8px;font-size:13px;">ORDER ID</p>
         <p style="color:#f1f5f9;margin:0;font-family:monospace;font-size:14px;">${orderId.slice(0, 8).toUpperCase()}</p>
       </div>
-      <p style="color:#94a3b8;line-height:1.6;">Your analysis is now in the queue. We'll send you an update when your reviewer begins work.</p>
+      <p style="color:#94a3b8;line-height:1.6;">Upload your pitch from your order page to submit it for review. For billing, cancellation or refund requests, visit <a href="${APP_URL}/billing" style="color:#93c5fd">billing support</a>.</p>
       <div style="text-align:center;margin:32px 0;">
         <a href="${APP_URL}/dashboard/orders/${orderId}" style="background:#2563eb;color:#fff;text-decoration:none;padding:14px 32px;border-radius:8px;font-weight:700;font-size:16px;display:inline-block;">View Order Status</a>
       </div>
@@ -218,32 +218,34 @@ export async function sendDeletionConfirmationEmail(to: string, name: string, re
     html: `<div style="${baseStyle}">${brandHeader}
       <h2 style="color:#f1f5f9;font-size:22px;margin-bottom:8px;">Deletion Request Received</h2>
       <p style="color:#94a3b8;line-height:1.6;">Hi ${name}, we've received your request to delete your ${requestType === 'all' ? 'account and all associated data' : requestType === 'videos' ? 'uploaded videos' : 'account'}.</p>
-      <p style="color:#94a3b8;line-height:1.6;">Our team will process your request within 30 days and send a confirmation when complete. If you have questions, contact <a href="mailto:support@pitchnav.com" style="color:#2563eb;">support@pitchnav.com</a>.</p>
+      <p style="color:#94a3b8;line-height:1.6;">Our team will review the request and may contact you to verify it. If you have questions, contact <a href="mailto:support@pitchnav.com" style="color:#2563eb;">support@pitchnav.com</a>.</p>
       ${footer}</div>`,
   })
 }
 
-export async function sendFollowupReminderEmail(to: string, name: string) {
+export async function sendFollowupReminderEmail(to: string, unsubscribeToken: string, mailingAddress: string) {
   return sendEmail({
     to,
     subject: 'It’s time to retest your Pitch Nav delivery',
     html: `<div style="${baseStyle}">${brandHeader}
       <h1 style="color:#fff;margin:0 0 16px">Ready to see what changed?</h1>
-      <p>Hi ${name}, your development-plan follow-up date has arrived.</p>
+      <p>Your development-plan follow-up date has arrived.</p>
       <p>Record your next delivery using the same camera angle and frame-rate settings so you can compare your first and latest analyses.</p>
       <p><a href="${APP_URL}/start-analysis" style="display:inline-block;background:#2563eb;color:#fff;padding:12px 20px;border-radius:8px;text-decoration:none;font-weight:700">Start follow-up analysis</a></p>
+      <p>You enabled retest reminders. <a href="${APP_URL}/unsubscribe?token=${unsubscribeToken}">Unsubscribe from retest reminders</a>.</p>
+      <p>${mailingAddress.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')}</p>
       <p style="font-size:12px;color:#64748b">Pitch Nav provides educational baseball-training information and does not guarantee performance results.</p>
       ${footer}</div>`,
   })
 }
 
-export async function sendStaffReviewRequestEmail(to: string, athleteName: string, title: string, analysisId: string) {
+export async function sendStaffReviewRequestEmail(to: string, analysisId: string) {
   return sendEmail({
     to,
-    subject: `Approval requested: ${athleteName} — ${title}`,
+    subject: `Motion Lab review requested`,
     html: `<div style="${baseStyle}">${brandHeader}
       <h2 style="color:#f1f5f9;font-size:22px;">A Motion Lab report needs your approval</h2>
-      <p style="color:#94a3b8;line-height:1.6;"><strong style="color:#fff;">${athleteName}</strong> submitted ${title}. Review the source video, phase frames, mechanics scores, velocity assumptions, and plan before releasing it.</p>
+      <p style="color:#94a3b8;line-height:1.6;">A submission is ready. Sign in to the staff workspace to review the video, measurements and plan.</p>
       <div style="text-align:center;margin:32px 0;"><a href="${APP_URL}/admin/motion-lab#${analysisId}" style="background:#2563eb;color:#fff;text-decoration:none;padding:14px 32px;border-radius:8px;font-weight:700;display:inline-block;">Review and approve</a></div>
       ${footer}</div>`,
   })

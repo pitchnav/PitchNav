@@ -1,9 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { Mail, AlertTriangle } from 'lucide-react'
 
-export default function ContactPage() {
+function ContactForm() {
+  const topic = useSearchParams().get('topic')
+  const initialTopic = topic === 'privacy' || topic === 'cancellation' ? topic : ''
   const [submitted, setSubmitted] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
@@ -103,11 +106,11 @@ export default function ContactPage() {
           {/* Contact form */}
           <div className="lg:col-span-2 card">
             {submitted ? (
-              <div className="text-center py-12">
+              <div role="status" className="text-center py-12">
                 <div className="text-5xl mb-4">✓</div>
                 <h2 className="text-2xl font-bold text-white mb-3">Message Sent</h2>
                 <p className="text-slate-400">
-                  Thanks for reaching out. We&apos;ll get back to you within 1–2 business days.
+                  Your request reached our email service. Support will reply to the address you provided.
                 </p>
               </div>
             ) : (
@@ -126,12 +129,13 @@ export default function ContactPage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div>
-                    <label htmlFor="name" className="label">Your Name</label>
+                    <label htmlFor="name" className="label">Your Name (optional)</label>
                     <input
                       id="name"
                       name="name"
                       type="text"
-                      required
+                      maxLength={120}
+                      autoComplete="name"
                       className="input"
                       placeholder="Jane Smith"
                     />
@@ -142,6 +146,8 @@ export default function ContactPage() {
                       id="email"
                       name="email"
                       type="email"
+                      maxLength={254}
+                      autoComplete="email"
                       required
                       className="input"
                       placeholder="jane@example.com"
@@ -151,12 +157,14 @@ export default function ContactPage() {
 
                 <div>
                   <label htmlFor="subject" className="label">Subject</label>
-                  <select id="subject" name="subject" required className="input">
+                  <select id="subject" name="subject" defaultValue={initialTopic} required className="input">
                     <option value="">Select a topic...</option>
                     <option value="order_status">Order Status</option>
                     <option value="video_upload">Video Upload Issue</option>
                     <option value="billing">Billing / Refund</option>
                     <option value="report_question">Question About My Report</option>
+                    <option value="privacy">Access, correction, deletion or permission withdrawal</option>
+                    <option value="cancellation">Cancel a subscription</option>
                     <option value="account">Account Issue</option>
                     <option value="general">General Question</option>
                     <option value="other">Other</option>
@@ -170,13 +178,17 @@ export default function ContactPage() {
                     name="message"
                     required
                     rows={6}
+                    maxLength={5000}
+                    aria-describedby="message-hint"
                     className="input resize-none"
-                    placeholder="Describe your question or issue in detail..."
+                    placeholder="What would you like us to do?"
                   />
                 </div>
 
+                <p id="message-hint" className="text-sm text-slate-300">For privacy or billing requests, use your account email if possible. Leave out passwords, card numbers, medical records and videos. A parent or guardian may write on an athlete’s behalf.</p>
+
                 {error && (
-                  <div className="rounded-lg bg-red-500/10 border border-red-500/20 px-4 py-3 text-sm text-red-400">
+                  <div role="alert" className="rounded-lg bg-red-500/10 border border-red-500/20 px-4 py-3 text-sm text-red-400">
                     {error}
                   </div>
                 )}
@@ -189,8 +201,8 @@ export default function ContactPage() {
                   {submitting ? 'Sending...' : 'Send Message'}
                 </button>
 
-                <p className="text-xs text-slate-600 text-center">
-                  Your message is sent securely. We do not share your contact information with third parties.
+                <p className="text-sm text-slate-400 text-center">
+                  Resend delivers these details to Pitch Nav support so we can respond. <a href="/privacy" className="text-electric-blue-light underline">Privacy Policy</a>
                 </p>
               </form>
             )}
@@ -199,4 +211,8 @@ export default function ContactPage() {
       </div>
     </div>
   )
+}
+
+export default function ContactPage() {
+  return <Suspense fallback={<p role="status">Loading contact form…</p>}><ContactForm /></Suspense>
 }

@@ -36,15 +36,12 @@ export function formatFileSize(bytes: number): string {
   return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`
 }
 
-export function calculateAge(dob: string): number {
-  const birth = new Date(dob)
-  const today = new Date()
-  let age = today.getFullYear() - birth.getFullYear()
-  const monthDiff = today.getMonth() - birth.getMonth()
-  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
-    age--
-  }
-  return age
+export function calculateAge(dob: string, today = new Date()): number {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dob)) return NaN
+  const birth = new Date(dob + 'T00:00:00Z')
+  if (!Number.isFinite(birth.getTime()) || birth.toISOString().slice(0, 10) !== dob) return NaN
+  const calendarDate = today.toISOString().slice(0, 10)
+  return today.getUTCFullYear() - birth.getUTCFullYear() - (calendarDate.slice(5) < dob.slice(5) ? 1 : 0)
 }
 
 export function formatHeight(feet: number | null, inches: number | null): string {

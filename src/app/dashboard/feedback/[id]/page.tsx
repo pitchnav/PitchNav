@@ -134,7 +134,7 @@ export default async function FeedbackReportPage({ params }: { params: Promise<{
         <div className="mt-6 grid gap-4 md:grid-cols-2">
           {categories.map((item) => <div key={item.category} className="min-w-0 rounded-xl border border-surface-border bg-navy-950 p-5 transition-colors duration-200 hover:border-electric-blue/35">
             <div className="flex items-center justify-between"><h3 className="font-bold text-white">{item.category}</h3><span className="text-xl font-black text-electric-blue-light">{item.score}/5</span></div>
-            <ProgressBar value={item.score} max={5} className="mt-3" />
+            <ProgressBar accessibleLabel={item.category} value={item.score} max={5} className="mt-3" />
             <p className="mt-3 text-xs font-semibold uppercase tracking-wider text-slate-500">Video quality: {item.confidence}</p>
             <div className="mt-4 space-y-4 text-sm leading-6">
               <div><p className="font-semibold text-accent-green">What you did well</p><p className="mt-1 text-slate-300">{item.strength}</p></div>

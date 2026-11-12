@@ -1,13 +1,13 @@
 # Pitch Nav Mobile
 
-This Expo app provides the Pitch Nav athlete, checkout, upload, Motion Lab, feedback, plan, and admin experiences on iPhone, iPad, and Android. It uses the same production website, account, Supabase data, Stripe Checkout, and staff workflow as the web app, so changes to the website appear in the mobile app automatically.
+This Expo app provides the Pitch Nav athlete, upload, Motion Lab, feedback, plan, and admin experiences on iPhone, iPad, and Android. It uses the same production website, account, Supabase data, billing records, and staff workflow as the web app, so changes to the website appear in the mobile app automatically.
 
 ## What the app includes
 
 - Persistent Pitch Nav sign-in and browser storage
 - Phone and tablet layouts from the responsive website
-- Camera, microphone, photo-library, and file-upload support
-- Stripe Checkout and Supabase authentication inside the app
+- Silent browser camera recording and user-selected file uploads
+- Supabase authentication. Digital checkout on iOS and Android is withheld pending a storefront and entitlement decision; cancellation/support remains available.
 - Fullscreen and inline pitching-video playback
 - Pull to refresh, Android back-button support, deep links, loading progress, and a friendly offline screen
 - External support and social links open in the device browser
@@ -25,7 +25,7 @@ This Expo app provides the Pitch Nav athlete, checkout, upload, Motion Lab, feed
 
 3. Follow Expo's instructions to open an iOS simulator, Android emulator, or development build.
 
-The production site defaults to `https://pitch-nav.vercel.app`. To use a preview deployment, copy `.env.example` to `.env` and change `EXPO_PUBLIC_WEB_APP_URL`.
+The default website is `https://pitchnav.com`. To use a preview deployment, copy `.env.example` to `.env` and change `EXPO_PUBLIC_WEB_APP_URL`.
 
 ## Build an installable test app
 

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { isResendConfigured, resend } from '@/lib/resend'
+import { isResendConfigured, resend, resendFrom } from '@/lib/resend'
 
 import { quoteProgram, money, type ProgramPlan, type Billing } from '@/lib/program-pricing'
 
@@ -82,8 +82,8 @@ export async function POST(request: NextRequest) {
 
   try {
     const result = await resend.emails.send({
-      from: `Pitch Nav <${process.env.RESEND_FROM_EMAIL}>`,
-      to: process.env.CONTACT_DESTINATION_EMAIL ?? process.env.RESEND_FROM_EMAIL!,
+      from: resendFrom,
+      to: process.env.CONTACT_DESTINATION_EMAIL || 'support@pitchnav.com',
       replyTo: email,
       subject: `[Pitch Nav Teams] ${organization} — ${count} pitchers`,
       html: `

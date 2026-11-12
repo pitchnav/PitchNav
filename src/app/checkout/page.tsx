@@ -84,7 +84,7 @@ function CheckoutContent() {
       const res = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderId, membershipTier }),
+        body: JSON.stringify({ orderId, membershipTier, acceptsRecurringBilling: agreed }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'Checkout failed')
@@ -153,13 +153,14 @@ function CheckoutContent() {
 
             {/* Membership choice */}
             <div className="card">
-              <h2 className="text-base font-semibold text-white">Choose Your Membership</h2>
-              <p className="mt-1 text-sm text-slate-400">Both options include one staff-reviewed pitching analysis every two weeks.</p>
+              <h2 className="text-base font-semibold text-white">Choose your monthly membership</h2>
+              <p className="mt-1 text-sm text-slate-400">These are the legacy monthly memberships available for this intake order. Both include one staff-reviewed pitching analysis every two weeks. The new individual plans shown on the pricing page use a separate checkout.</p>
 
               <div className="mt-5 grid gap-4 sm:grid-cols-2">
                 <button
                   type="button"
-                  onClick={() => setMembershipTier('throwing')}
+                  aria-pressed={membershipTier === 'throwing'}
+                  onClick={() => { setMembershipTier('throwing'); setAgreed(false) }}
                   className={`rounded-xl border p-4 text-left transition motion-reduce:transition-none hover:-translate-y-0.5 active:scale-[0.99] motion-reduce:hover:translate-y-0 motion-reduce:active:scale-100 ${membershipTier === 'throwing' ? 'border-electric-blue bg-electric-blue/10 ring-2 ring-electric-blue/25' : 'border-surface-border bg-navy-950 hover:border-slate-600'}`}
                 >
                   <p className="text-xs font-bold uppercase tracking-wider text-electric-blue-light">Throwing Development</p>
@@ -168,11 +169,11 @@ function CheckoutContent() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setMembershipTier('performance')}
+                  aria-pressed={membershipTier === 'performance'}
+                  onClick={() => { setMembershipTier('performance'); setAgreed(false) }}
                   className={`relative rounded-xl border p-4 text-left transition motion-reduce:transition-none hover:-translate-y-0.5 active:scale-[0.99] motion-reduce:hover:translate-y-0 motion-reduce:active:scale-100 ${membershipTier === 'performance' ? 'border-accent-green bg-accent-green/10 ring-2 ring-accent-green/20' : 'border-surface-border bg-navy-950 hover:border-slate-600'}`}
                 >
-                  <span className="absolute right-3 top-3 rounded-full bg-accent-green/15 px-2 py-1 text-[10px] font-bold uppercase text-accent-green">Most complete</span>
-                  <p className="pr-20 text-xs font-bold uppercase tracking-wider text-accent-green">Complete Performance</p>
+                  <p className="text-xs font-bold uppercase tracking-wider text-accent-green">Complete Performance</p>
                   <p className="mt-2 text-3xl font-black text-white">$40<span className="text-sm font-medium text-slate-400">/month</span></p>
                   <p className="mt-2 text-xs leading-relaxed text-slate-400">Everything in Throwing Development, plus tailored strength and mobility programming.</p>
                 </button>
@@ -202,7 +203,7 @@ function CheckoutContent() {
                   className="mt-0.5 h-4 w-4 rounded border-surface-border bg-navy-800 accent-electric-blue"
                 />
                 <span className="text-sm text-slate-400 leading-relaxed">
-                  I have read and agree to the{' '}
+                  I authorize a ${membershipTier === 'performance' ? '40' : '25'} monthly subscription, plus applicable tax, that renews until I cancel. I agree to the{' '}
                   <Link href="/terms" className="text-electric-blue-light hover:underline" target="_blank">Terms of Service</Link>
                   ,{' '}
                   <Link href="/privacy" className="text-electric-blue-light hover:underline" target="_blank">Privacy Policy</Link>
@@ -228,6 +229,8 @@ function CheckoutContent() {
                 <p className="text-4xl font-black text-white">${membershipTier === 'performance' ? '40' : '25'}<span className="text-sm font-medium text-slate-400">/month</span></p>
               </div>
 
+              <p className="mb-4 text-sm text-slate-300">First payment of ${membershipTier === 'performance' ? '40' : '25'} USD before any tax. Renews at the same monthly price until canceled. No separate assessment fee on this order.</p>
+              <Link className="mb-4 inline-block text-sm text-electric-blue-light underline" href="/billing">How to cancel or request a refund</Link>
               {error && (
                 <div className="rounded-lg bg-red-500/10 border border-red-500/20 px-4 py-3 text-sm text-red-400 mb-4">
                   {error}
@@ -238,7 +241,7 @@ function CheckoutContent() {
                 type="button"
                 onClick={handleCheckout}
                 disabled={!agreed || checkoutLoading}
-                className="btn-accent w-full justify-center py-4 text-base mb-4"
+                className="btn-action w-full justify-center py-4 text-base mb-4"
               >
                 {checkoutLoading ? (
                   <>
@@ -258,13 +261,6 @@ function CheckoutContent() {
                 Secure checkout · Pitch Nav does not store your card
               </div>
 
-              <hr className="my-4 border-surface-border" />
-
-              <div className="text-xs text-slate-600 space-y-1">
-                <p>✓ Secure encrypted connection</p>
-                <p>✓ Monthly membership · cancel according to the membership terms</p>
-                <p>✓ Your video is stored privately</p>
-              </div>
             </div>
           </div>
         </div>

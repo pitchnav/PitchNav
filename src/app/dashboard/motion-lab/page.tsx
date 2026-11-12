@@ -1,3 +1,4 @@
+import { getEligibleAthlete } from '@/lib/athlete-eligibility'
 import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { MotionAnalysisStudio } from '@/components/analysis/MotionAnalysisStudio'
@@ -59,5 +60,7 @@ export default async function MotionLabPage({ searchParams }: { searchParams: Pr
     }
   }
 
-  return <MotionAnalysisStudio initialVideo={initialVideo} autoProcess={auto === '1' && Boolean(initialVideo)} />
+  const { data: athleteProfileId } = await getEligibleAthlete(supabase, user.id, initialVideo?.athleteProfileId ?? null)
+  if (!athleteProfileId) redirect('/start-analysis')
+  return <MotionAnalysisStudio athleteProfileId={athleteProfileId} initialVideo={initialVideo} autoProcess={auto === '1' && Boolean(initialVideo)} />
 }

@@ -7,6 +7,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Eye, EyeOff, ArrowRight } from 'lucide-react'
+import { authReturnPath } from '@/lib/auth-redirect'
 import { createClient } from '@/lib/supabase/client'
 
 const schema = z.object({
@@ -22,7 +23,7 @@ function LoginContent() {
   const [serverError, setServerError] = useState('')
   const router = useRouter()
   const searchParams = useSearchParams()
-  const redirectTo = searchParams.get('redirectTo') ?? '/dashboard'
+  const redirectTo = authReturnPath(searchParams.get('redirectTo'))
   const supabase = createClient()
 
   const { register, handleSubmit, formState: { errors } } = useForm<FormData>({

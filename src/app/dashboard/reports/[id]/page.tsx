@@ -170,7 +170,7 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
                   </span>
                   <span className="text-sm font-bold text-electric-blue-light">{cat.score}/5</span>
                 </div>
-                <ProgressBar value={cat.score} max={5} color="blue" size="sm" />
+                <ProgressBar accessibleLabel={cat.category} value={cat.score} max={5} color="blue" size="sm" />
                 {cat.notes && <p className="text-xs text-slate-500 mt-1.5">{cat.notes}</p>}
               </div>
             ))}

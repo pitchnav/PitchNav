@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 }
 
 export default function TailoredDevelopmentPage() {
-  return <main className="min-h-screen bg-navy-950 pt-28 pb-20">
+  return <div className="min-h-screen bg-navy-950 pt-28 pb-20">
     <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
       <section className="grid items-start gap-12 lg:grid-cols-2">
         <div>
@@ -35,13 +35,13 @@ export default function TailoredDevelopmentPage() {
         <div className="mt-8 grid gap-6 md:grid-cols-2">
           {(['throwing', 'complete'] as const).map(key=>{
             const plan = INDIVIDUAL_PLANS[key]
-            return <article key={key} className={`card ${key === 'complete' ? '!border-amber-400/80 ring-1 ring-amber-400/30 shadow-[0_0_28px_rgba(251,191,36,0.10)]' : ''}`}>{key === 'complete' && <p className="mb-4 inline-flex rounded-full border border-amber-300/40 bg-amber-400/10 px-3 py-1 text-xs font-bold uppercase tracking-wider text-amber-300">Best value · Our pick</p>}<h3 className="text-2xl font-bold text-white">{plan.name}</h3><p className="mt-3 text-slate-400">{key === 'throwing' ? 'Mechanics feedback, throwing plans and drills for your next step.' : 'Throwing, lifting and mobility, plus Pitch Tracking when it launches.'}</p><p className="mt-6 text-3xl font-black text-white">{money(plan.firstMonth)}<span className="text-sm font-normal text-slate-400"> first month</span></p><p className="mt-2 text-sm text-slate-300">Then {money(plan.monthly)}/month · {money(plan.assessment)} initial assessment</p><p className="mt-4 text-sm text-slate-300">Or {money(plan.annual)}/year, paid upfront, plus your initial assessment.</p><div className="mt-6 flex flex-wrap gap-3"><Link href={checkoutPath(key, 'monthly')} className="btn-primary">Subscribe monthly</Link><Link href={checkoutPath(key, 'annual')} className="btn-secondary">Subscribe annually · save</Link></div></article>
+            return <article key={key} className="card"><h3 className="text-2xl font-bold text-white">{plan.name}</h3><p className="mt-3 text-slate-400">{key === 'throwing' ? 'Mechanics feedback, throwing plans and drills for your next step.' : 'Throwing, lifting and mobility, plus Pitch Tracking when it launches.'}</p><p className="mt-6 text-3xl font-black text-white">{money(plan.firstMonth + plan.assessment)}<span className="text-sm font-normal text-slate-400"> first payment</span></p><p className="mt-2 text-sm text-slate-300">Includes {money(plan.firstMonth)} for the first month and a {money(plan.assessment)} initial assessment. Renews at {money(plan.monthly)}/month until canceled.</p><p className="mt-4 text-sm text-slate-300">Annual first payment {money(plan.annual + plan.assessment)} including assessment. Renews at {money(plan.annual)}/year until canceled.</p><div className="mt-6 flex flex-wrap gap-3"><Link href={checkoutPath(key, 'monthly')} className="btn-secondary">Monthly plan details</Link><Link href={checkoutPath(key, 'annual')} className="btn-secondary">Annual plan details</Link></div></article>
           })}
         </div>
         <p className="mt-5 text-sm text-slate-400">Annual billing replaces the first-month offer. Prices are USD before tax.</p>
-        <div className="mt-8 card"><h3 className="text-xl font-bold text-white">Just want an assessment?</h3><p className="mt-3 text-slate-400">Get a mechanics review, written report and drills to take to practice for {money(STANDALONE_ASSESSMENT_CENTS)}. One payment, no subscription or ongoing updates.</p><Link href={checkoutPath('assessment')} className="mt-4 inline-flex text-sm font-semibold text-electric-blue-light">Buy assessment <ArrowRight className="ml-2 h-4 w-4" /></Link></div>
+        <div className="mt-8 card"><h3 className="text-xl font-bold text-white">Just want an assessment?</h3><p className="mt-3 text-slate-400">Get a mechanics review, written report and drills to take to practice for {money(STANDALONE_ASSESSMENT_CENTS)}. One payment, no subscription or ongoing updates.</p><Link href={checkoutPath('assessment')} className="mt-4 inline-flex text-sm font-semibold text-electric-blue-light">View assessment details <ArrowRight className="ml-2 h-4 w-4" /></Link></div>
       </section>
       <section className="mt-12 card"><h2 className="text-2xl font-bold text-white">Take your plan into the bullpen.</h2><p className="mt-4 max-w-3xl leading-relaxed text-slate-400">We’re connecting coach-reviewed pitch counts, pitch mixes and effort targets with the tracker. Follow your progress during the pen, then review where you hit your targets and where you missed. This connection is still in development.</p><p className="mt-4 text-sm text-slate-400">Guided training belongs to development plans. Standalone Pitch Tracking is for recording and reviewing your pitches.</p><Link href="/pitch-metrics" className="mt-5 inline-flex font-semibold text-electric-blue-light">Explore Pitch Tracking <ArrowRight className="ml-2 h-4 w-4" /></Link></section>
     </div>
-  </main>
+  </div>
 }

@@ -24,8 +24,8 @@ interface YesNoProps {
 
 function YesNoField({ id, label, registration, error }: YesNoProps) {
   return (
-    <div className="space-y-2">
-      <p className="text-sm font-medium text-white">{label}</p>
+    <fieldset className="space-y-2" aria-describedby={error ? id + "-error" : undefined}>
+      <legend className="text-sm font-medium text-white">{label}</legend>
       <div className="flex gap-3">
         {[{ value: 'true', label: 'Yes' }, { value: 'false', label: 'No' }].map(({ value, label: l }) => (
           <label key={value} className="flex-1 cursor-pointer">
@@ -37,14 +37,14 @@ function YesNoField({ id, label, registration, error }: YesNoProps) {
             />
             <div className="rounded-lg border border-surface-border bg-navy-800 p-3 text-center text-sm font-semibold text-slate-400
               transition-all peer-checked:border-electric-blue peer-checked:bg-electric-blue/10 peer-checked:text-white
-              hover:border-electric-blue/50 hover:text-white cursor-pointer">
+              peer-focus-visible:ring-2 peer-focus-visible:ring-white hover:border-electric-blue/50 hover:text-white cursor-pointer">
               {l}
             </div>
           </label>
         ))}
       </div>
-      {error && <p className="error-message">{error}</p>}
-    </div>
+      {error && <p id={id + "-error"} role="alert" className="error-message">{error}</p>}
+    </fieldset>
   )
 }
 
@@ -55,11 +55,12 @@ export function StepHealth({ initialData, athleteProfileId, onComplete, onBack }
 
   const { register, handleSubmit, watch, formState: { errors } } = useForm<StepHealthData>({
     resolver: zodResolver(stepHealthSchema),
+    defaultValues: { healthNotes: initialData.healthNotes ?? '' },
   })
 
   // Watch for pain flags
   const currentPain = watch('currentPain')
-  const showPainWarning = currentPain === true
+  const showPainWarning = String(currentPain) === "true"
 
   async function onSubmit(data: StepHealthData) {
     setLoading(true)
@@ -93,8 +94,7 @@ export function StepHealth({ initialData, athleteProfileId, onComplete, onBack }
       <div>
         <h2 className="text-xl font-bold text-white mb-1">Step 5: Health & Safety Screening</h2>
         <p className="text-sm text-slate-400">
-          This screening helps inform your reviewer. It is not a medical evaluation.
-          All responses are kept confidential.
+          Pitch Nav stores these answers with your athlete profile in Supabase so staff can review any throwing restrictions.
         </p>
       </div>
 
@@ -151,15 +151,17 @@ export function StepHealth({ initialData, athleteProfileId, onComplete, onBack }
 
       <div>
         <label htmlFor="healthNotes" className="label">
-          Anything else your reviewer should know about your health history? (optional)
+          Current throwing restrictions your reviewer should follow (optional)
         </label>
         <textarea
           id="healthNotes"
           className="input resize-none"
           rows={3}
-          placeholder="Any surgeries, long-term injuries, current restrictions, etc."
+          maxLength={500}
+          placeholder="Keep this brief. Leave out diagnoses, medical records and names of clinicians."
           {...register('healthNotes')}
         />
+        {errors.healthNotes && <p role="alert" className="error-message">{errors.healthNotes.message}</p>}
       </div>
 
       <div className="rounded-lg border border-slate-700/40 bg-navy-800 p-4">

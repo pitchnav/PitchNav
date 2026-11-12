@@ -10,7 +10,7 @@ import {
   formatDateShort, formatFileSize, ORDER_STATUS_LABELS,
   PLAYING_LEVEL_LABELS, SCORECARD_CATEGORIES,
   PITCH_POSITION_LABELS, DRILL_CATEGORY_LABELS,
-  calculateDeliveryScore,
+  calculateAge, calculateDeliveryScore,
 } from '@/lib/utils'
 import type {
   Order, AthleteProfile, VideoSubmission, Drill,
@@ -545,7 +545,17 @@ export default function AdminOrderDetailPage() {
                 {[
                   ['Name', profile.athlete_full_name],
                   ['Email', profile.athlete_email ?? '—'],
-                  ['DOB', profile.date_of_birth ?? '—'],
+                  ['Age', profile.date_of_birth ? String(calculateAge(profile.date_of_birth)) : '—'],
+                  ['Guardian permission', profile.guardian_consented ? 'On file' : 'No attestation on file'],
+                  ['OpenAI staff draft', profile.consent_ai_draft === true ? 'Permitted' : 'No permission'],
+                  ['Public educational use', profile.public_permission_version === 1
+                    ? [
+                        profile.consent_anonymous_clips && 'Anonymized clips',
+                        profile.consent_athlete_name && 'Athlete name',
+                        profile.consent_testimonial && 'Testimonial',
+                        profile.consent_before_after && 'Before/after clips',
+                      ].filter(Boolean).join(', ') || 'No permission'
+                    : 'No current release on file'],
                   ['Level', profile.playing_level ? PLAYING_LEVEL_LABELS[profile.playing_level as PlayingLevel] : '—'],
                   ['Throws', profile.throwing_hand],
                   ['Height', profile.height_feet ? `${profile.height_feet}'${profile.height_inches ?? 0}"` : '—'],
@@ -744,12 +754,12 @@ export default function AdminOrderDetailPage() {
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.18em] text-electric-blue-light">Automated review draft</p>
-                <h2 className="mt-1 text-lg font-bold text-white">AI prepares the report; staff verifies it</h2>
+                <h2 className="mt-1 text-lg font-bold text-white">Staff review and optional AI draft</h2>
                 <p className="mt-2 max-w-3xl text-sm text-slate-400">Pose tracking can generate score candidates and six phase images. Peak leg lift and finish are stronger candidates. Hand separation, foot contact, maximum external rotation, and ball release must be visually confirmed; ordinary 2D phone video cannot identify all of those events exactly.</p>
               </div>
               {automatedAnalysis ? (
                 <div className="flex shrink-0 flex-col gap-2">
-                  <button onClick={generateAiDraft} disabled={generatingAi} className="btn-accent">
+                  <button onClick={generateAiDraft} disabled={generatingAi || !profile?.consent_ai_draft} className="btn-accent">
                     {generatingAi ? 'AI reviewing six phases…' : automatedAnalysis.ai_draft_status === 'ready_for_staff_review' ? 'Regenerate AI coaching draft' : 'Generate AI coaching draft'}
                   </button>
                   <button onClick={applyAutomatedDraft} disabled={saving || automatedAnalysis.ai_draft_status !== 'ready_for_staff_review'} className="btn-primary">
@@ -768,7 +778,7 @@ export default function AdminOrderDetailPage() {
               ) : null}
             </div>
             {!automatedAnalysis && <p className="mt-3 text-sm text-yellow-300">Automatic processing has not finished for this order. The athlete does not need to run Motion Lab again. Use “Retry automatic processing” only if the original processing screen was closed or interrupted.</p>}
-            {automatedAnalysis && <p className="mt-3 text-xs text-slate-400">Step 1: generate the AI coaching draft from the six saved phase images. Step 2: visually verify it. Step 3: apply the verified draft. AI output is educational and is not laboratory or medical analysis.</p>}
+            {automatedAnalysis && <p className="mt-3 text-xs text-slate-400">With athlete or guardian permission, staff may generate an AI draft from six saved images. Otherwise, prepare feedback manually. Step 2: visually verify it. Step 3: apply the verified draft. AI output is educational and is not laboratory or medical analysis.</p>}
             {automatedAnalysis && (originalVideoDownloadUrl || trackedVideoUrl || skeletonVideoUrl) && (
               <div className="mt-3 flex flex-wrap gap-2">
                 {originalVideoDownloadUrl && (

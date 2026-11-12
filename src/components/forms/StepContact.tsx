@@ -10,13 +10,14 @@ import type { IntakeFormData } from './intakeSchema'
 import Link from 'next/link'
 
 interface Props {
+  canSaveOptionalPermissions: boolean
   initialData: Partial<IntakeFormData>
   userId: string
   existingProfileId?: string | null
   onComplete: (data: Partial<IntakeFormData>, profileId?: string) => void
 }
 
-export function StepContact({ initialData, userId, existingProfileId, onComplete }: Props) {
+export function StepContact({ canSaveOptionalPermissions, initialData, userId, existingProfileId, onComplete }: Props) {
   const [loading, setLoading] = useState(false)
   const [serverError, setServerError] = useState('')
   const supabase = createClient()
@@ -24,6 +25,8 @@ export function StepContact({ initialData, userId, existingProfileId, onComplete
   const { register, handleSubmit, watch, formState: { errors } } = useForm<StepContactData>({
     resolver: zodResolver(stepContactSchema),
     defaultValues: {
+      ...initialData,
+      guardianConsented: false,
       athleteFullName: initialData.athleteFullName ?? '',
       athleteEmail: initialData.athleteEmail ?? '',
       communicationPref: initialData.communicationPref ?? 'email',
@@ -34,7 +37,8 @@ export function StepContact({ initialData, userId, existingProfileId, onComplete
 
   const dob = watch('dateOfBirth')
   const age = dob ? calculateAge(dob) : null
-  const requiresGuardian = age !== null && age < 18
+  const contactMethod = watch('communicationPref')
+  const requiresGuardian = age !== null && age >= 13 && age < 18
 
   async function onSubmit(data: StepContactData) {
     setLoading(true)
@@ -45,39 +49,37 @@ export function StepContact({ initialData, userId, existingProfileId, onComplete
           user_id: userId,
           athlete_full_name: data.athleteFullName,
           athlete_email: data.athleteEmail,
-          phone_number: data.phoneNumber ?? null,
+          phone_number: data.communicationPref === 'email' ? null : data.phoneNumber?.trim() || null,
           date_of_birth: data.dateOfBirth,
-          city: data.city ?? null,
-          state: data.state ?? null,
           communication_pref: data.communicationPref,
-          guardian_name: data.guardianName ?? null,
-          guardian_email: data.guardianEmail ?? null,
-          guardian_consented: data.guardianConsented ?? false,
-          guardian_consented_at: data.guardianConsented ? new Date().toISOString() : null,
+          guardian_name: requiresGuardian ? data.guardianName?.trim() : null,
+          guardian_email: requiresGuardian ? data.guardianEmail : null,
+          guardian_consented: requiresGuardian && data.guardianConsented === true,
+          guardian_consented_at: requiresGuardian && data.guardianConsented ? new Date().toISOString() : null,
           terms_agreed: data.termsAgreed,
           terms_agreed_at: data.termsAgreed ? new Date().toISOString() : null,
           privacy_agreed: data.privacyAgreed,
           privacy_agreed_at: data.privacyAgreed ? new Date().toISOString() : null,
-          consent_anonymous_clips: data.consentAnonymousClips ?? false,
-          consent_athlete_name: data.consentAthleteName ?? false,
-          consent_testimonial: data.consentTestimonial ?? false,
-          consent_before_after: data.consentBeforeAfter ?? false,
+          ...(canSaveOptionalPermissions ? {
+            public_permission_version: 1,
+            consent_ai_draft: data.consentAiDraft === true,
+            consent_anonymous_clips: data.consentAnonymousClips ?? false,
+            consent_athlete_name: data.consentAthleteName ?? false,
+            consent_testimonial: data.consentTestimonial ?? false,
+            consent_before_after: data.consentBeforeAfter ?? false,
+          } : {}),
         }
       const query = existingProfileId
         ? supabase.from('athlete_profiles').update(profileFields).eq('id', existingProfileId).eq('user_id', userId)
         : supabase.from('athlete_profiles').insert(profileFields)
       const { data: profile, error } = await query
-        .select()
+        .select('id')
         .single()
 
       if (error) throw error
       onComplete(data, profile.id)
-    } catch (err: unknown) {
-      const databaseError = err as { code?: string; message?: string }
-      setServerError(
-        `Could not save your information. ${databaseError.code ? `Error ${databaseError.code}: ` : ''}${databaseError.message ?? 'Please try again.'}`
-      )
-      console.error(err)
+    } catch {
+      setServerError('Could not save your information. Please check the fields or try again.')
     } finally {
       setLoading(false)
     }
@@ -87,7 +89,7 @@ export function StepContact({ initialData, userId, existingProfileId, onComplete
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6" noValidate>
       <div>
         <h2 className="text-xl font-bold text-white mb-1">Step 1: Contact & Consent</h2>
-        <p className="text-sm text-slate-400">Tell us about the athlete. All fields marked * are required.</p>
+        <p className="text-sm text-slate-400">Pitch Nav saves each completed step in Supabase for your coaching review. Athletes must be at least 13. A parent or legal guardian must complete the permissions for ages 13–17. Fields marked * are required.</p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -100,25 +102,25 @@ export function StepContact({ initialData, userId, existingProfileId, onComplete
             placeholder="First Last"
             {...register('athleteFullName')}
           />
-          {errors.athleteFullName && <p className="error-message">{errors.athleteFullName.message}</p>}
+          {errors.athleteFullName && <p role="alert" className="error-message">{errors.athleteFullName.message}</p>}
         </div>
 
         <div>
           <label htmlFor="athleteEmail" className="label">Athlete Email *</label>
           <input id="athleteEmail" type="email" className="input" placeholder="athlete@email.com" {...register('athleteEmail')} />
-          {errors.athleteEmail && <p className="error-message">{errors.athleteEmail.message}</p>}
+          {errors.athleteEmail && <p role="alert" className="error-message">{errors.athleteEmail.message}</p>}
         </div>
 
-        <div>
-          <label htmlFor="phoneNumber" className="label">Phone Number</label>
+        {(contactMethod === 'phone' || contactMethod === 'text') && <div>
+          <label htmlFor="phoneNumber" className="label">Phone Number for service updates (optional)</label>
           <input id="phoneNumber" type="tel" className="input" placeholder="(555) 000-0000" {...register('phoneNumber')} />
-        </div>
+        </div>}
 
         <div>
           <label htmlFor="dateOfBirth" className="label">Date of Birth *</label>
           <input id="dateOfBirth" type="date" className="input" {...register('dateOfBirth')} />
-          {errors.dateOfBirth && <p className="error-message">{errors.dateOfBirth.message}</p>}
-          {age !== null && (
+          {errors.dateOfBirth && <p role="alert" className="error-message">{errors.dateOfBirth.message}</p>}
+          {age !== null && Number.isFinite(age) && (
             <p className="text-xs text-slate-500 mt-1">Age: {age} years old</p>
           )}
         </div>
@@ -132,15 +134,6 @@ export function StepContact({ initialData, userId, existingProfileId, onComplete
           </select>
         </div>
 
-        <div>
-          <label htmlFor="city" className="label">City</label>
-          <input id="city" type="text" className="input" placeholder="City" {...register('city')} />
-        </div>
-
-        <div>
-          <label htmlFor="state" className="label">State</label>
-          <input id="state" type="text" className="input" placeholder="State" {...register('state')} />
-        </div>
       </div>
 
       {/* Guardian section — only shown if under 18 */}
@@ -156,10 +149,12 @@ export function StepContact({ initialData, userId, existingProfileId, onComplete
             <div>
               <label htmlFor="guardianName" className="label">Guardian Full Name *</label>
               <input id="guardianName" type="text" className="input" {...register('guardianName')} />
+              {errors.guardianName && <p role="alert" className="error-message">{errors.guardianName.message}</p>}
             </div>
             <div>
               <label htmlFor="guardianEmail" className="label">Guardian Email *</label>
               <input id="guardianEmail" type="email" className="input" {...register('guardianEmail')} />
+              {errors.guardianEmail && <p role="alert" className="error-message">{errors.guardianEmail.message}</p>}
             </div>
           </div>
           <label className="flex items-start gap-3 cursor-pointer">
@@ -176,6 +171,7 @@ export function StepContact({ initialData, userId, existingProfileId, onComplete
               {' '}and I consent to the submission of this athlete&apos;s pitching videos and personal information for analysis. I confirm that this athlete is at least 13 years old.
             </span>
           </label>
+          {errors.guardianConsented && <p role="alert" className="error-message">{errors.guardianConsented.message}</p>}
         </div>
       )}
 
@@ -184,7 +180,7 @@ export function StepContact({ initialData, userId, existingProfileId, onComplete
         <h3 className="text-sm font-semibold text-white">Required Agreements</h3>
         {[
           { name: 'termsAgreed', label: 'I agree to the Terms of Service', href: '/terms', error: errors.termsAgreed },
-          { name: 'privacyAgreed', label: 'I agree to the Privacy Policy', href: '/privacy', error: errors.privacyAgreed },
+          { name: 'privacyAgreed', label: 'I acknowledge the Privacy Policy', href: '/privacy', error: errors.privacyAgreed },
         ].map(({ name, label, href, error }) => (
           <div key={name}>
             <label className="flex items-start gap-3 cursor-pointer">
@@ -206,16 +202,17 @@ export function StepContact({ initialData, userId, existingProfileId, onComplete
       </div>
 
       {/* Optional educational use consents */}
-      <div className="space-y-3 pt-2 border-t border-surface-border">
+      {canSaveOptionalPermissions && <div className="space-y-3 pt-2 border-t border-surface-border">
         <div>
           <h3 className="text-sm font-semibold text-white">Optional Permissions</h3>
-          <p className="text-xs text-slate-500 mt-1">These are completely optional and not required to use the service.</p>
+          <p className="text-xs text-slate-500 mt-1">You can leave every box unchecked and receive staff review. A guardian chooses for an athlete aged 13–17. You can change these choices here or <a href="/contact?topic=privacy" className="text-electric-blue-light underline">ask support to withdraw permission</a> for future use.</p>
         </div>
         {[
-          { name: 'consentAnonymousClips', label: 'Pitch Nav may use anonymous clips from my analysis for educational or instructional content.' },
-          { name: 'consentAthleteName', label: "Pitch Nav may use the athlete's name in connection with educational content." },
-          { name: 'consentTestimonial', label: 'Pitch Nav may use a testimonial from this athlete.' },
-          { name: 'consentBeforeAfter', label: 'Pitch Nav may use before-and-after comparison clips.' },
+          { name: 'consentAiDraft', label: 'Allow Pitch Nav staff to send six pitching images, age, body and pitching measurements, and relevant movement-screen results to OpenAI to draft feedback for this athlete. Staff reviews the draft.' },
+          { name: 'consentAnonymousClips', label: 'Pitch Nav may share anonymized clips from my analysis in public educational material after removing or obscuring identifying details.' },
+          { name: 'consentAthleteName', label: "Pitch Nav may use the athlete's name in public educational content." },
+          { name: 'consentTestimonial', label: 'Pitch Nav may publish a testimonial provided by this athlete.' },
+          { name: 'consentBeforeAfter', label: 'Pitch Nav may share before-and-after clips of this athlete in public educational material.' },
         ].map(({ name, label }) => (
           <label key={name} className="flex items-start gap-3 cursor-pointer">
             <input
@@ -223,10 +220,10 @@ export function StepContact({ initialData, userId, existingProfileId, onComplete
               className="mt-0.5 h-4 w-4 rounded border-surface-border bg-navy-800 accent-electric-blue"
               {...register(name as keyof StepContactData)}
             />
-            <span className="text-sm text-slate-500">{label}</span>
+            <span className="text-sm text-slate-300">{label}</span>
           </label>
         ))}
-      </div>
+      </div>}
 
       {serverError && (
         <div className="rounded-lg bg-red-500/10 border border-red-500/20 px-4 py-3 text-sm text-red-400">

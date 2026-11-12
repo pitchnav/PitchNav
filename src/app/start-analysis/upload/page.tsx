@@ -1,6 +1,7 @@
 'use client'
 
-import { Suspense, useState, useEffect, useMemo } from 'react'
+import { getEligibleAthlete, missingDatabaseFunction } from '@/lib/athlete-eligibility'
+import { Suspense, useState, useEffect, useMemo, useRef } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { Upload, Video, CheckCircle, X, AlertCircle, Camera } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
@@ -50,6 +51,20 @@ const RECORDING_REQUIREMENTS = [
   'Video is landscape with strong, even lighting',
 ]
 
+function UploadDialog({ titleId, onCancel, children }: { titleId: string; onCancel: () => void; children: React.ReactNode }) {
+  const ref = useRef<HTMLDialogElement>(null)
+  useEffect(() => {
+    const dialog = ref.current
+    const previous = document.activeElement
+    dialog?.showModal()
+    return () => {
+      dialog?.close()
+      if (previous instanceof HTMLElement && previous.isConnected) previous.focus()
+    }
+  }, [])
+  return <dialog ref={ref} aria-labelledby={titleId} onCancel={onCancel} className="card m-auto max-h-[90vh] w-[calc(100%_-_2rem)] max-w-xl overflow-y-auto bg-navy-900 text-white backdrop:bg-black/75">{children}</dialog>
+}
+
 function UploadContent() {
   const searchParams = useSearchParams()
   const profileId = searchParams.get('profileId')
@@ -66,6 +81,7 @@ function UploadContent() {
   const [checklistAutoSubmitting, setChecklistAutoSubmitting] = useState(false)
   const [loading, setLoading] = useState(true)
   const [orderLoading, setOrderLoading] = useState(false)
+  const [orderError, setOrderError] = useState('')
   const [preflightAngle, setPreflightAngle] = useState<'open_side' | null>(null)
   const [preflightChecks, setPreflightChecks] = useState<Record<string, boolean>>({})
   const [captureFps, setCaptureFps] = useState<60 | 120 | 240>(240)
@@ -132,18 +148,25 @@ function UploadContent() {
       if (!user) { router.push('/login?redirectTo=/start-analysis'); return }
       setUserId(user.id)
       if (paidOrderId) {
-        const { data: paidOrder } = await supabase.from('orders').select('id,athlete_profile_id,payment_confirmed_at').eq('id', paidOrderId).eq('user_id', user.id).single()
-        if (!paidOrder?.payment_confirmed_at) { router.replace(`/success?orderId=${paidOrderId}&payment=processing`); return }
+        const { data: paidOrder } = await supabase.from('orders').select('id,athlete_profile_id,payment_confirmed_at,refunded_at,status').eq('id', paidOrderId).eq('user_id', user.id).single()
+        if (!paidOrder || paidOrder.refunded_at || ['cancelled','refunded'].includes(paidOrder.status)) {
+          setOrderError('Uploads are unavailable for this order. Check your order status or contact support.')
+          setLoading(false)
+          return
+        }
+        if (!paidOrder.payment_confirmed_at) { router.replace(`/success?orderId=${paidOrderId}&payment=processing`); return }
+        const { data: eligible } = await getEligibleAthlete(supabase, user.id, paidOrder.athlete_profile_id)
+        if (!eligible) { router.replace('/start-analysis'); return }
         setOrderId(paidOrder.id); setLoading(false); return
       }
       if (!profileId) { router.push('/start-analysis'); return }
       const { data: existing } = await supabase.from('orders').select('id,payment_confirmed_at').eq('user_id', user.id).eq('athlete_profile_id', profileId).is('payment_confirmed_at', null).eq('status', 'awaiting_payment').order('created_at', { ascending: false }).limit(1).maybeSingle()
       let order = existing
       if (!order) {
-        const result = await supabase.from('orders').insert({ user_id: user.id, athlete_profile_id: profileId, status: 'awaiting_payment', delivery_estimate_text: 'Staff review completed within one business day.' }).select('id,payment_confirmed_at').single()
+        const result = await supabase.from('orders').insert({ user_id: user.id, athlete_profile_id: profileId, status: 'awaiting_payment' }).select('id,payment_confirmed_at').single()
         order = result.data
       }
-      if (!order) { setLoading(false); return }
+      if (!order) { setOrderError("Could not start this order. Please return to intake or contact support."); setLoading(false); return }
       router.replace(`/checkout?orderId=${order.id}&plan=${requestedPlan}`)
     }
     void init()
@@ -260,7 +283,10 @@ function UploadContent() {
         .select()
         .single()
 
-      if (dbError) throw dbError
+      if (dbError) {
+        await supabase.storage.from('pitch-videos').remove([storagePath])
+        throw dbError
+      }
 
       setVideos((prev) => ({
         ...prev,
@@ -286,17 +312,6 @@ function UploadContent() {
     }
   }
 
-  // Once the last quality box is checked, dismiss the checklist and upload.
-  // The guard above prevents React development-mode effects from submitting
-  // the same file more than once.
-  useEffect(() => {
-    if (!checklistAngle || checklistAutoSubmitting || !allChecked()) return
-    void confirmChecklistAndUpload()
-    // confirmChecklistAndUpload intentionally runs only when checklist state
-    // reaches complete; including the recreated function would retrigger it.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [checklistAngle, checklistItems, checklistAutoSubmitting, userId, orderId])
-
   function removeVideo(angle: string) {
     setVideos((prev) => {
       const next = { ...prev }
@@ -317,9 +332,13 @@ function UploadContent() {
     if (!sideVideoId) return
     setOrderLoading(true)
     try {
-      await supabase.from('orders').update({ status: 'submitted', submitted_at: new Date().toISOString(), delivery_estimate_text: 'Staff review completed within one business day.' }).eq('id', orderId)
+      const { error } = await supabase.rpc('submit_uploaded_order', { target_order: orderId })
+      // The previous workflow opens the saved clip in Motion Lab. Only the database
+      // submission function can advance the order status on the athlete's behalf.
+      if (error && !missingDatabaseFunction(error)) throw error
       router.push(`/dashboard/motion-lab?videoId=${sideVideoId}&auto=1`)
     } catch {
+      setOrderError('Could not submit this order. Check the order status and try again.')
       setOrderLoading(false)
     }
   }
@@ -331,6 +350,8 @@ function UploadContent() {
       </div>
     )
   }
+
+  if (!orderId) return <div className="min-h-screen bg-navy-950 px-4 pt-28 text-center"><h1 className="text-2xl font-bold">Video upload</h1><p role="alert" className="my-4 text-slate-300">{orderError || 'Your order is being prepared.'}</p><a className="text-electric-blue-light underline" href="/dashboard/orders">View orders</a></div>
 
   return (
     <div className="min-h-screen bg-navy-950 pt-24 pb-16">
@@ -382,7 +403,7 @@ function UploadContent() {
                     }}
                   >
                     <Upload className="h-8 w-8 text-slate-600 mx-auto mb-3" />
-                    <p className="text-sm text-slate-400">Drag & drop or click to upload</p>
+                    <p className="text-sm text-slate-400">Drop a file or choose a video below</p>
                     <p className="text-xs text-slate-600 mt-1">MP4, MOV, WebM · Max 500 MB</p>
                     <input
                       id={`video-file-${angle}`}
@@ -444,7 +465,7 @@ function UploadContent() {
                     )}
 
                     {video.error && (
-                      <div className="rounded-lg bg-red-500/10 border border-red-500/20 p-3 mb-3 flex items-center gap-2">
+                      <div role="alert" className="rounded-lg bg-red-500/10 border border-red-500/20 p-3 mb-3 flex items-center gap-2">
                         <AlertCircle className="h-4 w-4 text-red-400" />
                         <p className="text-xs text-red-400">{video.error}</p>
                       </div>
@@ -470,7 +491,7 @@ function UploadContent() {
                     )}
 
                     {video.uploading && (
-                      <div className="rounded-lg bg-electric-blue/10 p-3 text-sm text-electric-blue-light flex items-center gap-2">
+                      <div role="status" className="rounded-lg bg-electric-blue/10 p-3 text-sm text-electric-blue-light flex items-center gap-2">
                         <div className="h-4 w-4 rounded-full border-2 border-electric-blue border-t-transparent animate-spin" />
                         Uploading securely...
                       </div>
@@ -484,16 +505,15 @@ function UploadContent() {
 
         {/* Recording requirements appear before the device file picker. */}
         {preflightAngle && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-            <div className="card max-h-[92vh] w-full max-w-xl overflow-y-auto border-electric-blue/40">
+          <UploadDialog titleId="recording-setup" onCancel={() => { setPreflightAngle(null); setPendingDrop(null) }}>
               <p className="text-xs font-bold uppercase tracking-[0.2em] text-electric-blue-light">Required before upload</p>
-              <h3 className="mt-2 text-2xl font-black text-white">Confirm the side-view recording setup</h3>
+              <h3 id="recording-setup" className="mt-2 text-2xl font-black text-white">Confirm the side-view recording setup</h3>
               <p className="mt-2 text-sm leading-relaxed text-slate-400">These confirmations improve pose tracking and help staff decide whether measurements are usable. They do not guarantee laboratory accuracy.</p>
 
               <fieldset className="mt-5">
                 <legend className="text-sm font-bold text-white">Original Camera capture setting</legend>
                 <div className="mt-3 grid grid-cols-3 gap-2">
-                  {([240, 120, 60] as const).map((fps) => <button key={fps} type="button" onClick={() => setCaptureFps(fps)} className={`rounded-xl border px-3 py-3 text-sm font-bold ${captureFps === fps ? 'border-electric-blue bg-electric-blue/15 text-white' : 'border-surface-border bg-navy-950 text-slate-400'}`}>{fps} FPS<span className="mt-1 block text-[10px] font-medium">{fps === 240 ? 'Preferred' : fps === 120 ? 'Accepted' : 'Mechanics only'}</span></button>)}
+                  {([240, 120, 60] as const).map((fps) => <button key={fps} type="button" aria-pressed={captureFps === fps} onClick={() => setCaptureFps(fps)} className={`rounded-xl border px-3 py-3 text-sm font-bold ${captureFps === fps ? 'border-electric-blue bg-electric-blue/15 text-white' : 'border-surface-border bg-navy-950 text-slate-400'}`}>{fps} FPS<span className="mt-1 block text-[10px] font-medium">{fps === 240 ? 'Preferred' : fps === 120 ? 'Accepted' : 'Mechanics only'}</span></button>)}
                 </div>
                 <p className="mt-2 text-xs text-slate-500">Choose the setting used in Camera → Record Slo-mo. Do not choose 240 simply because the video plays slowly.</p>
               </fieldset>
@@ -508,17 +528,15 @@ function UploadContent() {
                 <button type="button" className="btn-secondary flex-1 justify-center" onClick={() => { setPreflightAngle(null); setPendingDrop(null) }}>Cancel</button>
                 <button type="button" disabled={!preflightReady()} className="btn-primary flex-1 justify-center" onClick={finishPreflight}>Continue to video</button>
               </div>
-            </div>
-          </div>
+          </UploadDialog>
         )}
 
         {/* Checklist modal overlay */}
         {checklistAngle && !videos[checklistAngle]?.submissionId && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-            <div className="card max-w-lg w-full max-h-[90vh] overflow-y-auto">
-              <h3 className="text-lg font-bold text-white mb-2">Video Quality Checklist</h3>
+          <UploadDialog titleId="quality-check" onCancel={() => setChecklistAngle(null)}>
+              <h3 id="quality-check" className="text-lg font-bold text-white mb-2">Video Quality Checklist</h3>
               <p className="text-sm text-slate-400 mb-6">
-                Confirm each item. The upload starts automatically after the final check.
+                Confirm each item, then choose Upload video to send the original file to Pitch Nav’s private Supabase storage for staff review. People, audio and file metadata may be included. Choose a clip you have permission to share and keep bystanders out of frame.
               </p>
               <div className="space-y-3 mb-6">
                 {CHECKLIST.map((item) => (
@@ -536,20 +554,21 @@ function UploadContent() {
                 ))}
               </div>
               <div className="flex gap-3">
+                <button type="button" disabled={!allChecked() || checklistAutoSubmitting} className="btn-primary flex-1 justify-center" onClick={confirmChecklistAndUpload}>Upload video</button>
                 <button
                   type="button"
-                  className="btn-secondary w-full justify-center"
+                  className="btn-secondary flex-1 justify-center"
                   onClick={() => setChecklistAngle(null)}
                 >
                   Cancel
                 </button>
               </div>
-            </div>
-          </div>
+          </UploadDialog>
         )}
 
         {/* CTA */}
         <div className="card">
+          {orderError && <p role="alert" className="mb-3 text-red-300">{orderError}</p>}
           <h3 className="text-base font-semibold text-white mb-2">Ready to continue?</h3>
           <p className="text-sm text-slate-400 mb-4">
             Payment is confirmed. Upload one complete throwing-arm side view. After upload, continue directly into Motion Lab for synchronized skeleton, measurements, phase frames, and staff review.

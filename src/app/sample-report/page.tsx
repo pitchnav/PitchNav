@@ -97,7 +97,7 @@ export default function SampleReportPage() {
               <p className="text-2xl font-black text-accent-green">{DEMO_ATHLETE.goalVelocity} <span className="text-base font-normal text-slate-400">mph</span></p>
             </div>
           </div>
-          <p className="text-xs text-slate-600 mt-2">Velocity is athlete-provided and not independently verified by Pitch Nav.</p>
+          <p className="text-xs text-slate-400 mt-2">Velocity is athlete-provided and not independently verified by Pitch Nav.</p>
         </div>
 
         <section className="card mb-8">
@@ -126,7 +126,7 @@ export default function SampleReportPage() {
                   <span className="text-sm font-semibold text-white">{category}</span>
                   <span className="text-sm font-bold text-electric-blue-light">{score}/5</span>
                 </div>
-                <ProgressBar value={score} max={5} color="blue" size="sm" />
+                <ProgressBar accessibleLabel={category} value={score} max={5} color="blue" size="sm" />
                 <p className="text-xs text-slate-500 mt-1.5">{notes}</p>
               </div>
             ))}

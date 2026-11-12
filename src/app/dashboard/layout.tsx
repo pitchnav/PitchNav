@@ -53,7 +53,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         </aside>
 
         {/* Main content */}
-        <main className="flex-1 lg:ml-64 min-h-screen">
+        <div className="flex-1 lg:ml-64 min-h-screen">
           {/* Mobile nav */}
           <div className="sticky top-16 z-20 flex gap-3 overflow-x-auto border-b border-surface-border bg-navy-900/95 px-4 py-3 backdrop-blur lg:hidden">
             {DASHBOARD_NAV.map(({ href, label, icon: Icon }) => (
@@ -68,7 +68,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
             ))}
           </div>
           <div className="p-4 sm:p-6 lg:p-8">{children}</div>
-        </main>
+        </div>
       </div>
     </div>
   )

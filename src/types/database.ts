@@ -117,6 +117,8 @@ export interface AthleteProfile {
   terms_agreed_at: string | null
   privacy_agreed: boolean
   privacy_agreed_at: string | null
+  public_permission_version?: number
+  consent_ai_draft?: boolean
   consent_anonymous_clips: boolean | null
   consent_athlete_name: boolean | null
   consent_testimonial: boolean | null

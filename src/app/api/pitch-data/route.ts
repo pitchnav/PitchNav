@@ -1,3 +1,4 @@
+import { getEligibleAthlete } from '@/lib/athlete-eligibility'
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
@@ -86,21 +87,14 @@ export async function POST(request: NextRequest) {
     )
   }
 
-  // Attach the athlete profile when there is one, so the reviewer can find this
-  // data from the athlete's submission.
-  const { data: profile } = await supabase
-    .from('athlete_profiles')
-    .select('id')
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle()
+  const { data: athleteProfileId } = await getEligibleAthlete(supabase, user.id, null)
+  if (!athleteProfileId) return NextResponse.json({ error: 'Complete the contact and permission step in athlete intake before saving pitch data.' }, { status: 403 })
 
   const { data: session, error: sessionError } = await supabase
     .from('pitch_data_sessions')
     .insert({
       user_id: user.id,
-      athlete_profile_id: profile?.id ?? null,
+      athlete_profile_id: athleteProfileId,
       source: input.source,
       session_date: input.sessionDate,
       file_name: input.fileName,

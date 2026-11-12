@@ -30,8 +30,9 @@
 
   /* Focus ring */
   *:focus-visible {
-    outline: 2px solid #2563eb;
+    outline: 3px solid #88cfff;
     outline-offset: 2px;
+    box-shadow: 0 0 0 2px #07182e;
     border-radius: 4px;
   }
 
@@ -53,9 +54,19 @@
 
 @layer components {
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-electric-blue px-6 py-3 text-sm font-semibold text-white transition-all duration-200 hover:bg-electric-blue-light hover:shadow-glow active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electric-blue focus-visible:ring-offset-2 focus-visible:ring-offset-navy-950 disabled:pointer-events-none disabled:opacity-50 disabled:active:scale-100;
+    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-electric-blue px-6 py-3 text-sm font-semibold text-white transition-all duration-200 hover:bg-blue-700 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electric-blue focus-visible:ring-offset-2 focus-visible:ring-offset-navy-950 disabled:pointer-events-none disabled:opacity-50 disabled:active:scale-100;
   }
 
+  .btn-action {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-6 py-3 text-sm font-semibold disabled:opacity-50;
+    background-color: #ff5e00;
+    color: #07182e;
+  }
+  .btn-action:hover:not(:disabled) { background-color: #ff782b; }
+  .skip-content { position: fixed; z-index: 100; left: 1rem; top: -8rem; padding: .75rem 1rem; border-radius: .5rem; background: #07182e; color: white; }
+  .skip-content:focus { top: .5rem; }
+  #main-content { scroll-margin-top: 4rem; }
+  .policy-body a { color: #91d1ff; text-decoration: underline; text-underline-offset: .18em; }
   .btn-secondary {
     @apply inline-flex items-center justify-center gap-2 rounded-lg border border-surface-border bg-surface-card px-6 py-3 text-sm font-semibold text-white transition-all duration-200 hover:bg-surface-hover hover:border-electric-blue active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electric-blue focus-visible:ring-offset-2 focus-visible:ring-offset-navy-950 disabled:pointer-events-none disabled:opacity-50 disabled:active:scale-100;
   }
@@ -108,6 +119,7 @@
 }
 
 @layer utilities {
+  .text-slate-500 { color: #92a3b8; }
   .text-balance {
     text-wrap: balance;
   }
@@ -127,6 +139,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
   /* Entrance/decorative motion is removed entirely. Loading indicators
      (animate-pulse, animate-pulse-slow, animate-spin) keep running —
      they communicate active status, not decoration. */

@@ -1,3 +1,4 @@
+import { calculateAge } from '@/lib/utils'
 import { z } from 'zod'
 
 // react-hook-form's `valueAsNumber: true` turns an empty optional number
@@ -12,14 +13,12 @@ function optionalNumber<T extends z.ZodTypeAny>(schema: T) {
 
 // ── Step 1: Contact ──────────────────────────────────────────
 
-export const stepContactSchema = z.object({
-  athleteFullName: z.string().min(2, 'Please enter the athlete\'s full name'),
+const contactFields = z.object({
+  athleteFullName: z.string().trim().min(2, 'Please enter the athlete\'s full name'),
   athleteEmail: z.string().email('Please enter a valid email address'),
   phoneNumber: z.string().optional(),
   dateOfBirth: z.string().refine((val) => {
-    const date = new Date(val)
-    const today = new Date()
-    const age = today.getFullYear() - date.getFullYear()
+    const age = calculateAge(val)
     return age >= 13 && age <= 100
   }, 'Athlete must be at least 13 years old'),
   city: z.string().optional(),
@@ -33,11 +32,21 @@ export const stepContactSchema = z.object({
   termsAgreed: z.boolean().refine((val) => val === true, 'You must agree to the terms'),
   privacyAgreed: z.boolean().refine((val) => val === true, 'You must agree to the privacy policy'),
   // Optional educational use consents
+  consentAiDraft: z.boolean().optional(),
   consentAnonymousClips: z.boolean().optional(),
   consentAthleteName: z.boolean().optional(),
   consentTestimonial: z.boolean().optional(),
   consentBeforeAfter: z.boolean().optional(),
 })
+
+function checkGuardian(data: z.infer<typeof contactFields>, ctx: z.RefinementCtx) {
+  const age = calculateAge(data.dateOfBirth)
+  if (!(age >= 13 && age < 18)) return
+  if (!data.guardianName?.trim()) ctx.addIssue({ code: 'custom', path: ['guardianName'], message: 'Enter the parent or legal guardian’s name.' })
+  if (!data.guardianEmail?.trim()) ctx.addIssue({ code: 'custom', path: ['guardianEmail'], message: 'Enter the parent or legal guardian’s email.' })
+  if (data.guardianConsented !== true) ctx.addIssue({ code: 'custom', path: ['guardianConsented'], message: 'A parent or legal guardian must give permission before you continue.' })
+}
+export const stepContactSchema = contactFields.superRefine(checkGuardian)
 
 // ── Step 2: Physical Profile ─────────────────────────────────
 
@@ -65,7 +74,7 @@ export const stepVelocitySchema = z.object({
     'stadium_radar', 'coach_provided', 'estimated', 'other',
   ], { required_error: 'How was velocity measured?' }),
   velocityMeasuredAt: z.string().optional(),
-  bullpenIntensity: z.enum(['game_intensity', 'moderate', 'light', 'varies']).optional(),
+  bullpenIntensity: z.preprocess(v => v === '' ? undefined : v, z.enum(['game_intensity', 'moderate', 'light', 'varies']).optional()),
   pitchesPerWeek: optionalNumber(z.number().int().min(0).max(1000).optional()),
 })
 
@@ -96,15 +105,16 @@ export const stepHealthSchema = z.object({
   recentPain30Days: radioBoolean,
   returnedFromInjury: radioBoolean,
   medicallyCLeared: radioBoolean,
-  healthNotes: z.string().optional(),
+  healthNotes: z.string().max(500, "Keep the note under 500 characters.").optional(),
 })
 
 // Combined full intake schema
-export const intakeFormSchema = stepContactSchema
+export const intakeFormSchema = contactFields
   .merge(stepPhysicalSchema)
   .merge(stepVelocitySchema)
   .merge(stepPitchingSchema)
   .merge(stepHealthSchema)
+  .superRefine(checkGuardian)
 
 export type IntakeFormData = z.infer<typeof intakeFormSchema>
 export type StepContactData = z.infer<typeof stepContactSchema>

@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { Menu, X, ChevronDown, User, LogOut, Settings } from 'lucide-react'
@@ -12,11 +13,9 @@ import type { User as AuthUser } from '@supabase/supabase-js'
 
 const PUBLIC_LINKS = [
   { href: '/how-it-works', label: 'How It Works' },
-  { href: '/sample-report', label: 'Sample Report' },
   { href: '/pricing', label: 'Pricing' },
   { href: '/pitch-metrics', label: 'Pitch Tracking' },
   { href: '/arsenal', label: 'Arsenal' },
-  { href: '/tailored-development', label: 'Tailored Development' },
   { href: '/faq', label: 'FAQ' },
   { href: '/shop', label: 'Shop' },
 ]
@@ -35,6 +34,8 @@ export function Navbar() {
   const [authUser, setAuthUser] = useState<AuthUser | null>()
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
+  const accountToggle = useRef<HTMLButtonElement>(null)
+  const mobileToggle = useRef<HTMLButtonElement>(null)
   const pathname = usePathname()
   const router = useRouter()
   const supabase = useMemo(() => createClient(), [])
@@ -76,21 +77,32 @@ export function Navbar() {
   }
 
   // Close mobile menu on route change
-  useEffect(() => setIsOpen(false), [pathname])
+  useEffect(() => { setIsOpen(false); setUserMenuOpen(false) }, [pathname])
+  useEffect(() => {
+    if (!isOpen && !userMenuOpen) return
+    function dismiss(event: KeyboardEvent) {
+      if (event.key !== 'Escape') return
+      if (userMenuOpen) { setUserMenuOpen(false); accountToggle.current?.focus() }
+      if (isOpen) { setIsOpen(false); mobileToggle.current?.focus() }
+    }
+    window.addEventListener('keydown', dismiss)
+    return () => window.removeEventListener('keydown', dismiss)
+  }, [isOpen, userMenuOpen])
 
   return (
-    <nav
+    <nav aria-label="Main navigation"
       className={cn(
         'fixed top-0 z-50 w-full transition-all duration-300',
         scrolled
           ? 'bg-navy-900/95 backdrop-blur-md border-b border-surface-border shadow-card'
-          : 'bg-transparent'
+          : 'bg-[#0b293d] border-b border-white/10'
       )}
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
           <Link href={authUser ? "/dashboard" : "/"} className="flex items-center gap-2 group">
+            <Image src="/icon.png" unoptimized alt="" width={32} height={29} className="h-auto w-8 rounded-sm" />
             <div className="flex items-center">
               <span className="text-2xl font-black tracking-tight text-white group-hover:text-electric-blue-light transition-colors">
                 Pitch
@@ -107,6 +119,7 @@ export function Navbar() {
               <Link
                 key={link.href}
                 href={link.href}
+                aria-current={pathname === link.href ? 'page' : undefined}
                 className={cn(
                   'text-sm font-medium transition-colors duration-200',
                   pathname === link.href
@@ -136,7 +149,8 @@ export function Navbar() {
                     onClick={() => setUserMenuOpen(!userMenuOpen)}
                     className="flex items-center gap-2 rounded-lg border border-surface-border bg-surface-card px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-surface-hover"
                     aria-expanded={userMenuOpen}
-                    aria-haspopup="true"
+                    ref={accountToggle}
+                    aria-controls={userMenuOpen ? "account-links" : undefined}
                   >
                     <User className="h-4 w-4 text-electric-blue-glow" />
                     <span className="max-w-[120px] truncate">
@@ -146,7 +160,7 @@ export function Navbar() {
                   </button>
 
                   {userMenuOpen && (
-                    <div className="absolute right-0 top-full mt-2 w-56 rounded-xl border border-surface-border bg-navy-800 shadow-card py-1 z-50">
+                    <div id="account-links" className="absolute right-0 top-full mt-2 w-56 rounded-xl border border-surface-border bg-navy-800 shadow-card py-1 z-50">
                       <Link
                         href="/dashboard/profile"
                         className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-300 hover:text-white hover:bg-surface-hover transition-colors"
@@ -170,9 +184,9 @@ export function Navbar() {
                 <Link href="/login" className="btn-secondary py-2 px-4 text-sm">
                   Sign In
                 </Link>
-                <Link href="/start-analysis" className="btn-primary py-2 px-4 text-sm">
-                  Start Analysis
-                </Link>
+                {pathname !== '/' && pathname !== '/pricing' && <Link href="/pricing" className="btn-secondary py-2 px-4 text-sm">
+                  See plans
+                </Link>}
               </>
             )}
           </div>
@@ -182,6 +196,8 @@ export function Navbar() {
             className="xl:hidden flex h-11 w-11 items-center justify-center rounded-lg text-slate-400 hover:text-white hover:bg-surface-hover transition-colors"
             onClick={() => setIsOpen(!isOpen)}
             aria-label={isOpen ? 'Close menu' : 'Open menu'}
+            ref={mobileToggle}
+            aria-controls={isOpen ? "mobile-navigation" : undefined}
             aria-expanded={isOpen}
           >
             {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
@@ -192,7 +208,7 @@ export function Navbar() {
       {/* Mobile menu */}
       <AnimatePresence>
         {isOpen && (
-          <motion.div
+          <motion.div id="mobile-navigation"
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
@@ -204,6 +220,7 @@ export function Navbar() {
               <Link
                 key={link.href}
                 href={link.href}
+                aria-current={pathname === link.href ? 'page' : undefined}
                 className={cn(
                   'block rounded-lg px-4 py-3 text-base font-medium transition-colors',
                   pathname === link.href
@@ -243,8 +260,8 @@ export function Navbar() {
                 <Link href="/login" className="btn-secondary justify-center">
                   Sign In
                 </Link>
-                <Link href="/start-analysis" className="btn-primary justify-center">
-                  Start Analysis
+                <Link href="/pricing" className="btn-secondary justify-center">
+                  See plans
                 </Link>
               </div>
             )}

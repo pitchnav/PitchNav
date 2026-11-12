@@ -14,25 +14,16 @@ export async function POST(request: NextRequest) {
     // Staff-processed analyses are saved under the athlete's user_id, not the
     // admin's, so this must also allow the requesting admin through.
     const admin = createAdminClient()
-    const { data: analysis } = await admin.from('motion_analyses').select('id,title,created_at,user_id').eq('id', analysisId).single()
+    const { data: analysis } = await admin.from('motion_analyses').select('id,user_id').eq('id', analysisId).single()
     if (!analysis) return NextResponse.json({ error: 'Analysis not found' }, { status: 404 })
     const { data: viewerProfile } = await supabase.from('profiles').select('is_admin').eq('id', user.id).single()
     if (analysis.user_id !== user.id && !viewerProfile?.is_admin) {
       return NextResponse.json({ error: 'Analysis not found' }, { status: 404 })
     }
-    const { data: profile } = await admin.from('profiles').select('full_name,email').eq('id', analysis.user_id).single()
-    const reviewEmail =
-      process.env.STAFF_REVIEW_EMAIL ||
-      process.env.OWNER_REVIEW_EMAIL ||
-      process.env.CONTACT_DESTINATION_EMAIL ||
-      'pitchnavllc@gmail.com'
+    const reviewEmail = process.env.STAFF_REVIEW_EMAIL || process.env.OWNER_REVIEW_EMAIL || process.env.CONTACT_DESTINATION_EMAIL
+    if (!reviewEmail) return NextResponse.json({ error: 'The analysis was saved. The staff notification destination is not configured.', saved: true, notificationSent: false }, { status: 503 })
 
-    const delivery = await sendStaffReviewRequestEmail(
-      reviewEmail,
-      profile?.full_name || profile?.email || 'Athlete',
-      analysis.title,
-      analysis.id
-    )
+    const delivery = await sendStaffReviewRequestEmail(reviewEmail, analysis.id)
 
     if (!delivery.success) {
       console.error('Staff review email was not delivered', delivery.error)

@@ -1,11 +1,9 @@
 'use client'
 
-import { useState } from 'react'
-import type { Metadata } from 'next'
+import { useId, useState } from 'react'
 import Link from 'next/link'
 import { ChevronDown, ChevronUp } from 'lucide-react'
 import { SafetyDisclaimer } from '@/components/ui/SafetyDisclaimer'
-import { cn } from '@/lib/utils'
 
 const FAQ_SECTIONS = [
   {
@@ -84,7 +82,7 @@ const FAQ_SECTIONS = [
       },
       {
         q: 'How long does the analysis take?',
-        a: "Most reports arrive within one business day after we receive your complete submission and payment. Check your dashboard for the current estimate.",
+        a: "Review starts after payment and receipt of a usable submission. Check the order in your dashboard for its current estimate.",
       },
       {
         q: 'What six positions are analyzed?',
@@ -114,19 +112,19 @@ const FAQ_SECTIONS = [
     questions: [
       {
         q: 'Who can access my videos?',
-        a: 'Only you and your assigned reviewer can access your uploaded videos. Your files are stored privately — no other user can see them.',
+        a: 'Pitch Nav staff use submitted videos for review. See the privacy policy for details on staff access and service providers.',
       },
       {
         q: 'How long are my videos retained?',
-        a: 'Video retention periods are configurable by the admin. After your analysis is delivered, raw videos are retained for a period set in system settings (typically one year) to allow for potential follow-up analysis. You can request deletion of your videos at any time from your dashboard.',
+        a: 'Contact support to ask about a particular video or request its deletion. The privacy policy explains how to make a request.',
       },
       {
-        q: 'Will my data be sold?',
-        a: 'No. Pitch Nav does not sell athlete data. Please review the full privacy policy for details on data collection, storage, and sharing.',
+        q: 'Where can I find information about data sharing?',
+        a: 'The privacy policy describes what Pitch Nav collects, why it is used, and which service providers may handle it.',
       },
       {
         q: 'How do I delete my account?',
-        a: 'You can request account deletion from your dashboard or by contacting support@pitchnav.com. Your account and associated data will be processed within 30 days. You\'ll receive a confirmation email when the deletion is complete.',
+        a: 'You can request account deletion through the contact form or by emailing support@pitchnav.com from the account address.',
       },
     ],
   },
@@ -139,11 +137,11 @@ const FAQ_SECTIONS = [
       },
       {
         q: 'Can I get a refund?',
-        a: 'If your submitted videos are unusable for analysis and a replacement cannot be obtained, we will issue a full refund. Completed analyses are not eligible for refunds. Contact support@pitchnav.com with any billing questions.',
+        a: 'A first report that is not useful qualifies for the advertised 14-day refund. An unusable video that cannot be replaced also qualifies for an analysis refund. See billing and cancellation below for the request steps.',
       },
       {
         q: 'How much does a follow-up analysis cost?',
-        a: 'Follow-up analysis pricing is available in your dashboard after your first report is complete. Contact us for current pricing.',
+        a: 'Check your membership terms or ask billing support what your purchase includes before placing another order.',
       },
     ],
   },
@@ -151,6 +149,7 @@ const FAQ_SECTIONS = [
 
 function FAQItem({ q, a }: { q: string; a: string }) {
   const [open, setOpen] = useState(false)
+  const answerId = useId()
 
   return (
     <div className="border-b border-surface-border last:border-0">
@@ -158,6 +157,7 @@ function FAQItem({ q, a }: { q: string; a: string }) {
         className="w-full flex items-center justify-between gap-4 py-5 text-left"
         onClick={() => setOpen(!open)}
         aria-expanded={open}
+        aria-controls={answerId}
       >
         <span className="text-sm font-semibold text-white">{q}</span>
         {open ? (
@@ -166,11 +166,9 @@ function FAQItem({ q, a }: { q: string; a: string }) {
           <ChevronDown className="h-4 w-4 text-slate-500 flex-shrink-0" />
         )}
       </button>
-      {open && (
-        <div className="pb-5">
-          <p className="text-sm text-slate-400 leading-relaxed">{a}</p>
-        </div>
-      )}
+      <div id={answerId} hidden={!open} className="pb-5">
+          <p className="max-w-prose text-base leading-relaxed text-slate-300">{a}</p>
+      </div>
     </div>
   )
 }
@@ -180,23 +178,23 @@ export default function FAQPage() {
     <div className="min-h-screen bg-navy-950 pt-24 pb-16">
       <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="text-center mb-16">
+        <header className="mb-10 border-b border-surface-border pb-8">
           <h1 className="text-4xl font-black tracking-tight text-white sm:text-5xl">
-            Questions from Pitchers
+            Frequently asked questions
           </h1>
-          <p className="mt-4 text-lg text-slate-400 max-w-xl mx-auto">
+          <p className="mt-4 max-w-xl text-lg text-slate-300">
             Can&apos;t find what you&apos;re looking for?{' '}
-            <Link href="/contact" className="text-electric-blue-light hover:underline">
+            <Link href="/contact" className="text-electric-blue-light underline underline-offset-2">
               Contact us
             </Link>.
           </p>
-        </div>
+        </header>
 
         {/* FAQ sections */}
         <div className="space-y-10">
           {FAQ_SECTIONS.map((section) => (
-            <div key={section.category}>
-              <h2 className="text-xs font-bold uppercase tracking-widest text-electric-blue-light mb-4">
+            <div key={section.category} id={section.category === 'Payments & Refunds' ? 'payments' : undefined} className="scroll-mt-24">
+              <h2 className="mb-3 text-xl font-bold text-white">
                 {section.category}
               </h2>
               <div className="card p-0 divide-y divide-surface-border overflow-hidden">
@@ -206,6 +204,8 @@ export default function FAQPage() {
                   </div>
                 ))}
               </div>
+              {section.category === 'Payments & Refunds' && <Link className="mt-3 inline-block text-electric-blue-light underline" href="/billing">Billing, cancellation and refunds</Link>}
+              {section.category === 'Account & Privacy' && <Link className="mt-3 inline-block text-electric-blue-light underline" href="/privacy">Read the privacy policy</Link>}
             </div>
           ))}
         </div>
@@ -214,12 +214,6 @@ export default function FAQPage() {
           <SafetyDisclaimer compact />
         </div>
 
-        <div className="mt-10 text-center">
-          <p className="text-slate-400 mb-4">Still have questions?</p>
-          <Link href="/contact" className="btn-secondary">
-            Contact Support
-          </Link>
-        </div>
       </div>
     </div>
   )

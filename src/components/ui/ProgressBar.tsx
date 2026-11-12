@@ -4,6 +4,7 @@ interface ProgressBarProps {
   value: number          // 0–100
   max?: number
   label?: string
+  accessibleLabel?: string
   showValue?: boolean
   color?: 'blue' | 'green' | 'yellow' | 'red'
   size?: 'sm' | 'md' | 'lg'
@@ -14,6 +15,7 @@ export function ProgressBar({
   value,
   max = 100,
   label,
+  accessibleLabel,
   showValue = false,
   color = 'blue',
   size = 'md',
@@ -52,7 +54,7 @@ export function ProgressBar({
         aria-valuenow={value}
         aria-valuemin={0}
         aria-valuemax={max}
-        aria-label={label}
+        aria-label={accessibleLabel ?? label ?? 'Progress'}
       >
         <div
           className={cn('h-full rounded-full transition-all duration-500 ease-out', colorStyles[color])}

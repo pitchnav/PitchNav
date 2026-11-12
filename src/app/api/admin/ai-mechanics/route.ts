@@ -104,14 +104,18 @@ export async function POST(request: Request) {
 
     const admin = createAdminClient()
     const { data: analysis, error: analysisError } = await admin.from('motion_analyses')
-      .select('id,user_id,mechanics_metrics,clip_summary,category_scores,phase_snapshots,capture_fps,athlete_profiles(date_of_birth,height_feet,height_inches,weight_lbs,throwing_hand,playing_level,current_avg_velocity,current_max_velocity,goal_velocity,velocity_source,velocity_measured_at,main_goal,mechanical_concern,throwing_program,strength_program,upcoming_deadline,bullpen_intensity,pitches_per_week)')
+      .select('id,user_id,mechanics_metrics,clip_summary,category_scores,phase_snapshots,capture_fps,athlete_profiles(id,user_id,consent_ai_draft,date_of_birth,height_feet,height_inches,weight_lbs,throwing_hand,playing_level,current_avg_velocity,current_max_velocity,goal_velocity,velocity_source,velocity_measured_at,bullpen_intensity,pitches_per_week)')
       .eq('id', analysisId).single()
     if (analysisError) return NextResponse.json({ error: `Could not load the saved Motion Lab result: ${analysisError.message}` }, { status: 500 })
     if (!analysis) return NextResponse.json({ error: 'Motion analysis not found.' }, { status: 404 })
+    const athlete = Array.isArray(analysis.athlete_profiles) ? analysis.athlete_profiles[0] : analysis.athlete_profiles
+    if (athlete?.consent_ai_draft !== true || athlete.user_id !== analysis.user_id) {
+      return NextResponse.json({ error: 'This athlete has not authorized an OpenAI draft. Continue with staff review.' }, { status: 403 })
+    }
     const snapshots = Array.isArray(analysis.phase_snapshots) ? analysis.phase_snapshots as Array<{ key: string; storage_path?: string; time?: number; confidence_note?: string }> : []
     const images: Array<Record<string, unknown>> = []
-    for (const shot of snapshots) {
-      if (!shot.storage_path) continue
+    for (const shot of snapshots.slice(0, 6)) {
+      if (!/^[a-z_]+$/.test(shot.key) || shot.storage_path !== `${analysis.user_id}/motion-lab/${analysis.id}/phases/${shot.key}.png`) continue
       const { data } = await admin.storage.from('analysis-assets').createSignedUrl(shot.storage_path, 1800)
       if (data?.signedUrl) {
         images.push({ type: 'input_text', text: `Phase candidate ${shot.key}, at ${shot.time ?? 'unknown'} seconds. Detector note: ${shot.confidence_note ?? 'none'}.` })
@@ -121,7 +125,6 @@ export async function POST(request: Request) {
     if (images.length < 12) return NextResponse.json({
       error: 'Automatic six-phase processing has not finished for this order. Retry automatic processing only if the customer processing screen was interrupted.',
     }, { status: 409 })
-    const athlete = Array.isArray(analysis.athlete_profiles) ? analysis.athlete_profiles[0] : analysis.athlete_profiles
 
     const analysisUserId = analysis.user_id as string
     // Intake data (age, height, weight, level, velocity) turned into computed
@@ -134,8 +137,9 @@ export async function POST(request: Request) {
     // mechanics fault is happening; when absent the model must say the
     // physical explanation is still an inference from video.
     const { data: screenSession } = await admin.from('movement_screen_sessions')
-      .select('id,results,summary,completed_at')
+      .select('results,completed_at')
       .eq('user_id', analysisUserId)
+      .eq('athlete_profile_id', athlete.id)
       .eq('status', 'complete')
       .order('completed_at', { ascending: false })
       .limit(1)
@@ -226,7 +230,7 @@ Clip summary: ${JSON.stringify(analysis.clip_summary ?? {})}
 2D pose metrics: ${JSON.stringify(analysis.mechanics_metrics ?? {})}
 Deterministic candidates (supporting data only): ${JSON.stringify(analysis.category_scores ?? [])}`
     const model = process.env.OPENAI_MECHANICS_MODEL || 'gpt-5.4-mini'
-    const response = await fetch('https://api.openai.com/v1/responses', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${process.env.OPENAI_API_KEY}` }, body: JSON.stringify({ model, reasoning: { effort: 'medium' }, input: [{ role: 'user', content: [{ type: 'input_text', text: prompt }, ...images] }], text: { verbosity: 'medium', format: { type: 'json_schema', name: 'pitch_nav_mechanics_draft', strict: true, schema } } }) })
+    const response = await fetch('https://api.openai.com/v1/responses', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${process.env.OPENAI_API_KEY}` }, body: JSON.stringify({ model, store: false, reasoning: { effort: 'medium' }, input: [{ role: 'user', content: [{ type: 'input_text', text: prompt }, ...images] }], text: { verbosity: 'medium', format: { type: 'json_schema', name: 'pitch_nav_mechanics_draft', strict: true, schema } } }) })
     const payload = await response.json() as Record<string, unknown>
     if (!response.ok) return NextResponse.json({ error: (payload.error as { message?: string } | undefined)?.message || 'The coaching draft could not be generated.' }, { status: 502 })
     const output = getOutputText(payload)

@@ -5,7 +5,7 @@ import Image from 'next/image'
 import { useState } from 'react'
 
 const products = [
-  { name: 'Weighted Velocity Ball Set', image: 'plyos', category: 'Throwing', price: 49.99, recommended: true, variant: 'Six weights · Bag included' },
+  { name: 'Weighted Velocity Ball Set', image: 'plyos', category: 'Throwing', price: 49.99, variant: 'Six weights · Bag included' },
   { name: 'Pro Arm Care Bands', image: 'bands', category: 'Throwing', price: 29.99, variant: 'Wrist cuff pair' },
   { name: 'Pro Capture Tripod', image: 'tripod', category: 'Capture', price: 34.99, variant: 'Clamp and case included' },
   { name: 'Everyday Trucker Hat', image: 'cap', category: 'Apparel', price: 29.99, variant: 'White mesh' },
@@ -34,16 +34,15 @@ export default function Catalog() {
       </div>
       <select aria-label="Sort products" value={sort} onChange={e => setSort(e.target.value)}
         className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold">
-        <option value="featured">Sort: Featured</option><option value="low">Price: Low to high</option><option value="high">Price: High to low</option>
+        <option value="featured">Collection order</option><option value="low">Price: Low to high</option><option value="high">Price: High to low</option>
       </select>
     </div>
-    <p className="mb-4 text-sm text-slate-600">Collection preview · Orders open soon.</p>
+    <p className="mb-4 text-sm text-slate-600">Product mockups and proposed USD prices. Gear orders are closed.</p>
     <ul className="grid grid-cols-1 gap-4 min-[480px]:grid-cols-2 lg:grid-cols-4">
-      {visible.map(product => <li key={product.image} id={product.image} style={{ scrollMarginTop: 96 }} className={product.recommended ? styles.recommendedProduct : styles.product}>
+      {visible.map(product => <li key={product.image} id={product.image} style={{ scrollMarginTop: 96 }} className={styles.product}>
         <div className="relative aspect-[5/4] overflow-hidden bg-slate-100">
           <Image src={'/shop/' + (product.frontImage ?? product.image) + '.webp'} alt={product.name} fill sizes="(min-width: 1024px) 25vw, (min-width: 480px) 50vw, 100vw" className={styles.front} />
           <Image src={'/shop/' + product.image + '-angle.webp'} alt="" fill sizes="(min-width: 1024px) 25vw, (min-width: 480px) 50vw, 100vw" className={styles.angle} />
-          {product.recommended && <span className="absolute top-3 left-3 rounded-sm bg-navy-950 px-2 py-1 text-xs font-semibold text-white">Recommended</span>}
         </div>
         <div className="p-4">
           <h3 className="text-lg font-bold leading-tight tracking-tight">{product.name}</h3>

@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 
 const footerLinks = {
   product: [
@@ -16,12 +17,15 @@ const footerLinks = {
     { label: 'Sign Up', href: '/signup' },
     { label: 'Sign In', href: '/login' },
     { label: 'Dashboard', href: '/dashboard' },
-    { label: 'Start Analysis', href: '/start-analysis' },
+    { label: 'Analysis plans', href: '/pricing' },
     { label: 'Contact', href: '/contact' },
   ],
   legal: [
     { label: 'Privacy Policy', href: '/privacy' },
     { label: 'Terms of Service', href: '/terms' },
+    { label: 'Cancellation & refunds', href: '/billing' },
+    { label: 'Cookies & device storage', href: '/cookies' },
+    { label: 'Request access or deletion', href: '/contact?topic=privacy' },
     { label: 'Training Disclaimer', href: '/disclaimer' },
   ],
 }
@@ -34,6 +38,7 @@ export function Footer() {
           {/* Brand */}
           <div className="lg:col-span-2">
             <Link href="/" className="inline-flex items-center mb-4">
+              <Image src="/icon.png" unoptimized alt="" width={32} height={29} className="mr-2 h-auto w-8 rounded-sm" />
               <span className="text-2xl font-black tracking-tight text-white">Pitch</span>
               <span className="text-2xl font-black italic tracking-tight text-electric-blue-light">Nav</span>
             </Link>
@@ -66,7 +71,7 @@ export function Footer() {
 
           {/* Product links */}
           <div>
-            <h3 className="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-4">
+            <h3 className="text-xs font-semibold uppercase tracking-widest text-slate-400 mb-4">
               Product
             </h3>
             <ul className="space-y-3">
@@ -85,7 +90,7 @@ export function Footer() {
 
           {/* Account links */}
           <div>
-            <h3 className="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-4">
+            <h3 className="text-xs font-semibold uppercase tracking-widest text-slate-400 mb-4">
               Account
             </h3>
             <ul className="space-y-3">
@@ -104,7 +109,7 @@ export function Footer() {
 
           {/* Legal */}
           <div>
-            <h3 className="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-4">
+            <h3 className="text-xs font-semibold uppercase tracking-widest text-slate-400 mb-4">
               Legal
             </h3>
             <ul className="space-y-3">
@@ -125,10 +130,10 @@ export function Footer() {
         <hr className="mt-12 border-surface-border" />
 
         <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-slate-400">
             &copy; {new Date().getFullYear()} Pitch Nav. All rights reserved.
           </p>
-          <p className="text-xs text-slate-600">
+          <p className="text-xs text-slate-400">
             Pitch Nav is not affiliated with any professional baseball organization, school,
             or athletic program.
           </p>

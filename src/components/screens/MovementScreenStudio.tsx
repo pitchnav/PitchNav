@@ -45,7 +45,7 @@ function sideWord(side: ScreenSide) {
   return side === 'single' ? '' : side === 'left' ? 'Left' : 'Right'
 }
 
-export function MovementScreenStudio() {
+export function MovementScreenStudio({ athleteProfileId }: { athleteProfileId: string }) {
   const supabase = useMemo(() => createClient(), [])
   const steps = useMemo(() => buildSteps(), [])
 
@@ -255,6 +255,7 @@ export function MovementScreenStudio() {
       const finalSummary = summarizeScreenSession(collected)
       const { error: insertError } = await supabase.from('movement_screen_sessions').insert({
         user_id: user.id,
+        athlete_profile_id: athleteProfileId,
         status: 'complete',
         results: collected,
         summary: finalSummary,
@@ -322,18 +323,19 @@ export function MovementScreenStudio() {
           </div>
         </div>
 
+        <p className="text-sm text-slate-300">Your browser measures the recording on this device. Saving the session sends its measurements and summary to Pitch Nav for staff review. The original screen clip stays on this device.</p>
         <VideoRecorder key={stepKey(step)} purpose="this movement screen" disabled={measuring || saving} onUse={handleFile} />
 
-        <label className="flex cursor-pointer flex-col items-center gap-2 rounded-2xl border-2 border-dashed border-slate-700 p-8 text-center transition hover:border-electric-blue/50">
+        <label className="flex cursor-pointer flex-col items-center gap-2 rounded-2xl border-2 border-dashed border-slate-700 p-8 text-center transition focus-within:ring-2 focus-within:ring-white hover:border-electric-blue/50">
           <Upload className="h-7 w-7 text-electric-blue-light" />
           <span className="font-semibold text-white">
-            {currentResult ? 'Upload another recording' : 'Or upload a saved video'}
+            {currentResult ? 'Choose another recording' : 'Or choose a saved video'}
           </span>
           <span className="text-xs text-slate-500">MP4 or WebM · a few seconds is enough</span>
           <input
             type="file"
             accept={ACCEPTED_VIDEO_TYPES}
-            className="hidden"
+            className="sr-only"
             onChange={(event) => {
               const file = event.target.files?.[0]
               if (file) handleFile(file)

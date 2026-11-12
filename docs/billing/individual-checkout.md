@@ -1,8 +1,8 @@
 # Individual checkout activation
 
 Individual purchase buttons now use `/checkout/individual?plan=…&billing=…`.
-This server route redirects directly to the matching configured Stripe Payment
-Link. Teams keep the existing quote form. No customer payment is taken by a GET
+This server route displays the initial total, renewal, assessment fees and billing help.
+A separate Continue to payment button opens the matching Stripe Payment Link only when enabled. Teams keep the existing quote form. No customer payment is taken by a GET
 request. The route does not create Stripe products or change existing memberships.
 
 ## Approved USD prices
@@ -29,7 +29,7 @@ never recurring. Prices are before tax; keep checkout disclosures consistent.
    checkout links. Disable customer-adjustable quantity for individual purchases.
 2. Complete and test account ownership and signed-webhook fulfillment for the new
    hosted links. The current legacy webhook requires `order_id` and `user_id` and
-   cannot fulfill anonymous Payment Link purchases. These redirects do NOT add
+   cannot fulfill anonymous Payment Link purchases. These links do not add
    that integration. Do not enable live links until purchases attach to the correct
    account, create the assessment work item when needed, update subscription
    entitlements, and keep paid reports accessible after cancellation. Do not grant

@@ -31,19 +31,19 @@ export const metadata: Metadata = {
       'See what to work on next pen and where your lifts fit between outings. Explore Pitch Tracking, now in development.',
     images: [
       {
-        url: '/og-image.png',
-        width: 1200,
-        height: 630,
-        alt: 'Pitch Nav — Baseball Pitching Mechanics Analysis',
+        url: '/icon.png',
+        width: 256,
+        height: 232,
+        alt: 'Pitch Nav logo',
       },
     ],
   },
   twitter: {
-    card: 'summary_large_image',
+    card: 'summary',
     title: 'Pitch Nav | Pitch Tracking & Baseball Training',
     description:
       'Get feedback on your delivery and a development plan that fits your baseball season.',
-    images: ['/og-image.png'],
+    images: ['/icon.png'],
   },
   robots: {
     index: true,
@@ -62,8 +62,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body className="min-h-screen bg-navy-950 text-white antialiased">
+        <a className="skip-content" href="#main-content">Skip to main content</a>
         <Navbar />
-        <main>{children}</main>
+        <main tabIndex={-1} id="main-content">{children}</main>
         <Footer />
       </body>
     </html>

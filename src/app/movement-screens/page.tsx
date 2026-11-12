@@ -7,7 +7,7 @@ import { MOVEMENT_SCREENS } from '@/lib/movement-screens'
 export const metadata: Metadata = {
   title: 'Movement Screens',
   description:
-    'How to film the Pitch Nav movement screens. Short held positions filmed facing the camera that measure the physical capacity behind your delivery.',
+    'How to film the Pitch Nav movement screens. Short held positions filmed facing the camera that give reviewers a two-dimensional view of your range of motion.',
 }
 
 // The screen copy is read straight from src/lib/movement-screens.ts — the same
@@ -94,10 +94,8 @@ export default function MovementScreensPage() {
                 entire strength and mobility plan.
               </p>
               <p className="mt-3 text-sm leading-relaxed text-slate-400">
-                These screens are slow and held, and they move in a plane that faces the camera — the one
-                situation where phone video measures a joint angle dependably. Where a screen exists, your
-                report says the finding was measured. Where none exists, it says so and names the screen
-                that would settle it.
+                Holding a position lets staff estimate the angle visible in the recording. Camera position and
+                body landmarks affect that estimate. Your reviewer can ask for another view if a result is unclear.
               </p>
             </div>
           </div>

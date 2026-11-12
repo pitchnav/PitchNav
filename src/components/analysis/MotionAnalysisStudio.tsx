@@ -905,9 +905,11 @@ type InitialVideo = {
 type AutomaticStage = 'loading' | 'analyzing' | 'saving' | 'complete' | 'error'
 
 export function MotionAnalysisStudio({
+  athleteProfileId,
   initialVideo = null,
   autoProcess = false,
 }: {
+  athleteProfileId?: string
   initialVideo?: InitialVideo
   autoProcess?: boolean
 }) {
@@ -1989,7 +1991,7 @@ export function MotionAnalysisStudio({
           id: analysisId,
           order_id: initialVideo?.orderId ?? null,
           user_id: targetUserId,
-          athlete_profile_id: initialVideo?.athleteProfileId ?? null,
+          athlete_profile_id: initialVideo?.athleteProfileId ?? athleteProfileId ?? null,
           title: fileName.replace(/\.[^.]+$/, '') || 'Motion Lab Analysis',
           status: 'submitted_for_review',
           source_video_storage_path: sourcePath,

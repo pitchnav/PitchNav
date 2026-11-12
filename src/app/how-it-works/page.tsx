@@ -5,7 +5,7 @@ import { SafetyDisclaimer } from '@/components/ui/SafetyDisclaimer'
 
 export const metadata: Metadata = {
   title: 'How It Works',
-  description: 'Learn how Pitch Nav works — create your profile, set up your camera, record your videos, submit payment, and receive your expert mechanics analysis.',
+  description: 'Learn how Pitch Nav works — create your profile, set up your camera, record your videos, submit payment, and receive your staff-reviewed mechanics assessment.',
 }
 
 const steps = [
@@ -48,7 +48,7 @@ const steps = [
       'Secure card checkout',
       'Pitch Nav does not store your card number',
       'See the pricing page for current plans and assessment fees',
-      'Order confirmation email sent immediately',
+      'Check payment status and order details in your dashboard',
       'Your coach can begin once your video is in',
     ],
     note: null,
@@ -63,18 +63,18 @@ const steps = [
       'Radar screenshot or radar-backed video (optional)',
       'Video quality checklist before final submission',
     ],
-    note: 'Your uploaded videos are private. You and your assigned reviewer can access them.',
+    note: 'Pitch Nav uses submitted footage for review. See the privacy policy for staff and service-provider access.',
   },
   {
     icon: <Clock className="h-8 w-8" />,
     number: '05',
     title: 'Track Your Order',
-    description: 'Track your order in your dashboard. You\'ll get an email whenever your status changes.',
+    description: 'Track your order in your dashboard. Look there for review updates and requests for a replacement video.',
     details: [
       'Real-time status tracking in your dashboard',
       'Email notifications at key milestones',
       'Reviewer may request replacement videos if needed',
-      'Typical delivery: one business day after complete submission',
+      'Check your order for the current review estimate',
     ],
     note: 'If your reviewer needs replacement videos, you\'ll be notified with a clear explanation and 14 days to re-upload at no extra charge.',
   },
@@ -175,11 +175,11 @@ export default function HowItWorksPage() {
           </Link>
           <p className="mt-4 text-sm text-slate-500">
             Have questions first?{' '}
-            <Link href="/faq" className="text-electric-blue-light hover:underline">
+            <Link href="/faq" className="text-electric-blue-light underline underline-offset-2">
               Check the FAQ
             </Link>{' '}
             or{' '}
-            <Link href="/contact" className="text-electric-blue-light hover:underline">
+            <Link href="/contact" className="text-electric-blue-light underline underline-offset-2">
               contact us
             </Link>.
           </p>

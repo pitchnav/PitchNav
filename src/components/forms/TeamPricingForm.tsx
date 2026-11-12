@@ -49,7 +49,7 @@ export function TeamPricingForm() {
 
   if (sent) {
     return (
-      <div className="rounded-xl border border-accent-green/25 bg-accent-green/5 p-6 text-center">
+      <div role="status" className="rounded-xl border border-accent-green/25 bg-accent-green/5 p-6 text-center">
         <CheckCircle className="mx-auto h-8 w-8 text-accent-green" />
         <h3 className="mt-3 text-lg font-bold text-white">Request received</h3>
         <p className="mx-auto mt-2 max-w-md text-sm text-slate-400">
@@ -105,13 +105,14 @@ export function TeamPricingForm() {
       </div>
 
       {error && (
-        <div className="sm:col-span-2 flex items-start gap-2 rounded-lg border border-red-500/20 bg-red-500/10 p-3">
+        <div role="alert" className="sm:col-span-2 flex items-start gap-2 rounded-lg border border-red-500/20 bg-red-500/10 p-3">
           <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
           <p className="text-sm text-red-400">{error}</p>
         </div>
       )}
 
       <div className="sm:col-span-2">
+        <p className="mb-3 text-sm text-slate-300">Resend delivers your program and contact details to Pitch Nav so we can reply about enrollment. <a href="/privacy" className="text-electric-blue-light underline">Privacy Policy</a></p>
         <button type="submit" disabled={busy} className="btn-primary w-full justify-center py-4 disabled:opacity-50">
           {busy ? <Loader2 className="h-5 w-5 animate-spin" /> : <Users className="h-5 w-5" />}
           Request program enrollment

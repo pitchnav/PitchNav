@@ -32,18 +32,18 @@ const MEMBERSHIPS = {
 
 export async function createCheckoutSession({
   orderId,
-  athleteName,
   userId,
   membershipTier,
   successUrl,
   cancelUrl,
+  previousSessionId,
 }: {
   orderId: string
-  athleteName: string
   userId: string
   membershipTier: MembershipTier
   successUrl: string
   cancelUrl: string
+  previousSessionId: string | null
 }) {
   if (!isStripeConfigured) {
     throw new Error('STRIPE_SECRET_KEY is not configured')
@@ -58,6 +58,13 @@ export async function createCheckoutSession({
     )
   }
 
+  const price = await stripe.prices.retrieve(membership.priceId)
+  if (!price.active || price.currency !== 'usd' || price.unit_amount !== membership.amountCents ||
+      price.billing_scheme !== 'per_unit' || price.transform_quantity ||
+      price.recurring?.interval !== 'month' || price.recurring.interval_count !== 1 ||
+      price.recurring.usage_type !== 'licensed') {
+    throw new Error('Configured membership price does not match the monthly offer')
+  }
   const session = await stripe.checkout.sessions.create({
     mode: 'subscription',
     payment_method_types: ['card'],
@@ -70,12 +77,11 @@ export async function createCheckoutSession({
     metadata: {
       order_id: orderId,
       user_id: userId,
-      athlete_name: athleteName,
       membership_tier: membershipTier,
       membership_label: membership.label,
       expected_amount_cents: String(membership.amountCents),
+      renewal_terms_version: '2026-11-11-monthly',
     },
-    customer_email: undefined, // set via metadata if needed
     success_url: successUrl,
     cancel_url: cancelUrl,
     subscription_data: {
@@ -85,7 +91,7 @@ export async function createCheckoutSession({
         membership_tier: membershipTier,
       },
     },
-  })
+  }, { idempotencyKey: `order:${orderId}:${membershipTier}:${previousSessionId ?? 'initial'}` })
 
   return session
 }

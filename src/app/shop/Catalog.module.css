@@ -21,12 +21,6 @@
   .product:hover .angle { opacity: 1; }
 }
 
-.recommendedProduct {
-  composes: product;
-  border: 2px solid #4496ff;
-  padding-bottom: 0.75rem;
-}
-
 .hero {
   background: #021332 url('/shop/equipment-banner.webp') center / cover no-repeat;
 }
@@ -37,7 +31,6 @@
   box-shadow: 0 2px 10px rgb(15 23 42 / 6%);
 }
 .product img { mix-blend-mode: multiply; }
-.recommendedProduct { padding-bottom: 0; }
 @media (max-width: 700px) {
   .hero {
     background-position: right top;

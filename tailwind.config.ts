@@ -19,7 +19,7 @@ const config: Config = {
         },
         electric: {
           blue: '#2563eb',
-          'blue-light': '#3b82f6',
+          'blue-light': '#83bef1',
           'blue-glow': '#60a5fa',
         },
         accent: {
