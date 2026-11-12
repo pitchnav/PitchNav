@@ -95,13 +95,13 @@
       "id": "scene-7",
       "timecode": "0:16-0:19",
       "visualBeat": "Recording mode requirement",
-      "cameraDirection": "Screen insert: iPhone Settings → Camera → Record Slo-mo → 240 FPS, using public/pitch-nav-slow-motion-guide.png as the reference graphic.",
+      "cameraDirection": "Use an original text card showing the path in iPhone Settings → Camera → Record Slo-mo → 240 FPS.",
       "onScreenText": ["SLO-MO. 240 FPS PREFERRED."],
       "voiceOver": "SLO-MO mode. Two hundred forty frames per second preferred, one twenty accepted.",
       "bRoll": [],
       "soundDesign": "UI tap accents.",
       "assetReferences": [
-        { "kind": "brand-asset", "description": "iPhone camera settings guide graphic", "path": "public/pitch-nav-slow-motion-guide.png", "status": "available", "aiGenerated": false }
+        { "kind": "brand-asset", "description": "Original camera settings text card", "status": "needed", "aiGenerated": false }
       ]
     },
     {
@@ -135,7 +135,7 @@
   "assetReferences": [
     { "kind": "real-pitching-footage", "description": "Staged wrong-setup clip + correctly-shot same-subject clip", "status": "needed", "aiGenerated": false },
     { "kind": "real-founder-footage", "description": "Tripod placement + measurement close-ups", "status": "needed", "aiGenerated": false },
-    { "kind": "brand-asset", "description": "Slow-motion camera settings guide graphic", "path": "public/pitch-nav-slow-motion-guide.png", "status": "available", "aiGenerated": false },
+    { "kind": "brand-asset", "description": "Original camera settings text card", "status": "needed", "aiGenerated": false },
     { "kind": "brand-asset", "description": "Logo for end card", "path": "public/pitch-nav-logo-source.png", "status": "available", "aiGenerated": false },
     { "kind": "music", "description": "Brisk, slightly playful staccato bed — educational energy", "status": "needed", "aiGenerated": false }
   ],

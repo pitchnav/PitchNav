@@ -368,7 +368,15 @@ function UploadContent() {
         </div>
 
         <section className="card mb-8 overflow-hidden border-electric-blue/30">
-          <div className="grid items-center gap-5 md:grid-cols-[0.9fr_1.1fr]"><div><p className="text-xs font-bold uppercase tracking-[0.18em] text-electric-blue-light">Before choosing files</p><h2 className="mt-1 text-xl font-black text-white">Confirm that you recorded in SLO-MO</h2><p className="mt-2 text-sm leading-relaxed text-slate-400">Use 240 FPS when available or 120 FPS when necessary. Normal Video mode—even when played slowly later—is not eligible for the velocity estimator.</p><a href={cameraGuideHref} target="_blank" className="mt-4 inline-flex text-sm font-bold text-electric-blue-light hover:text-white">Open the complete recording guide →</a></div><div><img src="/pitch-nav-slow-motion-guide.png?v=20260718" alt="How to configure iPhone Slo-mo recording at 240 or 120 FPS" className="w-full rounded-lg border border-surface-border" /><p className="mt-2 text-xs text-slate-500">If the graphic is unavailable: iPhone Settings → Camera → Record Slo-mo → 1080p HD at 240 fps (120 fps accepted).</p></div></div>
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-electric-blue-light">Before choosing files</p>
+          <h2 className="mt-1 text-xl font-black text-white">Confirm that you recorded in SLO-MO</h2>
+          <p className="mt-2 text-sm leading-relaxed text-slate-400">
+            On iPhone, open Settings → Camera → Record Slo-mo. Choose 1080p HD at 240 fps if available, or 120 fps.
+            Record the pitch in Slo-mo mode. Playing a normal-speed recording back slowly does not change its capture rate.
+          </p>
+          <a href={cameraGuideHref} target="_blank" className="mt-4 inline-flex text-sm font-bold text-electric-blue-light hover:text-white">
+            Open the complete recording guide →
+          </a>
         </section>
 
         {/* Video slots */}

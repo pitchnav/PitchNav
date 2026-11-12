@@ -34,7 +34,7 @@
 
 - A deliberately-wrong demo clip (too close, wrong angle, or normal speed) — can be staged, but must be labeled as a setup demonstration, not a real pitcher's analysis
 - A correctly-set-up demo clip from 15 feet, 6 feet high, side view
-- Optional: `public/pitch-nav-slow-motion-guide.png` as a screen insert showing the iPhone Settings → Camera → Record Slo-mo path
+- An original text card can show the path in iPhone Settings → Camera → Record Slo-mo.
 
 ## Caption rhythm example
 
