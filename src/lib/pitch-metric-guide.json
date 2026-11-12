@@ -1,0 +1,114 @@
+{
+  "velocity": {
+    "label": "Release velocity",
+    "definition": "How fast the ball travels as it leaves the hand, in miles per hour.",
+    "direction": "At the same release distance, a faster pitch gives the hitter less time. A slower changeup can widen the timing gap from your fastball.",
+    "context": "Compare the same pitch type, device and throwing intent across sessions.",
+    "source": "https://baseballsavant.mlb.com/csv-docs"
+  },
+  "ivb": {
+    "label": "Induced vertical break",
+    "definition": "How far above or below a gravity-only trajectory the pitch arrives, in inches.",
+    "direction": "A more positive value means less drop. A negative value means extra drop. A four-seamer and a curve can benefit from opposite shapes.",
+    "context": "A fastball with positive IVB can still travel downward. Compare pitches at similar speeds and release points.",
+    "source": "https://www.mlb.com/glossary/statcast/induced-vertical-break"
+  },
+  "hb": {
+    "label": "Horizontal break",
+    "definition": "How far the pitch bends sideways during flight, in inches.",
+    "direction": "The sign gives direction. On the Arsenal chart, +12 is twelve inches to the pitcher’s right and −12 is the same amount to the left.",
+    "context": "Arm side is right for a right-hander and left for a left-hander. Check the viewing convention on your source before comparing pitches.",
+    "source": "https://baseballsavant.mlb.com/leaderboard/pitch-movement"
+  },
+  "spin": {
+    "label": "Spin rate",
+    "definition": "How many revolutions the ball makes per minute at release.",
+    "direction": "Higher RPM means faster rotation. Lower RPM means slower rotation. Either can suit a pitch, depending on its purpose and spin direction.",
+    "context": "Compare spin with velocity, axis and measured movement. Two pitches with the same RPM can break differently.",
+    "source": "https://www.mlb.com/glossary/statcast/spin-rate"
+  },
+  "axis": {
+    "label": "Spin axis",
+    "definition": "The orientation of the line the ball rotates around. A device may express the direction as an angle or a clock-face tilt.",
+    "direction": "Angles wrap around. For example, 359° and 1° are only two degrees apart. Clock positions describe directions without ranking them.",
+    "context": "Compare the same viewpoint and axis convention. A camera-relative tilt needs a known view to interpret it as pitcher-relative.",
+    "source": "https://baseballsavant.mlb.com/csv-docs"
+  },
+  "efficiency": {
+    "label": "Spin efficiency",
+    "definition": "The percentage of total spin rotating across the flight path and contributing to spin-induced deflection.",
+    "direction": "A higher percentage means more transverse spin. A lower percentage means more spin around the flight direction, as on a gyro slider.",
+    "context": "Judge the percentage alongside the intended pitch shape, total spin and measured break.",
+    "source": "https://www.mlb.com/glossary/statcast/active-spin"
+  },
+  "extension": {
+    "label": "Release extension",
+    "definition": "How far toward home plate the ball is released from the pitching rubber, in feet.",
+    "direction": "More extension shortens the remaining flight distance. Less extension leaves a longer flight at the same mound distance.",
+    "context": "Compare pitches at the same speed and mound distance. A repeatable release helps explain changes between sessions.",
+    "source": "https://www.mlb.com/glossary/statcast/extension"
+  },
+  "releaseHeight": {
+    "label": "Release height",
+    "definition": "The height of the ball above the ground at release, in feet.",
+    "direction": "A higher reading means a taller release point. A lower reading means the ball left the hand closer to the ground.",
+    "context": "Compare with your own release point for this pitch. Stature, arm slot and delivery affect the reading.",
+    "source": "https://baseballsavant.mlb.com/csv-docs"
+  },
+  "releaseSide": {
+    "label": "Release side",
+    "definition": "The sideways offset of the release point from the rubber’s centerline, in feet.",
+    "direction": "On the Arsenal chart, positive is to the pitcher’s right and negative is to the left. A value near zero is closer to the centerline.",
+    "context": "Check your device’s viewpoint. Your position on the rubber and arm slot both affect this reading.",
+    "source": "https://baseballsavant.mlb.com/csv-docs"
+  },
+  "count": {
+    "label": "Pitch count",
+    "definition": "The number of throws represented by a reading or an average.",
+    "direction": "A larger count gives more throws to compare. An average based on one or two pitches can change sharply with the next throw.",
+    "context": "If a count is missing from a pitch average, leave it blank. A row of data can represent a single throw or a whole session.",
+    "source": ""
+  },
+  "location": {
+    "label": "Pitch location",
+    "definition": "Where the ball crosses the front of home plate, viewed against the strike zone.",
+    "direction": "Higher and lower describe the height of the crossing. The best location depends on the target, count, pitch and hitter.",
+    "context": "Compare the crossing with the intended target. A pitch outside the zone can be an intentional chase pitch.",
+    "source": "https://baseballsavant.mlb.com/csv-docs"
+  },
+  "stuff": {
+    "label": "Stuff+",
+    "definition": "A model score comparing pitch characteristics with a professional pitch-family reference. The reference average is 100.",
+    "direction": "Above 100 rates higher in the model. Below 100 rates lower. A score of 105 does not mean five percent more movement or five percent more outs.",
+    "context": "Pitch Nav uses speed and available movement for its projections. Command and the outcome of a specific pitch are separate. The website preview shows a fictional score.",
+    "source": ""
+  },
+  "pitchType": {
+    "label": "Pitch type",
+    "definition": "The pitch family or grip the throw is labeled with, such as a four-seam fastball, slider or changeup.",
+    "direction": "These are categories. There is no higher or lower type.",
+    "context": "Use consistent tags when comparing your sessions. The same pitch name can cover different speeds and movement shapes.",
+    "source": "https://baseballsavant.mlb.com/csv-docs"
+  },
+  "armSlot": {
+    "label": "Arm slot",
+    "definition": "The angle of the throwing arm relative to the ground at release.",
+    "direction": "A higher slot is closer to overhand. A lower slot is closer to sidearm.",
+    "context": "42° is an example for this report layout, not a measurement of the pitcher shown.",
+    "source": ""
+  },
+  "hipShoulder": {
+    "label": "Hip–shoulder separation",
+    "definition": "The difference between the direction the pelvis faces and the direction the shoulders face at the same instant.",
+    "direction": "A larger angle means the two are turned farther apart at that moment. The timing matters as much as the size of the angle.",
+    "context": "38° is an example. One side view alone does not establish a precise 3D rotation.",
+    "source": ""
+  },
+  "stride": {
+    "label": "Stride length",
+    "definition": "How far the pitcher strides toward the target by lead-foot contact, expressed here as a percentage of standing height.",
+    "direction": "A larger percentage means a longer stride relative to that pitcher’s height. Longer is not automatically better.",
+    "context": "87% is an example. Measuring this percentage requires a consistent starting point, scale and standing height.",
+    "source": ""
+  }
+}

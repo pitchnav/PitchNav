@@ -95,10 +95,10 @@ export function Navbar() {
         'fixed top-0 z-50 w-full transition-all duration-300',
         scrolled
           ? 'bg-navy-900/95 backdrop-blur-md border-b border-surface-border '
-          : 'bg-brand-ink border-b border-white/10'
+          : pathname === '/' ? 'bg-[#072237] border-b border-[#325165]' : 'bg-brand-ink border-b border-white/10'
       )}
     >
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div className={cn("mx-auto px-4 sm:px-6 lg:px-8", pathname === "/" ? "max-w-[1460px]" : "max-w-7xl")}>
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
           <Link href={authUser ? "/dashboard" : "/"} className="flex items-center gap-2 group">

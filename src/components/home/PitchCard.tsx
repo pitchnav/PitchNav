@@ -1,34 +1,80 @@
 'use client'
 
-import { useState } from 'react'
-import { sampleArsenal } from '@/lib/arsenal-example'
+import { useEffect, useRef, useState } from 'react'
+import Image from 'next/image'
+import { Maximize, Pause, Play, Video } from 'lucide-react'
+import { MetricHelp } from '@/components/pitch-data/MetricHelp'
 import styles from './PublicHome.module.css'
 
-const labels = ['Four-seam', 'Slider', 'Changeup']
-const colors = ['#124f7b', '#583a6e', '#2d6858']
-const x = (inches: number) => 170 + 6 * inches
-const y = (inches: number) => 148 - 5 * inches
+const posterTime = 53 / 30
+const examples = [
+  ['armSlot', 'Arm slot', '42°'],
+  ['hipShoulder', 'Hip–shoulder sep.', '38°'],
+  ['stride', 'Stride', '87%'],
+] as const
+const clock = (seconds: number) => `0:${String(Math.floor(seconds)).padStart(2, '0')}`
 
-export function PitchCard() {
-  const [active, setActive] = useState(0)
-  const pitch = sampleArsenal[active]
-  return <figure className={styles.sheet}>
-    <figcaption className={styles.sheetHead}><strong>Pitch movement</strong><span>Sample arsenal · RHP</span></figcaption>
-    <svg className={styles.plot} viewBox="0 0 340 252" role="img" aria-label="Example movement in inches, from the pitcher’s view. The three pitches are also available using the buttons below.">
-      <defs><pattern id="field-grid" x="20" y="23" width="30" height="25" patternUnits="userSpaceOnUse"><path d="M30 0 H0 V25" fill="none" stroke="#c1d0d3" strokeWidth="1"/></pattern></defs>
-      <rect x="20" y="23" width="300" height="200" fill="url(#field-grid)"/>
-      <path d="M20 148H320 M170 23V223" stroke="#809399" fill="none"/>
-      <g fill="#465b64" fontSize="9" fontFamily="ui-monospace, monospace"><text x="5" y="50">20</text><text x="5" y="101">10</text><text x="10" y="151">0</text><text x="49" y="237">−20</text><text x="167" y="237">0</text><text x="282" y="237">+20</text></g>
-      <g fill="#314b58" fontSize="10"><text x="20" y="15">Induced vertical break (in.)</text><text x="319" y="251" textAnchor="end">Horizontal break (in.)</text></g>
-      {sampleArsenal.map((p,i) => <g key={p.id} transform={`translate(${x(p.hb ?? 0)} ${y(p.ivb ?? 0)})`}>
-        {i===active && <circle r="15" fill="none" stroke={colors[i]} strokeWidth="1.5"/>}
-        {i===0 ? <circle r="7" fill={colors[i]}/> : i===1 ? <rect x="-6" y="-6" width="12" height="12" rx="1" fill={colors[i]}/> : <path d="M0 -8L8 6H-8Z" fill={colors[i]}/>}
-        <text x={i===2?11:0} y={i===2?5:-21} textAnchor={i===2?'start':'middle'} fontSize="10" fontWeight="700" fill={colors[i]}>{labels[i]}</text>
-      </g>)}
-    </svg>
-    <div className={styles.switches} role="group" aria-label="Select sample pitch">{labels.map((label,i)=><button key={label} type="button" onClick={()=>setActive(i)} aria-pressed={i===active}>{label}</button>)}</div>
-    <dl className={styles.readings} aria-live="polite" aria-atomic="true">
-      {[['Velocity',pitch.velocity,'mph'],['Horiz. break',pitch.hb,'in'],['Vert. break',pitch.ivb,'in']].map(([name,value,unit])=><div key={name}><dt>{name}</dt><dd>{value} <small>{unit}</small></dd></div>)}
-    </dl>
+export function PitchCard({ mediaBase }: { mediaBase?: string }) {
+  const media = useRef<HTMLVideoElement>(null)
+  const theater = useRef<HTMLDialogElement>(null)
+  const [time, setTime] = useState(posterTime)
+  const [duration, setDuration] = useState(0)
+  const [playing, setPlaying] = useState(false)
+  const [failed, setFailed] = useState(false)
+  const [expanded, setExpanded] = useState(false)
+  const expandButton = useRef<HTMLButtonElement>(null)
+  const showReel = !!mediaBase && !failed
+  useEffect(() => {
+    const v = media.current
+    if (!v || !showReel) return
+    const ready = () => {
+      if (!Number.isFinite(v.duration)) return
+      setDuration(v.duration)
+      v.currentTime = Math.min(posterTime, v.duration)
+    }
+    if (v.readyState >= HTMLMediaElement.HAVE_METADATA) ready()
+    else v.addEventListener('loadedmetadata', ready, { once: true })
+    return () => v.removeEventListener('loadedmetadata', ready)
+  }, [showReel, mediaBase])
+  async function toggle() {
+    const v = media.current
+    if (!v) return
+    if (!v.paused) { v.pause(); return }
+    if (v.ended) v.currentTime = 0
+    try { await v.play() } catch { setFailed(true) }
+  }
+  function toggleTheater() {
+    const el = theater.current
+    if (!el) return
+    el.close()
+    if (expanded) el.show()
+    else el.showModal()
+    setExpanded(!expanded)
+    expandButton.current?.focus({ preventScroll: true })
+  }
+  return <figure className={styles.sample} aria-labelledby="motion-title">
+    <figcaption className={styles.sheetHead}><span id="motion-title" className={styles.chip}><Video size={17} aria-hidden="true"/> Motion analysis</span>
+      <span>{showReel ? `Frame ${String(Math.min(117,1+Math.floor(time*30+.001))).padStart(3,'0')}` : 'Pose study'}</span></figcaption>
+    <dialog open role={expanded ? 'dialog' : 'group'} className={styles.theater} ref={theater} aria-label="Delivery replay" onCancel={e=>{ if(expanded){e.preventDefault();toggleTheater()} }}>
+      {showReel ? <video ref={media} className={styles.film} src={mediaBase+'/delivery.mp4'} poster={mediaBase+'/delivery.webp'} muted playsInline preload="metadata"
+        aria-label="Side-view footage of the pitcher beside a synchronized 3D anatomical model"
+        onTimeUpdate={e=>setTime(e.currentTarget.currentTime)} onSeeked={e=>setTime(e.currentTarget.currentTime)}
+        onPlay={()=>setPlaying(true)} onPause={()=>setPlaying(false)} onEnded={()=>setPlaying(false)} onError={()=>setFailed(true)} />
+        : <Image unoptimized preload sizes="(max-width:899px) 94vw, 57vw" className={styles.film} src="/media/home/motion-study.webp" width="1320" height="638" alt="A side-view study of a pitcher at foot plant beside the 3D anatomical rig estimated from the same pose." />}
+      {showReel && <div className={styles.transport}>
+        <button type="button" onClick={toggle} aria-label={playing?'Pause delivery replay':'Play delivery replay'}>{playing?<Pause/>:<Play/>}</button>
+        <input type="range" min="0" max={duration || 3.9} step={1/30} value={time} disabled={!duration}
+          aria-label="Seek through delivery" aria-valuetext={`${time.toFixed(2)} seconds`}
+          onChange={e=>{const t=Number(e.target.value);if(media.current) media.current.currentTime=t;setTime(t)}}/>
+        <span>{clock(time)} / {clock(Math.ceil(duration || 3.9))}</span>
+        <button ref={expandButton} type="button" aria-label={expanded?'Exit expanded replay':'Expand replay'} onClick={toggleTheater}><Maximize/></button>
+      </div>}
+    </dialog>
+    <div className={styles.metricBar}>
+      <span className={styles.exampleLabel}>Example metrics</span>
+      {examples.map(([metric,label,value])=><MetricHelp key={metric} metric={metric} icon={false} reading={value} className={styles.motionMetric}>
+        <span>{label}</span><strong>{value}</strong>
+      </MetricHelp>)}
+    </div>
   </figure>
 }

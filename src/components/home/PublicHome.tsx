@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
 import { PitchCard } from './PitchCard'
+import { PitchIntelligence } from './PitchIntelligence'
 import styles from './PublicHome.module.css'
 
 const resources = [
@@ -10,15 +11,18 @@ const resources = [
 ]
 
 export function PublicHome() {
+  const localReel = process.env.NODE_ENV === 'development' && !!process.env.PITCHNAV_LOCAL_MOTION_DIR
+  const mediaBase = localReel ? '/api/dev-motion' : process.env.PITCHNAV_APPROVED_MOTION_BASE
   return <div className={styles.home}>
     <section className={styles.hero}>
       <div className={styles.intro}>
         <p className={styles.byline}>Pitching analysis &amp; development</p>
-        <h1>A plan for your next bullpen.</h1>
-        <p className={styles.lede}>Send in a delivery from the side. A coach reviews the throw and gives you a drill to take back to the mound.</p>
-        <div className={styles.actions}><Link className="btn-action" href="/pricing">See analysis plans <ArrowRight size={17} aria-hidden="true"/></Link><Link href="/sample-report">See a sample report <span aria-hidden="true">↗</span></Link></div>
+        <div className={styles.headline}><h1><span>A plan for</span>{' '}<span>your next</span>{' '}<span>bullpen.</span></h1></div>
+        <div className={styles.details}><p className={styles.lede}>Send in a delivery from the side. A coach reviews the throw and gives you a drill to take back to the mound.</p>
+        <div className={styles.actions}><Link className="btn-action" href="/pricing">See analysis plans <ArrowRight size={17} aria-hidden="true"/></Link><Link href="/sample-report">See a sample report <span aria-hidden="true">↗</span></Link></div></div>
       </div>
-      <div className={styles.sample}><PitchCard/><p>Illustrative pitch data. <Link href="/arsenal">Explore the arsenal preview <span aria-hidden="true">↗</span></Link></p></div>
+      <PitchCard mediaBase={mediaBase} />
+      <PitchIntelligence />
     </section>
     <section className={styles.desk} aria-labelledby="work-title">
       <div><p className={styles.byline}>From the bullpen</p><h2 id="work-title">Before you throw.</h2><p>Start with the setup, see what a review covers, or find a plan that fits your season.</p></div>
