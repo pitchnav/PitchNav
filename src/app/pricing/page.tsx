@@ -20,7 +20,7 @@ const faqs = [
   },
   {
     q: 'How do assessments and annual billing work?',
-    a: 'Individual Complete includes one initial assessment. You can start Throwing without an assessment or purchase the standalone review separately. Annual plans are billed for one year up front and renew annually until canceled.',
+    a: 'Individual Complete includes one initial assessment. You can start Throwing without an assessment or purchase the standalone review separately. Monthly plans give you $5 off the first month. Annual plans are paid up front at 25% off twelve regular monthly payments and renew yearly until canceled.',
   },
 ]
 

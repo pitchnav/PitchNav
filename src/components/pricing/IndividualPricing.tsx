@@ -4,7 +4,7 @@ import { useState, type FocusEvent } from 'react'
 import Link from 'next/link'
 import { ArrowRight, Check } from 'lucide-react'
 import { checkoutPath } from '@/lib/individual-checkout'
-import { INDIVIDUAL_PLANS, STANDALONE_ASSESSMENT_CENTS, money, type Billing } from '@/lib/pricing-catalog'
+import { ANNUAL_DISCOUNT_PERCENT, INDIVIDUAL_PLANS, STANDALONE_ASSESSMENT_CENTS, money, type Billing } from '@/lib/pricing-catalog'
 import styles from './IndividualPricing.module.css'
 
 type Inclusion = 'throwing' | 'assessment' | 'metrics'
@@ -25,7 +25,6 @@ export function IndividualPricing() {
   const [hovered, setHovered] = useState<Inclusion | null>(null)
   const [focused, setFocused] = useState<Inclusion | null>(null)
   const active = hovered ?? focused
-  const unit = billing === 'annual' ? 'year' : 'month'
 
   function clearFocus(event: FocusEvent<HTMLElement>) {
     if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setFocused(null)
@@ -61,13 +60,12 @@ export function IndividualPricing() {
         const plan = INDIVIDUAL_PLANS[key]
         const complete = key === 'complete'
         const price = billing === 'annual' ? plan.annual : plan.firstMonth
-        const introductory = billing === 'monthly' && price < plan.monthly
         return <article key={key} className={styles.plan} data-recommended={complete} {...(key !== 'complete' ? sourceEvents(key) : {})}>
           {complete && <span className={styles.flag}>Best value</span>}
           <h3>{plan.name}</h3>
-          <p className={styles.price}><strong className="price-figure">{money(price).replace(/\.00$/, '')}</strong> <span>/ {unit}</span></p>
-          <p className={styles.terms}>{introductory ? <><s>{money(plan.monthly)}</s> · {money(price)} for the first month. Renews at {money(plan.monthly)}/month.</>
-            : <>Billed {billing === 'annual' ? 'annually' : 'monthly'} until canceled.</>}</p>
+          <p className={styles.price}><strong className="price-figure">{money(price).replace(/\.00$/, '')}</strong> <span>{billing === 'annual' ? '/ year' : 'first month'}</span></p>
+          <p className={styles.terms}>{billing === 'monthly' ? <><span className="sr-only">Regular monthly price </span><s>{money(plan.monthly)}</s> · {money(plan.monthly - price).replace(/\.00$/, '')} off month one. Renews at {money(plan.monthly)}/month until canceled.</>
+            : <><span className="sr-only">Twelve regular monthly payments </span><s>{money(plan.monthly * 12)}</s> · {ANNUAL_DISCOUNT_PERCENT}% off twelve regular monthly payments. Billed annually until canceled.</>}</p>
           {key === 'metrics' && <p className={styles.status}>In development</p>}
           <ul className={styles.features}>
             {complete ? completeFeatures.map(({ source, text }) => <li key={text}

@@ -16,13 +16,13 @@ describe('individual checkout disclosures', () => {
   })
   afterEach(() => { process.env = oldEnvironment })
   test('reviews the exact annual first payment and renewal before linking to the processor', async () => {
-    process.env.STRIPE_CHECKOUT_V2_COMPLETE_ANNUAL_URL = 'https://buy.stripe.com/test_annual'
+    process.env.STRIPE_CHECKOUT_V3_COMPLETE_ANNUAL_URL = 'https://buy.stripe.com/test_annual'
     const html = await page('complete', 'annual')
-    for (const term of ['$379.99', 'One pitching assessment is included', 'until canceled', '/billing', 'https://buy.stripe.com/test_annual']) expect(html).toContain(term)
+    for (const term of ['$405.00', 'One pitching assessment is included', 'until canceled', '/billing', 'https://buy.stripe.com/test_annual']) expect(html).toContain(term)
   })
   test('no monthly fallback when an annual link is missing', async () => {
-    process.env.STRIPE_CHECKOUT_V2_THROWING_MONTHLY_URL = 'https://buy.stripe.com/test_monthly'
-    delete process.env.STRIPE_CHECKOUT_V2_THROWING_ANNUAL_URL
+    process.env.STRIPE_CHECKOUT_V3_THROWING_MONTHLY_URL = 'https://buy.stripe.com/test_monthly'
+    delete process.env.STRIPE_CHECKOUT_V3_THROWING_ANNUAL_URL
     expect(await page('throwing', 'annual')).not.toContain('buy.stripe.com')
   })
   test('payments remain unavailable until fulfillment is enabled', async () => {

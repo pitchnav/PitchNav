@@ -20,7 +20,7 @@ test.each([{...base,programPlan:'throwing'},{...base,billing:'weekly'},{...base,
 })
 test('annual quote uses the annual total and no monthly promotion', async () => {
   expect((await POST(request({...base,billing:'annual'}))).status).toBe(200)
-  expect(send.mock.calls[0][0].html).toContain('$8,049.60')
+  expect(send.mock.calls[0][0].html).toContain('$7,703.00')
 })
 test('email provider error is not reported as success', async () => {
   send.mockResolvedValue({error:{message:'unavailable'}})

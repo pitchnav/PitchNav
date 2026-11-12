@@ -2,12 +2,12 @@ import { checkoutPath, getCheckoutOption, configuredCheckoutUrl } from './indivi
 
 describe('individual checkout routing', () => {
   test.each([
-    ['throwing', 'monthly', 2500, 'V2_THROWING_MONTHLY'],
-    ['throwing', 'annual', 23999, 'V2_THROWING_ANNUAL'],
-    ['complete', 'monthly', 4500, 'V2_COMPLETE_MONTHLY'],
-    ['complete', 'annual', 37999, 'V2_COMPLETE_ANNUAL'],
+    ['throwing', 'monthly', 2000, 'V3_THROWING_MONTHLY'],
+    ['throwing', 'annual', 22500, 'V3_THROWING_ANNUAL'],
+    ['complete', 'monthly', 4000, 'V3_COMPLETE_MONTHLY'],
+    ['complete', 'annual', 40500, 'V3_COMPLETE_ANNUAL'],
     ['metrics', 'monthly', 1999, 'METRICS_MONTHLY'],
-    ['metrics', 'annual', 23999, 'METRICS_ANNUAL'],
+    ['metrics', 'annual', 22491, 'V3_METRICS_ANNUAL'],
     ['assessment', 'one-time', 2000, 'V2_ASSESSMENT'],
   ])('%s / %s keeps its exact checkout and initial total', (plan, billing, total, key) => {
     const option = getCheckoutOption(plan as string, billing as string)!

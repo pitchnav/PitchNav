@@ -21,9 +21,9 @@ export function ProgramQuote({ players, plan, billing }: { players: string; plan
       </dl>
     </div>}
     <details className="text-sm text-slate-300"><summary className="cursor-pointer font-semibold">Per-player rates and how discounts work</summary>
-      <div className="mt-3 overflow-x-auto"><table className="w-full text-left text-sm"><caption className="sr-only">Graduated per-player USD prices for {plan}</caption><thead><tr>{['Player positions','First month','Then monthly','Annual'].map(x=><th className="p-2" key={x} scope="col">{x}</th>)}</tr></thead><tbody>{PROGRAM_TIERS.map(t=><tr key={t.label} className="border-t border-surface-border"><th scope="row" className="p-2 font-normal">{t.label}</th><td className="p-2">{money(t[plan].monthly-500)}</td><td className="p-2">{money(t[plan].monthly)}</td><td className="p-2">{money(t[plan].annual)}</td></tr>)}</tbody></table></div>
+      <div className="mt-3 overflow-x-auto"><table className="w-full text-left text-sm"><caption className="sr-only">Graduated per-player USD prices for {plan}</caption><thead><tr>{['Player positions','First month','Then monthly','Annual'].map(x=><th className="p-2" key={x} scope="col">{x}</th>)}</tr></thead><tbody>{PROGRAM_TIERS.map(t=><tr key={t.label} className="border-t border-surface-border"><th scope="row" className="p-2 font-normal">{t.label}</th><td className="p-2">{money(t[plan].firstMonth)}</td><td className="p-2">{money(t[plan].monthly)}</td><td className="p-2">{money(t[plan].annual)}</td></tr>)}</tbody></table></div>
       <p className="mt-3">Discounts apply to additional players in each band. The first nine keep their rate; players 10–24 receive the next rate. Complete adds $49.99 per newly assessed athlete, once. This quote assumes all players are new. Metrics-only has no assessment fee.</p>
     </details>
-    <p className="text-xs text-slate-400">USD before tax. Annual subscriptions are paid upfront and do not combine with the first-month offer. Internal quote only. No payment is collected. Pitch Tracking is a beta in development.</p>
+    <p className="text-xs text-slate-400">USD before tax. Annual subscriptions are paid upfront at 25% off twelve regular monthly payments. The first-month offer applies to monthly billing. Internal quote only. No payment is collected. Pitch Tracking is a beta in development.</p>
   </form>
 }

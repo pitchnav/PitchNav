@@ -10,14 +10,14 @@ request. The route does not create Stripe products or change existing membership
 | Option | First checkout | Renewal | Assessment included in first checkout |
 |---|---:|---:|---:|
 | Standalone assessment | $20.00 | None | — |
-| Throwing monthly | $25.00 | $25.00/month | None |
-| Throwing annual | $239.99 | $239.99/year | None |
-| Complete monthly | $45.00 | $45.00/month | Included |
-| Complete annual | $379.99 | $379.99/year | Included |
+| Throwing monthly | $20.00 | $25.00/month | None |
+| Throwing annual | $225.00 | $225.00/year | None |
+| Complete monthly | $40.00 | $45.00/month | Included |
+| Complete annual | $405.00 | $405.00/year | Included |
 | Tracking monthly | $19.99 | $24.99/month | None |
-| Tracking annual | $239.99 | $239.99/year | None |
+| Tracking annual | $224.91 | $224.91/year | None |
 
-Only standalone monthly Pitch Tracking has a $5 first-invoice discount. Individual Complete includes one assessment at no extra charge. The standalone assessment is a one-time purchase. Prices are before tax; keep checkout disclosures consistent.
+Every monthly subscription has a $5 discount on the first invoice only. Each annual subscription costs 75% of twelve regular monthly payments and renews yearly at that price. Individual Complete includes one assessment at no extra charge. The standalone assessment is a one-time purchase. Prices are before tax; keep checkout disclosures consistent.
 
 ## Required before enabling sales
 
@@ -32,7 +32,7 @@ Only standalone monthly Pitch Tracking has a $5 first-invoice discount. Individu
    account, create the assessment work item when needed, update subscription
    entitlements, and keep paid reports accessible after cancellation. Do not grant
    access based on a success URL or email alone.
-3. Supply the seven server-only `STRIPE_CHECKOUT_*_URL` variables from `.env.example`. The V2 assessment and coaching keys must point to links matching this catalog.
+3. Supply the seven server-only `STRIPE_CHECKOUT_*_URL` variables from `.env.example`. The V3 coaching and annual tracking links must use the updated prices. The existing V2 assessment and monthly tracking links retain their prices.
    Use only real `https://buy.stripe.com/...` destinations. Test each pricing card
    and the development/tracking page buttons against the correct checkout.
 4. After price AND fulfillment verification, set `INDIVIDUAL_CHECKOUT_READY=true`.

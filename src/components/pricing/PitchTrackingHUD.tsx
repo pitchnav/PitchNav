@@ -8,7 +8,7 @@ export function PitchTrackingHUD() {
       <div className="mt-6 flex justify-between text-xs text-slate-400"><span>BULLPEN · SAMPLE PITCH</span><span>FASTBALL</span></div>
       <div className="mt-4 rounded-2xl border border-surface-border bg-navy-900 p-5">
         <p className="text-xs font-semibold tracking-widest text-slate-400">VELOCITY · EXAMPLE ONLY</p>
-        <p className="mt-2 flex items-baseline gap-2"><span className="text-6xl font-black tracking-tight text-white">88.1</span><span className="text-sm text-slate-400">MPH</span></p>
+        <p className="mt-2 flex items-baseline gap-2"><span className="price-figure text-6xl text-white">88.1</span><span className="text-sm text-slate-400">MPH</span></p>
         <p className="mt-2 text-xs text-slate-400">Sample number · not a measured pitch</p>
       </div>
       <div className="mt-4 rounded-2xl border border-surface-border p-4">
@@ -28,7 +28,7 @@ export function PitchTrackingHUD() {
           { label: 'Horizontal break', value: '11.4', unit: 'in · arm-side' },
           { label: 'Release extension', value: '6.4', unit: 'ft' },
           { label: 'Stuff+', value: '105', unit: 'sample score' },
-        ].map(({label,value,unit})=><div key={label} className={`rounded-lg bg-navy-900 p-3 ${label==='Stuff+'?'col-span-2':''}`}><p className="text-xs text-slate-400">{label}</p><p className="mt-1 text-lg font-bold text-white">{value} <span className="text-xs font-normal text-slate-400">{unit}</span></p></div>)}
+        ].map(({label,value,unit})=><div key={label} className={`rounded-lg bg-navy-900 p-3 ${label==='Stuff+'?'col-span-2':''}`}><p className="text-xs font-bold text-slate-400">{label}</p><p className="mt-1 price-figure text-lg text-white">{value} <span className="text-xs font-normal text-slate-400">{unit}</span></p></div>)}
       </div>
       <div className="mt-4 flex items-center justify-between gap-2 text-xs text-slate-400"><span className="flex items-center gap-1"><Play className="h-3 w-3" /> Replay after processing</span><Database className="h-4 w-4" aria-hidden="true" /></div>
     </div>

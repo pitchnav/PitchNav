@@ -26,7 +26,7 @@ export default function PitchMetricsPage() {
           <p className="price-figure mt-5 text-5xl text-white">{money(price.firstMonth)}</p><p className="mt-2 text-slate-300">first month, then {money(price.monthly)}/month</p>
           <div className="my-6 border-t border-surface-border" />
           <p className="price-figure text-2xl text-white">{money(price.annual)}<span className="text-sm font-normal text-slate-400"> / year, paid upfront</span></p>
-          <p className="mt-4 text-sm text-slate-400">No assessment fee. Pay yearly or take the first-month offer. Prices are USD before tax. Subscriptions open when tracking is ready; no payment is taken during testing.</p>
+          <p className="mt-4 text-sm text-slate-400">No assessment fee. Annual billing saves 25% compared with twelve regular monthly payments. Prices are USD before tax. Subscriptions open when tracking is ready; no payment is taken during testing.</p>
           <Link className="btn-secondary mt-5" href={checkoutPath('metrics', 'annual')}>View annual plan details</Link><p className="mt-6 text-sm text-slate-300">Included with Complete Development when it launches. No extra tracking subscription.</p>
         </div>
       </section>

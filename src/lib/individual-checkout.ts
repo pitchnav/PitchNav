@@ -18,7 +18,7 @@ export function getCheckoutOption(plan: string | undefined, billing: string | un
   return { plan, billing, name: price.name,
     initialTotal: (billing === 'annual' ? price.annual : price.firstMonth) + price.assessment,
     assessment: price.assessment, recurring: billing === 'annual' ? price.annual : price.monthly,
-    environmentKey: `STRIPE_CHECKOUT_${plan === 'metrics' ? '' : 'V2_'}${plan.toUpperCase()}_${billing.toUpperCase()}_URL` }
+    environmentKey: `STRIPE_CHECKOUT_${plan === 'metrics' && billing === 'monthly' ? '' : 'V3_'}${plan.toUpperCase()}_${billing.toUpperCase()}_URL` }
 }
 
 // Server-owned configuration only. Never accept a destination from query params.
