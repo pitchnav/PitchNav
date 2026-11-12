@@ -151,7 +151,7 @@ export function CameraAlignmentStudio() {
   return <section className="card mb-10 overflow-hidden">
     <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
       <div><p className="text-xs font-bold uppercase tracking-[0.2em] text-electric-blue-light">Live alignment check</p><h2 className="mt-1 text-2xl font-black text-white">Line up the complete delivery</h2><p className="mt-2 max-w-2xl text-sm text-slate-400">Use this preview before recording. It guides positioning but cannot automatically guarantee that the hand or release remains visible.</p></div>
-      <button type="button" onClick={startCamera} className="btn-primary shrink-0"><Camera className="h-4 w-4" /> {active ? 'Restart camera' : 'Open camera'}</button>
+      <button type="button" onClick={startCamera} className="btn-action shrink-0"><Camera className="h-4 w-4" /> {active ? 'Restart camera' : 'Open camera'}</button>
     </div>
 
     <div className="mt-6 grid gap-6 lg:grid-cols-[1.5fr_1fr]">

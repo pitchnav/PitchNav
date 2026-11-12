@@ -28,8 +28,8 @@ export default function PricingPage() {
   return (
     <div className="min-h-screen bg-navy-950 pt-24 pb-16">
       <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
-        <header className="mb-10 max-w-3xl border-b border-surface-border pb-8">
-          <h1 className="text-4xl font-black tracking-tight text-white sm:text-5xl">Plans and pricing</h1>
+        <header className="page-intro">
+          <h1 className="page-title text-white">Plans and pricing</h1>
           <p className="mt-4 max-w-2xl text-lg leading-7 text-slate-300">Compare your first payment and renewal for an individual plan. For a roster quote, <a className="text-electric-blue-light underline" href="#teams">see team pricing</a>.</p>
         </header>
 

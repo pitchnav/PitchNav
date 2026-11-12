@@ -177,7 +177,7 @@ export function StepPitching({ initialData, athleteProfileId, onComplete, onBack
 
       <div className="flex gap-3">
         <button type="button" onClick={onBack} className="btn-secondary flex-1 justify-center py-3">← Back</button>
-        <button type="submit" disabled={loading} className="btn-primary flex-1 justify-center py-3">
+        <button type="submit" disabled={loading} className="btn-action flex-1 justify-center py-3">
           {loading ? 'Saving...' : 'Continue to Health Screening →'}
         </button>
       </div>

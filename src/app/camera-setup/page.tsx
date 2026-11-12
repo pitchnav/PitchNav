@@ -76,14 +76,14 @@ function CameraSetupContent() {
     <div className="min-h-screen bg-navy-950 pt-24 pb-16">
       <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-black tracking-tight text-white sm:text-5xl">
+        <header className="page-intro">
+          <h1 className="page-title text-white">
             Film Your Mechanics Assessment
           </h1>
-          <p className="mt-4 text-lg text-slate-400 max-w-2xl mx-auto">
+          <p>
             Film one complete delivery from your throwing-arm side. Keep your feet and throwing hand in frame through the finish. We can review your mechanics without knowing where the pitch landed. This guide is for mechanics reviews; Pitch Tracking uses a separate setup.
           </p>
-        </div>
+        </header>
 
         <section className="card mb-10 overflow-hidden border-electric-blue/30">
           <div className="mb-5"><p className="text-xs font-bold uppercase tracking-[0.2em] text-electric-blue-light">Required recording mode</p><h2 className="mt-1 text-2xl font-black text-white">Use Slo-Mo for Your Mechanics Video</h2><p className="mt-2 text-sm text-slate-400">On iPhone, set Settings → Camera → Record Slo-mo to 1080p at 240 FPS when available. Then open the Camera app and swipe to <strong className="text-white">SLO-MO</strong> before recording. Choosing a slower playback speed afterward does not create high-frame-rate footage.</p></div>

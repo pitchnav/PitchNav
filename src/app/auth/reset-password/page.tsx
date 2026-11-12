@@ -72,7 +72,7 @@ export default function ResetPasswordPage() {
               router.push('/dashboard')
               router.refresh()
             }}
-            className="btn-primary w-full justify-center py-3"
+            className="btn-action w-full justify-center py-3"
           >
             Go to Dashboard
             <ArrowRight className="h-4 w-4" />
@@ -90,7 +90,7 @@ export default function ResetPasswordPage() {
           <p className="text-slate-400 mb-8">
             This password reset link is no longer valid. Please request a new one.
           </p>
-          <Link href="/forgot-password" className="btn-primary w-full justify-center py-3">
+          <Link href="/forgot-password" className="btn-action w-full justify-center py-3">
             Request New Link
           </Link>
         </div>
@@ -101,12 +101,8 @@ export default function ResetPasswordPage() {
   return (
     <div className="min-h-screen bg-navy-950 pt-24 pb-16 flex items-center justify-center px-4">
       <div className="w-full max-w-md">
-        <div className="text-center mb-10">
-          <Link href="/" className="inline-block mb-6">
-            <span className="text-3xl font-black text-white">Pitch</span>
-            <span className="text-3xl font-black italic text-electric-blue-light">Nav</span>
-          </Link>
-          <h1 className="text-3xl font-black text-white">Set a New Password</h1>
+        <div className="page-intro">
+          <h1 className="page-title text-white">Set a New Password</h1>
           <p className="mt-2 text-slate-400">Choose a new password for your account.</p>
         </div>
 
@@ -159,7 +155,7 @@ export default function ResetPasswordPage() {
             <button
               type="submit"
               disabled={loading || hasRecoverySession === null}
-              className="btn-primary w-full justify-center py-3"
+              className="btn-action w-full justify-center py-3"
             >
               {loading ? 'Updating...' : 'Update Password'}
               {!loading && <ArrowRight className="h-4 w-4" />}

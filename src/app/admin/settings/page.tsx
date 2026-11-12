@@ -68,7 +68,7 @@ export default function AdminSettingsPage() {
     <div className="max-w-3xl mx-auto">
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-3xl font-black text-white">Settings</h1>
-        <button onClick={saveAll} disabled={saving} className="btn-primary">
+        <button onClick={saveAll} disabled={saving} className="btn-action">
           <Save className="h-4 w-4" />
           {saved ? '✓ Saved!' : saving ? 'Saving…' : 'Save All'}
         </button>

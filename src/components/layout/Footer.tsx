@@ -48,9 +48,9 @@ export function Footer() {
             </p>
 
             {/* Safety disclaimer */}
-            <div className="mt-6 rounded-lg border border-yellow-500/20 bg-yellow-500/5 p-4">
-              <p className="text-xs text-yellow-400/80 leading-relaxed">
-                <strong className="text-yellow-400">Safety Notice:</strong> Pitch Nav provides
+            <div className="mt-6 border-l-2 border-brand-line pl-4">
+              <p className="text-xs text-brand-muted leading-relaxed">
+                <strong className="text-white">Safety Notice:</strong> Pitch Nav provides
                 educational baseball training information. It does not diagnose injuries,
                 calculate clinical injury risk, or guarantee velocity increases. Athletes
                 experiencing pain should stop throwing and consult a medical professional.
@@ -71,7 +71,7 @@ export function Footer() {
 
           {/* Product links */}
           <div>
-            <h3 className="text-xs font-semibold uppercase tracking-widest text-slate-400 mb-4">
+            <h3 className="text-base font-bold text-brand-blue mb-4">
               Product
             </h3>
             <ul className="space-y-3">
@@ -90,7 +90,7 @@ export function Footer() {
 
           {/* Account links */}
           <div>
-            <h3 className="text-xs font-semibold uppercase tracking-widest text-slate-400 mb-4">
+            <h3 className="text-base font-bold text-brand-blue mb-4">
               Account
             </h3>
             <ul className="space-y-3">
@@ -109,7 +109,7 @@ export function Footer() {
 
           {/* Legal */}
           <div>
-            <h3 className="text-xs font-semibold uppercase tracking-widest text-slate-400 mb-4">
+            <h3 className="text-base font-bold text-brand-blue mb-4">
               Legal
             </h3>
             <ul className="space-y-3">

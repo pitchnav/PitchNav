@@ -11,10 +11,10 @@ export default function DisclaimerPage() {
     <div className="min-h-screen bg-navy-950 pt-24 pb-16">
       <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
         <div className="mb-12">
-          <h1 className="text-4xl font-black tracking-tight text-white mb-4">
+          <h1 className="page-title text-white">
             Training & Medical Disclaimer
           </h1>
-          <p className="text-slate-400 text-sm">Last updated: [DATE — replace before launch]</p>
+          <p className="mt-4 text-brand-muted text-sm">Business and legal review in progress</p>
         </div>
 
         <div className="rounded-xl border border-yellow-500/30 bg-yellow-500/10 p-6 mb-10">

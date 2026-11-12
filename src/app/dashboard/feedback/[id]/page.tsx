@@ -97,7 +97,7 @@ export default async function FeedbackReportPage({ params }: { params: Promise<{
     <div className="mx-auto w-full max-w-6xl min-w-0 space-y-6 overflow-x-hidden px-3 sm:space-y-8 sm:px-4 animate-fade-in">
       <Link href="/dashboard#feedback-plan" className="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-white"><ArrowLeft className="h-4 w-4" /> Back to dashboard</Link>
 
-      <section className="overflow-hidden rounded-2xl border border-electric-blue/25 bg-gradient-to-br from-navy-800 to-navy-950 p-6 sm:p-8">
+      <section className="card border-t-4 border-t-brand-blue sm:p-8">
         <p className="text-xs font-bold uppercase tracking-[0.22em] text-electric-blue-light">Pitch Nav video review</p>
         <div className="mt-3 flex flex-col justify-between gap-6 md:flex-row md:items-end">
           <div><h1 className="text-3xl font-black text-white sm:text-5xl">Feedback & Development Plan</h1><p className="mt-2 text-slate-400">{analysis.title}</p></div>

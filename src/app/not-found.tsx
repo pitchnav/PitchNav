@@ -14,7 +14,7 @@ export default function NotFound() {
         might be incorrect.
       </p>
       <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-        <Link href="/" className="btn-primary justify-center">
+        <Link href="/" className="btn-action justify-center">
           Back to Home <ArrowRight className="h-4 w-4" />
         </Link>
         <Link href="/dashboard" className="btn-secondary justify-center">

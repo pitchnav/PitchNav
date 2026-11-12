@@ -236,14 +236,14 @@ export default async function DashboardPage() {
       {/* Empty state */}
       {!orders?.length && !motionAnalyses?.length && (
         <div className="card animate-fade-in py-16 text-center">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-electric-blue/10 shadow-glow">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-electric-blue/10">
             <Video className="h-6 w-6 text-electric-blue-light" aria-hidden="true" />
           </div>
           <h2 className="text-xl font-bold text-white mb-2">No analyses yet</h2>
           <p className="text-slate-400 mb-6 max-w-sm mx-auto">
             Start your first pitching analysis to begin understanding your delivery and developing your velocity.
           </p>
-          <Link href="/start-analysis" className="btn-primary group">
+          <Link href="/start-analysis" className="btn-action group">
             <Plus className="h-4 w-4" /> Start My First Analysis
             <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
           </Link>
@@ -257,7 +257,7 @@ export default async function DashboardPage() {
             <h3 className="font-semibold text-white">Ready for a follow-up?</h3>
             <p className="text-sm text-slate-400">Track your development with another analysis.</p>
           </div>
-          <Link href="/start-analysis" className="btn-primary group flex-shrink-0">
+          <Link href="/start-analysis" className="btn-action group flex-shrink-0">
             <Plus className="h-4 w-4" /> New Analysis
             <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
           </Link>

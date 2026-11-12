@@ -94,7 +94,7 @@ export function VideoRecorder({ onUse, disabled = false, purpose }: { onUse: (fi
     <div className="flex flex-wrap gap-3">
       {state === 'idle' && <button type="button" disabled={disabled} onClick={openCamera} className="btn-primary">Open camera</button>}
       {state === 'opening' && <p role="status">Opening camera…</p>}
-      {state === 'ready' && <button type="button" disabled={disabled} onClick={start} className="btn-primary">Start recording</button>}
+      {state === 'ready' && <button type="button" disabled={disabled} onClick={start} className="btn-action">Start recording</button>}
       {state === 'recording' && <button type="button" onClick={() => recorder.current?.stop()} className="btn-primary">Stop recording</button>}
       {state === 'review' && <><button type="button" disabled={disabled} className="btn-primary" onClick={async () => { if (!file) return; setState('using'); try { await onUse(file, { normalSpeed: true, cameraFps: cameraFps.current }); reset(); if (mounted.current) { setFile(null); setState('idle') } } catch { if (mounted.current) { setError('Could not use this recording. Try again.'); setState('review') } } }}>Use recording</button><button type="button" onClick={openCamera} className="btn-secondary">Record again</button></>}
       {state === 'using' && <p role="status">Preparing your recording…</p>}

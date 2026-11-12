@@ -231,7 +231,7 @@ export function StepContact({ canSaveOptionalPermissions, initialData, userId, e
         </div>
       )}
 
-      <button type="submit" disabled={loading} className="btn-primary w-full justify-center py-3">
+      <button type="submit" disabled={loading} className="btn-action w-full justify-center py-3">
         {loading ? 'Saving...' : 'Continue to Physical Profile →'}
       </button>
     </form>

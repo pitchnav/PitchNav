@@ -16,16 +16,16 @@ export default function PitchMetricsPage() {
       <section className="grid items-center gap-10 lg:grid-cols-[1.3fr_1fr]">
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.2em] text-electric-blue-light">Pitch Nav Tracking · Single-camera pitching system</p>
-          <h1 className="mt-5 text-4xl font-black tracking-tight text-white sm:text-6xl">Your bullpen.<br />Tracked with your iPhone.</h1>
+          <h1 className="mt-5 page-title text-white">Your bullpen.<br />Tracked with your iPhone.</h1>
           <p className="mt-6 max-w-xl text-lg text-slate-300">We’re testing a way to film from behind the mound and see where each pitch crossed, how fast it traveled and how it got there.</p>
           <p className="mt-4 text-sm text-slate-400">Pitch Tracking is in testing and is not open to the public yet. We’re checking accuracy before launch.</p>
-          <div className="mt-8 flex flex-wrap gap-3"><Link className="btn-primary" href={checkoutPath('metrics', 'monthly')}>View monthly plan details <ArrowRight className="h-4 w-4" /></Link><Link className="btn-secondary" href="/pricing#teams">For teams &amp; programs</Link></div>
+          <div className="mt-8 flex flex-wrap gap-3"><Link className="btn-action" href={checkoutPath('metrics', 'monthly')}>View monthly plan details <ArrowRight className="h-4 w-4" /></Link><Link className="btn-secondary" href="/pricing#teams">For teams &amp; programs</Link></div>
         </div>
         <div className="card border-electric-blue/30">
           <p className="text-xs font-semibold uppercase tracking-widest text-electric-blue-light">Standalone launch pricing</p>
-          <p className="mt-5 text-5xl font-black text-white">{money(price.firstMonth)}</p><p className="mt-2 text-slate-300">first month, then {money(price.monthly)}/month</p>
+          <p className="price-figure mt-5 text-5xl text-white">{money(price.firstMonth)}</p><p className="mt-2 text-slate-300">first month, then {money(price.monthly)}/month</p>
           <div className="my-6 border-t border-surface-border" />
-          <p className="text-2xl font-bold text-white">{money(price.annual)}<span className="text-sm font-normal text-slate-400"> / year, paid upfront</span></p>
+          <p className="price-figure text-2xl text-white">{money(price.annual)}<span className="text-sm font-normal text-slate-400"> / year, paid upfront</span></p>
           <p className="mt-4 text-sm text-slate-400">No assessment fee. Pay yearly or take the first-month offer. Prices are USD before tax. Subscriptions open when tracking is ready; no payment is taken during testing.</p>
           <Link className="btn-secondary mt-5" href={checkoutPath('metrics', 'annual')}>View annual plan details</Link><p className="mt-6 text-sm text-slate-300">Included with Complete Development when it launches. No extra tracking subscription.</p>
         </div>

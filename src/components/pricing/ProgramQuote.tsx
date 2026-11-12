@@ -13,8 +13,8 @@ export function ProgramQuote({ players, plan, billing }: { players: string; plan
     <button className="btn-primary" type="submit">Calculate program quote</button>
     {!quote ? <p role="alert" className="text-red-400">Enter a whole number of players from 1 to 500.</p> : <div aria-live="polite" className="rounded-xl border border-electric-blue/30 bg-electric-blue/5 p-5">
       <div className="grid gap-5 sm:grid-cols-2">
-        <div><p className="text-sm text-slate-300">Estimated signup total</p><p className="mt-1 text-3xl font-black text-white tabular-nums">{money(quote.dueNow)}</p></div>
-        <div><p className="text-sm text-slate-300">{billing === 'annual' ? 'Annual renewal' : 'Monthly from month 2'}</p><p className="mt-1 text-3xl font-black text-white tabular-nums">{money(quote.recurring)}</p></div>
+        <div><p className="text-sm text-slate-300">Estimated signup total</p><p className="price-figure mt-1 text-3xl text-white">{money(quote.dueNow)}</p></div>
+        <div><p className="text-sm text-slate-300">{billing === 'annual' ? 'Annual renewal' : 'Monthly from month 2'}</p><p className="price-figure mt-1 text-3xl text-white">{money(quote.recurring)}</p></div>
       </div>
       <dl className="mt-5 space-y-2 text-sm text-slate-300">
         {[[billing === 'annual' ? 'Annual subscription' : 'Discounted first month', quote.subscription], ['One-time assessments',quote.assessment], ['First-year total including assessments',quote.firstYear], ['Annual savings vs. monthly introductory pricing',quote.annualSavings]].map(([label,value]) => <div key={label} className="flex flex-wrap justify-between gap-2"><dt>{label}</dt><dd className="font-semibold tabular-nums">{money(Number(value))}</dd></div>)}

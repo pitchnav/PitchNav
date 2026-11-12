@@ -42,12 +42,8 @@ export default function ForgotPasswordPage() {
   return (
     <div className="min-h-screen bg-navy-950 pt-24 pb-16 flex items-center justify-center px-4">
       <div className="w-full max-w-md">
-        <div className="text-center mb-10">
-          <Link href="/" className="inline-block mb-6">
-            <span className="text-3xl font-black text-white">Pitch</span>
-            <span className="text-3xl font-black italic text-electric-blue-light">Nav</span>
-          </Link>
-          <h1 className="text-3xl font-black text-white">Reset Password</h1>
+        <div className="page-intro">
+          <h1 className="page-title text-white">Reset Password</h1>
           <p className="mt-2 text-slate-400">
             {submitted
               ? 'Check your email for a reset link.'
@@ -92,7 +88,7 @@ export default function ForgotPasswordPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="btn-primary w-full justify-center py-3"
+                className="btn-action w-full justify-center py-3"
               >
                 {loading ? 'Sending...' : 'Send Reset Link'}
               </button>

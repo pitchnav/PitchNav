@@ -25,19 +25,19 @@ export default function Catalog() {
     <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
       <div className="flex items-center gap-4">
         <h2 id="collection-title" className="text-3xl font-black tracking-tight">Training essentials</h2>
-        <span aria-live="polite" className="border-l border-slate-300 pl-4 text-sm text-slate-600">{visible.length} {visible.length === 1 ? 'product' : 'products'}</span>
+        <span aria-live="polite" className="border-l border-slate-300 pl-4 text-sm text-brand-paperText">{visible.length} {visible.length === 1 ? 'product' : 'products'}</span>
       </div>
       <div className="flex flex-wrap gap-2" role="group" aria-label="Product category">
         {['All Gear', 'Throwing', 'Capture', 'Apparel', 'Everyday'].map(item =>
           <button key={item} type="button" aria-pressed={category === item} onClick={() => setCategory(item)}
-            className="rounded-full bg-slate-200 px-4 py-2 text-sm font-semibold aria-pressed:bg-blue-600 aria-pressed:text-white">{item}</button>)}
+            className="min-h-11 rounded border border-brand-paperLine px-4 py-2 text-sm font-semibold aria-pressed:border-brand-ink aria-pressed:bg-brand-ink aria-pressed:text-white">{item}</button>)}
       </div>
       <select aria-label="Sort products" value={sort} onChange={e => setSort(e.target.value)}
-        className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold">
+        className="min-h-11 rounded border border-brand-paperLine bg-white px-3 py-2 text-sm font-semibold">
         <option value="featured">Collection order</option><option value="low">Price: Low to high</option><option value="high">Price: High to low</option>
       </select>
     </div>
-    <p className="mb-4 text-sm text-slate-600">Product mockups and proposed USD prices. Gear orders are closed.</p>
+    <p className="mb-4 text-sm text-brand-paperText">Product mockups and proposed USD prices. Gear orders are closed.</p>
     <ul className="grid grid-cols-1 gap-4 min-[480px]:grid-cols-2 lg:grid-cols-4">
       {visible.map(product => <li key={product.image} id={product.image} style={{ scrollMarginTop: 96 }} className={styles.product}>
         <div className="relative aspect-[5/4] overflow-hidden bg-slate-100">
@@ -46,8 +46,8 @@ export default function Catalog() {
         </div>
         <div className="p-4">
           <h3 className="text-lg font-bold leading-tight tracking-tight">{product.name}</h3>
-          <p className="mt-1 text-sm text-slate-600">{product.variant}</p>
-          <p className="mt-4 text-lg font-bold tabular-nums">${product.price.toFixed(2)}</p>
+          <p className="mt-1 text-sm text-brand-paperText">{product.variant}</p>
+          <p className="price-figure mt-4 text-lg">${product.price.toFixed(2)}</p>
         </div>
       </li>)}
     </ul>

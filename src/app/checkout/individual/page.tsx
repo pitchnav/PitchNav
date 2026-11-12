@@ -28,7 +28,7 @@ export default async function IndividualCheckout({ searchParams }: {
       <h1 className="mt-4 text-3xl font-black text-white">{option.name}</h1>
       <p className="mt-3 text-slate-300">{option.billing === 'one-time' ? 'One-time assessment' : option.billing === 'annual' ? 'Annual subscription · paid upfront' : 'Monthly subscription'}</p>
       <h2 className="mt-6 text-sm font-semibold text-slate-300">First payment before tax</h2>
-      <p className="text-4xl font-black text-white">{money(option.initialTotal)}</p>
+      <p className="price-figure text-4xl text-white">{money(option.initialTotal)}</p>
       {option.assessment > 0 && <p className="mt-2 text-sm text-slate-300">Includes a one-time {money(option.assessment)} initial assessment.</p>}
       <p className="mt-2 text-sm text-slate-300">{option.recurring > 0 ? `Renews automatically at ${money(option.recurring)} per ${period} until canceled.` : 'No recurring charge.'}</p>
       <Link className="mt-3 inline-block text-sm text-electric-blue-light underline" href="/billing">Cancellation and refunds</Link>

@@ -50,12 +50,12 @@ function ContactForm() {
   return (
     <div className="min-h-screen bg-navy-950 pt-24 pb-16">
       <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16">
-          <h1 className="text-4xl font-black tracking-tight text-white sm:text-5xl">Contact Us</h1>
-          <p className="mt-4 text-lg text-slate-400 max-w-xl mx-auto">
+        <header className="page-intro">
+          <h1 className="page-title text-white">Contact Us</h1>
+          <p>
             Questions about your plan, assessment, or account? Send us a message.
           </p>
-        </div>
+        </header>
 
         {/* Emergency notice */}
         <div className="mb-10 rounded-xl border border-red-500/20 bg-red-500/5 p-5">
@@ -196,7 +196,7 @@ function ContactForm() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="btn-primary w-full justify-center py-3"
+                  className="btn-action w-full justify-center py-3"
                 >
                   {submitting ? 'Sending...' : 'Send Message'}
                 </button>

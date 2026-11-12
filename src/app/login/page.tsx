@@ -55,12 +55,8 @@ function LoginContent() {
   return (
     <div className="min-h-screen bg-navy-950 pt-24 pb-16 flex items-center justify-center px-4">
       <div className="w-full max-w-md">
-        <div className="text-center mb-10">
-          <Link href="/" className="inline-block mb-6">
-            <span className="text-3xl font-black text-white">Pitch</span>
-            <span className="text-3xl font-black italic text-electric-blue-light">Nav</span>
-          </Link>
-          <h1 className="text-3xl font-black text-white">Sign In</h1>
+        <div className="page-intro">
+          <h1 className="page-title text-white">Sign In</h1>
           <p className="mt-2 text-slate-400">Access your dashboard and reports.</p>
         </div>
 
@@ -116,7 +112,7 @@ function LoginContent() {
             <button
               type="submit"
               disabled={loading}
-              className="btn-primary w-full justify-center py-3"
+              className="btn-action w-full justify-center py-3"
             >
               {loading ? 'Signing In...' : 'Sign In'}
               {!loading && <ArrowRight className="h-4 w-4" />}

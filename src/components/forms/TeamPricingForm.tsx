@@ -113,7 +113,7 @@ export function TeamPricingForm() {
 
       <div className="sm:col-span-2">
         <p className="mb-3 text-sm text-slate-300">Resend delivers your program and contact details to Pitch Nav so we can reply about enrollment. <a href="/privacy" className="text-electric-blue-light underline">Privacy Policy</a></p>
-        <button type="submit" disabled={busy} className="btn-primary w-full justify-center py-4 disabled:opacity-50">
+        <button type="submit" disabled={busy} className="btn-action w-full justify-center py-4 disabled:opacity-50">
           {busy ? <Loader2 className="h-5 w-5 animate-spin" /> : <Users className="h-5 w-5" />}
           Request program enrollment
         </button>

@@ -152,22 +152,22 @@ function FAQItem({ q, a }: { q: string; a: string }) {
   const answerId = useId()
 
   return (
-    <div className="border-b border-surface-border last:border-0">
+    <div>
       <button
         className="w-full flex items-center justify-between gap-4 py-5 text-left"
         onClick={() => setOpen(!open)}
         aria-expanded={open}
         aria-controls={answerId}
       >
-        <span className="text-sm font-semibold text-white">{q}</span>
+        <span className="text-base font-semibold text-brand-ink">{q}</span>
         {open ? (
-          <ChevronUp className="h-4 w-4 text-electric-blue-light flex-shrink-0" />
+          <ChevronUp className="h-4 w-4 text-brand-paperText flex-shrink-0" />
         ) : (
-          <ChevronDown className="h-4 w-4 text-slate-500 flex-shrink-0" />
+          <ChevronDown className="h-4 w-4 text-brand-paperText flex-shrink-0" />
         )}
       </button>
       <div id={answerId} hidden={!open} className="pb-5">
-          <p className="max-w-prose text-base leading-relaxed text-slate-300">{a}</p>
+          <p className="max-w-prose text-base leading-relaxed text-brand-paperText">{a}</p>
       </div>
     </div>
   )
@@ -178,8 +178,8 @@ export default function FAQPage() {
     <div className="min-h-screen bg-navy-950 pt-24 pb-16">
       <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <header className="mb-10 border-b border-surface-border pb-8">
-          <h1 className="text-4xl font-black tracking-tight text-white sm:text-5xl">
+        <header className="page-intro">
+          <h1 className="page-title text-white">
             Frequently asked questions
           </h1>
           <p className="mt-4 max-w-xl text-lg text-slate-300">
@@ -197,7 +197,7 @@ export default function FAQPage() {
               <h2 className="mb-3 text-xl font-bold text-white">
                 {section.category}
               </h2>
-              <div className="card p-0 divide-y divide-surface-border overflow-hidden">
+              <div className="paper-sheet divide-y divide-brand-paperLine">
                 {section.questions.map((faq) => (
                   <div key={faq.q} className="px-6">
                     <FAQItem q={faq.q} a={faq.a} />

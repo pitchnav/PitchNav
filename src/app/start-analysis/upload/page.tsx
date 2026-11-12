@@ -526,7 +526,7 @@ function UploadContent() {
 
               <div className="mt-6 flex gap-3">
                 <button type="button" className="btn-secondary flex-1 justify-center" onClick={() => { setPreflightAngle(null); setPendingDrop(null) }}>Cancel</button>
-                <button type="button" disabled={!preflightReady()} className="btn-primary flex-1 justify-center" onClick={finishPreflight}>Continue to video</button>
+                <button type="button" disabled={!preflightReady()} className="btn-action flex-1 justify-center" onClick={finishPreflight}>Continue to video</button>
               </div>
           </UploadDialog>
         )}
@@ -554,7 +554,7 @@ function UploadContent() {
                 ))}
               </div>
               <div className="flex gap-3">
-                <button type="button" disabled={!allChecked() || checklistAutoSubmitting} className="btn-primary flex-1 justify-center" onClick={confirmChecklistAndUpload}>Upload video</button>
+                <button type="button" disabled={!allChecked() || checklistAutoSubmitting} className="btn-action flex-1 justify-center" onClick={confirmChecklistAndUpload}>Upload video</button>
                 <button
                   type="button"
                   className="btn-secondary flex-1 justify-center"
@@ -592,7 +592,7 @@ function UploadContent() {
             type="button"
             disabled={!requiredUploaded || orderLoading}
             onClick={finishSubmission}
-            className="btn-primary w-full justify-center py-3"
+            className="btn-action w-full justify-center py-3"
           >
             {orderLoading ? 'Opening Motion Lab…' : 'Continue to Motion Lab →'}
           </button>

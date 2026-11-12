@@ -25,7 +25,7 @@ export default function GlobalError({
         This page ran into a problem. Try again, or contact us if it keeps happening.
       </p>
       <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-        <button type="button" onClick={reset} className="btn-primary justify-center">
+        <button type="button" onClick={reset} className="btn-action justify-center">
           <RotateCcw className="h-4 w-4" /> Try Again
         </button>
         <Link href="/contact" className="btn-secondary justify-center">

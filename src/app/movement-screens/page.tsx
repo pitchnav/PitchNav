@@ -74,13 +74,13 @@ export default function MovementScreensPage() {
   return (
     <div className="min-h-screen bg-navy-950 pt-24 pb-16">
       <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
-        <div className="mb-12 text-center">
-          <h1 className="text-4xl font-black tracking-tight text-white sm:text-5xl">Movement Screens</h1>
-          <p className="mx-auto mt-4 max-w-2xl text-lg text-slate-400">
+        <header className="page-intro">
+          <h1 className="page-title text-white">Movement Screens</h1>
+          <p>
             Film these short movement checks so we can assess your range of motion and build
             your training plan around it.
           </p>
-        </div>
+        </header>
 
         <section className="card mb-10 border-electric-blue/30">
           <div className="flex items-start gap-3">
@@ -167,7 +167,7 @@ export default function MovementScreensPage() {
             <Link href="/camera-setup" className="btn-secondary">
               Pitching camera guide <ArrowRight className="h-4 w-4" />
             </Link>
-            <Link href="/start-analysis" className="btn-primary">
+            <Link href="/start-analysis" className="btn-action">
               Start your analysis <ArrowRight className="h-4 w-4" />
             </Link>
           </div>

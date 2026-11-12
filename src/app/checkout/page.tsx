@@ -164,7 +164,7 @@ function CheckoutContent() {
                   className={`rounded-xl border p-4 text-left transition motion-reduce:transition-none hover:-translate-y-0.5 active:scale-[0.99] motion-reduce:hover:translate-y-0 motion-reduce:active:scale-100 ${membershipTier === 'throwing' ? 'border-electric-blue bg-electric-blue/10 ring-2 ring-electric-blue/25' : 'border-surface-border bg-navy-950 hover:border-slate-600'}`}
                 >
                   <p className="text-xs font-bold uppercase tracking-wider text-electric-blue-light">Throwing Development</p>
-                  <p className="mt-2 text-3xl font-black text-white">$25<span className="text-sm font-medium text-slate-400">/month</span></p>
+                  <p className="price-figure mt-2 text-3xl text-white">$25<span className="text-sm font-medium text-slate-400">/month</span></p>
                   <p className="mt-2 text-xs leading-relaxed text-slate-400">Pitching mechanics, throwing drills, feedback, and an eight-week throwing plan.</p>
                 </button>
                 <button
@@ -174,7 +174,7 @@ function CheckoutContent() {
                   className={`relative rounded-xl border p-4 text-left transition motion-reduce:transition-none hover:-translate-y-0.5 active:scale-[0.99] motion-reduce:hover:translate-y-0 motion-reduce:active:scale-100 ${membershipTier === 'performance' ? 'border-accent-green bg-accent-green/10 ring-2 ring-accent-green/20' : 'border-surface-border bg-navy-950 hover:border-slate-600'}`}
                 >
                   <p className="text-xs font-bold uppercase tracking-wider text-accent-green">Complete Performance</p>
-                  <p className="mt-2 text-3xl font-black text-white">$40<span className="text-sm font-medium text-slate-400">/month</span></p>
+                  <p className="price-figure mt-2 text-3xl text-white">$40<span className="text-sm font-medium text-slate-400">/month</span></p>
                   <p className="mt-2 text-xs leading-relaxed text-slate-400">Everything in Throwing Development, plus tailored strength and mobility programming.</p>
                 </button>
               </div>
@@ -226,7 +226,7 @@ function CheckoutContent() {
                   <h3 className="text-lg font-bold text-white">Order Total</h3>
                   <p className="text-slate-500 text-sm">Monthly membership</p>
                 </div>
-                <p className="text-4xl font-black text-white">${membershipTier === 'performance' ? '40' : '25'}<span className="text-sm font-medium text-slate-400">/month</span></p>
+                <p className="price-figure text-4xl text-white">${membershipTier === 'performance' ? '40' : '25'}<span className="text-sm font-medium text-slate-400">/month</span></p>
               </div>
 
               <p className="mb-4 text-sm text-slate-300">First payment of ${membershipTier === 'performance' ? '40' : '25'} USD before any tax. Renews at the same monthly price until canceled. No separate assessment fee on this order.</p>

@@ -101,14 +101,14 @@ export default function HowItWorksPage() {
     <div className="min-h-screen bg-navy-950 pt-24 pb-16">
       <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="text-center mb-20">
-          <h1 className="text-4xl font-black tracking-tight text-white sm:text-5xl">
+        <header className="page-intro">
+          <h1 className="page-title text-white">
             Start Your Development Plan
           </h1>
-          <p className="mt-4 text-lg text-slate-400 max-w-2xl mx-auto">
+          <p>
             Here’s how to get your delivery reviewed and start training around your outings.
           </p>
-        </div>
+        </header>
 
         {/* Steps */}
         <div className="space-y-16">
@@ -170,7 +170,7 @@ export default function HowItWorksPage() {
         <SafetyDisclaimer />
 
         <div className="mt-12 text-center">
-          <Link href="/pricing" className="btn-primary text-base px-8 py-4">
+          <Link href="/pricing" className="btn-action text-base px-8 py-4">
             Choose My Membership <ArrowRight className="h-5 w-5" />
           </Link>
           <p className="mt-4 text-sm text-slate-500">

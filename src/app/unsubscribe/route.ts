@@ -1,3 +1,4 @@
+import { siteTheme } from '@/lib/site-theme'
 import { NextRequest } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import { unsubscribeAccount } from '@/lib/retest-email-preferences'
@@ -6,7 +7,22 @@ export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 function notice(title: string, body: string, status = 200) {
-  return new Response(`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>${title} | Pitch Nav</title><style>body{font:1.1rem/1.6 system-ui;background:#0b1220;color:#eee;margin:0}main{max-width:38rem;margin:12vh auto;padding:1.5rem}button,a{font:inherit}button{padding:.6rem 1.2rem}a{color:#99ceff}</style></head><body><main><h1>${title}</h1>${body}<p><a href="/contact?topic=privacy">Contact Pitch Nav support</a></p></main></body></html>`, {
+  const { ink, blue, paper, paperText, action, actionText } = siteTheme
+  return new Response(`<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>${title} | Pitch Nav</title><style>
+  * { box-sizing: border-box }
+  body { margin: 0; background: ${ink}; color: ${ink}; font: 1rem/1.6 "Avenir Next", system-ui, sans-serif }
+  main { max-width: 40rem; margin: 12vh auto; padding: 0 1.25rem }
+  header { margin-bottom: 1.5rem; color: ${blue}; font-weight: 700 }
+  article { background: ${paper}; border-top: .3rem solid ${blue}; padding: clamp(1.25rem, 5vw, 2.5rem) }
+  h1 { line-height: 1.08; letter-spacing: -.05em; margin-top: 0 }
+  p { color: ${paperText} }
+  a { color: ${ink}; font-weight: 600; text-underline-offset: .2em }
+  button { min-height: 44px; border: 0; border-radius: 5px; padding: .75rem 1.1rem; font: inherit; font-weight: 650; color: ${actionText}; background: ${action}; cursor: pointer }
+  :focus-visible { outline: 3px solid ${ink}; outline-offset: 3px }
+</style></head><body><main><header>Pitch Nav</header><article><h1>${title}</h1>${body}
+<p><a href="/contact?topic=privacy">Contact Pitch Nav support</a></p></article></main></body></html>`, {
     status, headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store', 'Referrer-Policy': 'no-referrer', 'X-Robots-Tag': 'noindex, nofollow' },
   })
 }

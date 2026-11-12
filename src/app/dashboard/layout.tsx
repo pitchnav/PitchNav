@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
+import { WorkspaceLink } from '@/components/layout/WorkspaceLink'
 import { createClient } from '@/lib/supabase/server'
 import { Activity, LayoutDashboard, Settings, ClipboardList, Dumbbell, TrendingUp, Ruler, Gauge } from 'lucide-react'
 
@@ -24,21 +25,17 @@ export default async function DashboardLayout({ children }: { children: React.Re
     <div className="min-h-screen bg-navy-950 pt-16">
       <div className="flex">
         {/* Sidebar — desktop */}
-        <aside className="hidden lg:flex flex-col w-64 flex-shrink-0 min-h-screen border-r border-surface-border bg-navy-900 fixed top-16 bottom-0 left-0 z-10">
+        <aside className="hidden lg:flex flex-col w-64 flex-shrink-0 overflow-y-auto border-r border-surface-border bg-navy-900 fixed top-16 bottom-0 left-0 z-10">
           <div className="p-6">
-            <p className="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-4">
+            <p className="mb-4 border-b border-brand-line pb-3 text-sm font-semibold text-brand-blue">
               Athlete Dashboard
             </p>
-            <nav className="space-y-1">
+            <nav aria-label="Athlete dashboard" className="space-y-1">
               {DASHBOARD_NAV.map(({ href, label, icon: Icon }) => (
-                <Link
-                  key={href}
-                  href={href}
-                  className="flex min-h-11 items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-400 hover:bg-surface-card hover:text-white transition-colors"
-                >
-                  <Icon className="h-4 w-4" />
-                  {label}
-                </Link>
+                <WorkspaceLink key={href} href={href}>
+                <Icon aria-hidden="true" className="h-4 w-4 shrink-0" />
+                {label}
+              </WorkspaceLink>
               ))}
             </nav>
           </div>
@@ -53,21 +50,17 @@ export default async function DashboardLayout({ children }: { children: React.Re
         </aside>
 
         {/* Main content */}
-        <div className="flex-1 lg:ml-64 min-h-screen">
+        <div className="min-w-0 flex-1 lg:ml-64 min-h-screen">
           {/* Mobile nav */}
-          <div className="sticky top-16 z-20 flex gap-3 overflow-x-auto border-b border-surface-border bg-navy-900/95 px-4 py-3 backdrop-blur lg:hidden">
+          <nav aria-label="Athlete dashboard" className="sticky top-16 z-20 flex gap-3 overflow-x-auto border-b border-surface-border bg-navy-900/95 px-4 py-3 backdrop-blur lg:hidden">
             {DASHBOARD_NAV.map(({ href, label, icon: Icon }) => (
-              <Link
-                key={href}
-                href={href}
-                className="flex min-h-11 items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-slate-400 hover:text-white whitespace-nowrap transition-colors"
-              >
-                <Icon className="h-4 w-4" />
+              <WorkspaceLink key={href} href={href}>
+                <Icon aria-hidden="true" className="h-4 w-4 shrink-0" />
                 {label}
-              </Link>
+              </WorkspaceLink>
             ))}
-          </div>
-          <div className="p-4 sm:p-6 lg:p-8">{children}</div>
+          </nav>
+          <div className="workspace-content p-4 sm:p-6 lg:p-8">{children}</div>
         </div>
       </div>
     </div>

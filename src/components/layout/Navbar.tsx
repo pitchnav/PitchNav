@@ -94,8 +94,8 @@ export function Navbar() {
       className={cn(
         'fixed top-0 z-50 w-full transition-all duration-300',
         scrolled
-          ? 'bg-navy-900/95 backdrop-blur-md border-b border-surface-border shadow-card'
-          : 'bg-[#0b293d] border-b border-white/10'
+          ? 'bg-navy-900/95 backdrop-blur-md border-b border-surface-border '
+          : 'bg-brand-ink border-b border-white/10'
       )}
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -123,7 +123,7 @@ export function Navbar() {
                 className={cn(
                   'text-sm font-medium transition-colors duration-200',
                   pathname === link.href
-                    ? 'text-white'
+                    ? 'text-brand-blue underline decoration-2 underline-offset-8'
                     : 'text-slate-400 hover:text-white'
                 )}
               >
@@ -160,7 +160,7 @@ export function Navbar() {
                   </button>
 
                   {userMenuOpen && (
-                    <div id="account-links" className="absolute right-0 top-full mt-2 w-56 rounded-xl border border-surface-border bg-navy-800 shadow-card py-1 z-50">
+                    <div id="account-links" className="absolute right-0 top-full mt-2 w-56 rounded-xl border border-surface-border bg-navy-800  py-1 z-50">
                       <Link
                         href="/dashboard/profile"
                         className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-300 hover:text-white hover:bg-surface-hover transition-colors"

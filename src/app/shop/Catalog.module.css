@@ -22,13 +22,13 @@
 }
 
 .hero {
-  background: #021332 url('/shop/equipment-banner.webp') center / cover no-repeat;
+  background: var(--ink) url('/shop/equipment-banner.webp') center / cover no-repeat;
 }
 .product {
   overflow: hidden;
-  border-radius: 14px;
+  border-radius: 3px;
+  border: 1px solid #bdccce;
   background: white;
-  box-shadow: 0 2px 10px rgb(15 23 42 / 6%);
 }
 .product img { mix-blend-mode: multiply; }
 @media (max-width: 700px) {

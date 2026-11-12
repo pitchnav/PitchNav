@@ -1,4 +1,5 @@
 import type { Config } from 'tailwindcss'
+import { siteTheme } from './src/lib/site-theme'
 
 const config: Config = {
   content: [
@@ -9,45 +10,37 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Brand palette
+        brand: siteTheme,
         navy: {
-          950: '#05080f',
-          900: '#080d1a',
-          800: '#0d1629',
-          700: '#132038',
-          600: '#1a2d50',
+          950: siteTheme.ink,
+          900: siteTheme.band,
+          800: '#102c3f',
+          700: siteTheme.raised,
+          600: '#30566d',
         },
         electric: {
-          blue: '#2563eb',
-          'blue-light': '#83bef1',
-          'blue-glow': '#60a5fa',
+          blue: '#30688a',
+          'blue-light': siteTheme.blue,
+          'blue-glow': '#96cae8',
         },
         accent: {
-          green: '#00e5a0',
-          'green-dim': '#00b87d',
+          green: '#79dcc1',
+          'green-dim': '#5cc9ae',
         },
         surface: {
-          DEFAULT: '#111827',
-          card: '#1a2235',
-          hover: '#1f2d44',
-          border: '#1e2d45',
+          DEFAULT: siteTheme.band,
+          card: siteTheme.panel,
+          hover: siteTheme.raised,
+          border: siteTheme.line,
         },
       },
       fontFamily: {
-        sans: ['var(--font-inter)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-        display: ['var(--font-inter)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-      },
-      backgroundImage: {
-        'hero-gradient': 'linear-gradient(135deg, #05080f 0%, #0d1629 50%, #132038 100%)',
-        'card-gradient': 'linear-gradient(145deg, #1a2235 0%, #111827 100%)',
-        'accent-gradient': 'linear-gradient(90deg, #2563eb 0%, #00e5a0 100%)',
-        'glow-blue': 'radial-gradient(circle, rgba(37,99,235,0.15) 0%, transparent 70%)',
+        sans: ['var(--font-body)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        display: ['var(--font-body)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
       },
       boxShadow: {
-        'card': '0 4px 24px rgba(0, 0, 0, 0.4)',
-        'card-hover': '0 8px 40px rgba(37, 99, 235, 0.2)',
-        'glow': '0 0 30px rgba(37, 99, 235, 0.3)',
-        'glow-green': '0 0 30px rgba(0, 229, 160, 0.2)',
+        card: '0 2px 5px rgb(7 24 46 / 12%)',
+        'card-hover': '0 3px 9px rgb(7 24 46 / 16%)',
       },
       animation: {
         'fade-in': 'fadeIn 0.5s ease-in-out',

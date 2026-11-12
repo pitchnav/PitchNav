@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
+import { WorkspaceLink } from '@/components/layout/WorkspaceLink'
 import { createClient } from '@/lib/supabase/server'
 import {
   LayoutDashboard, ClipboardList, Users, Dumbbell, Settings, AlertTriangle, Activity, Film, Bot } from 'lucide-react'
@@ -44,43 +45,35 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     <div className="min-h-screen bg-navy-950 pt-16">
       <div className="flex">
         {/* Admin sidebar */}
-        <aside className="hidden lg:flex flex-col w-64 flex-shrink-0 min-h-screen border-r border-surface-border bg-navy-900 fixed top-16 bottom-0 left-0 z-10">
+        <aside className="hidden lg:flex flex-col w-64 flex-shrink-0 overflow-y-auto border-r border-surface-border bg-navy-900 fixed top-16 bottom-0 left-0 z-10">
           <div className="p-6">
             <div className="flex items-center gap-2 mb-6">
               <div className="rounded-md bg-electric-blue/20 px-2 py-1">
-                <span className="text-xs font-bold text-electric-blue-light uppercase tracking-widest">Admin</span>
+                <span className="text-sm font-semibold text-brand-blue">Admin</span>
               </div>
             </div>
-            <nav className="space-y-1">
+            <nav aria-label="Administration" className="space-y-1">
               {ADMIN_NAV.map(({ href, label, icon: Icon }) => (
-                <Link
-                  key={href}
-                  href={href}
-                  className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-400 hover:bg-surface-card hover:text-white transition-colors"
-                >
-                  <Icon className="h-4 w-4" />
-                  {label}
-                </Link>
+                <WorkspaceLink key={href} href={href}>
+                <Icon aria-hidden="true" className="h-4 w-4 shrink-0" />
+                {label}
+              </WorkspaceLink>
               ))}
             </nav>
           </div>
         </aside>
 
         {/* Main content */}
-        <div className="flex-1 lg:ml-64 min-h-screen">
-          <div className="lg:hidden border-b border-surface-border bg-navy-900 px-4 py-3 flex gap-3 overflow-x-auto">
+        <div className="min-w-0 flex-1 lg:ml-64 min-h-screen">
+          <nav aria-label="Administration" className="lg:hidden border-b border-surface-border bg-navy-900 px-4 py-3 flex gap-3 overflow-x-auto">
             {ADMIN_NAV.map(({ href, label, icon: Icon }) => (
-              <Link
-                key={href}
-                href={href}
-                className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-slate-400 hover:text-white whitespace-nowrap"
-              >
-                <Icon className="h-4 w-4" />
+              <WorkspaceLink key={href} href={href}>
+                <Icon aria-hidden="true" className="h-4 w-4 shrink-0" />
                 {label}
-              </Link>
+              </WorkspaceLink>
             ))}
-          </div>
-          <div className="p-6 lg:p-8">{children}</div>
+          </nav>
+          <div className="workspace-content p-4 sm:p-6 lg:p-8">{children}</div>
         </div>
       </div>
     </div>

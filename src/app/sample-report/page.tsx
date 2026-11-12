@@ -170,7 +170,7 @@ export default function SampleReportPage() {
           <p className="text-slate-400 mb-8 max-w-lg mx-auto">
             Send us your pitching video. Get a breakdown of your mechanics and drills to take to your next session.
           </p>
-          <Link href="/pricing" className="btn-primary text-base px-8 py-4">
+          <Link href="/pricing" className="btn-action text-base px-8 py-4">
             Choose My Membership <ArrowRight className="h-5 w-5" />
           </Link>
         </div>

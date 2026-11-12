@@ -16,9 +16,9 @@ export default function TailoredDevelopmentPage() {
       <section className="grid items-start gap-12 lg:grid-cols-2">
         <div>
           <p className="text-xs font-bold uppercase tracking-widest text-electric-blue-light">Pitch Nav · Tailored Development</p>
-          <h1 className="mt-5 text-4xl font-black tracking-tight text-white sm:text-6xl">Tailored Development</h1>
+          <h1 className="mt-5 page-title text-white">Tailored Development</h1>
           <p className="mt-6 text-lg leading-relaxed text-slate-300">Tell us when you play school, summer or fall ball. Send a pitch from the side. Your coach uses that delivery and your team dates to plan what comes next.</p>
-          <div className="mt-8 flex flex-wrap gap-3"><Link href="/pricing" className="btn-primary">Choose your plan <ArrowRight className="h-4 w-4" /></Link><Link href="/sample-report" className="btn-secondary">See a sample assessment</Link></div>
+          <div className="mt-8 flex flex-wrap gap-3"><Link href="/pricing" className="btn-action">Choose your plan <ArrowRight className="h-4 w-4" /></Link><Link href="/sample-report" className="btn-secondary">See a sample assessment</Link></div>
           <p className="mt-6 text-sm text-slate-400">Coming to development plans: weekly schedule changes, equipment swaps and saved lifting weights. Explore a sample week below.</p>
           <div className="mt-10 space-y-6">
             {[
@@ -35,7 +35,7 @@ export default function TailoredDevelopmentPage() {
         <div className="mt-8 grid gap-6 md:grid-cols-2">
           {(['throwing', 'complete'] as const).map(key=>{
             const plan = INDIVIDUAL_PLANS[key]
-            return <article key={key} className="card"><h3 className="text-2xl font-bold text-white">{plan.name}</h3><p className="mt-3 text-slate-400">{key === 'throwing' ? 'Mechanics feedback, throwing plans and drills for your next step.' : 'Throwing, lifting and mobility, plus Pitch Tracking when it launches.'}</p><p className="mt-6 text-3xl font-black text-white">{money(plan.firstMonth + plan.assessment)}<span className="text-sm font-normal text-slate-400"> first payment</span></p><p className="mt-2 text-sm text-slate-300">Includes {money(plan.firstMonth)} for the first month and a {money(plan.assessment)} initial assessment. Renews at {money(plan.monthly)}/month until canceled.</p><p className="mt-4 text-sm text-slate-300">Annual first payment {money(plan.annual + plan.assessment)} including assessment. Renews at {money(plan.annual)}/year until canceled.</p><div className="mt-6 flex flex-wrap gap-3"><Link href={checkoutPath(key, 'monthly')} className="btn-secondary">Monthly plan details</Link><Link href={checkoutPath(key, 'annual')} className="btn-secondary">Annual plan details</Link></div></article>
+            return <article key={key} className="card"><h3 className="text-2xl font-bold text-white">{plan.name}</h3><p className="mt-3 text-slate-400">{key === 'throwing' ? 'Mechanics feedback, throwing plans and drills for your next step.' : 'Throwing, lifting and mobility, plus Pitch Tracking when it launches.'}</p><p className="price-figure mt-6 text-3xl text-white">{money(plan.firstMonth + plan.assessment)}<span className="text-sm font-normal text-slate-400"> first payment</span></p><p className="mt-2 text-sm text-slate-300">Includes {money(plan.firstMonth)} for the first month and a {money(plan.assessment)} initial assessment. Renews at {money(plan.monthly)}/month until canceled.</p><p className="mt-4 text-sm text-slate-300">Annual first payment {money(plan.annual + plan.assessment)} including assessment. Renews at {money(plan.annual)}/year until canceled.</p><div className="mt-6 flex flex-wrap gap-3"><Link href={checkoutPath(key, 'monthly')} className="btn-secondary">Monthly plan details</Link><Link href={checkoutPath(key, 'annual')} className="btn-secondary">Annual plan details</Link></div></article>
           })}
         </div>
         <p className="mt-5 text-sm text-slate-400">Annual billing replaces the first-month offer. Prices are USD before tax.</p>
