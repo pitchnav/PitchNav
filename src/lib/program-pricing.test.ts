@@ -3,9 +3,9 @@ import { quoteProgram, INDIVIDUAL_PLANS } from './program-pricing'
 
 describe('approved pricing in integer cents', () => {
   test('individual launch prices and assessment are separate', () => {
-    expect(INDIVIDUAL_PLANS.throwing).toMatchObject({ monthly: 2499, firstMonth: 1999, annual: 23999, assessment: 4999 })
+    expect(INDIVIDUAL_PLANS.throwing).toMatchObject({ monthly: 2500, firstMonth: 2500, annual: 23999, assessment: 0 })
     expect(INDIVIDUAL_PLANS.metrics.assessment).toBe(0)
-    expect(INDIVIDUAL_PLANS.complete).toMatchObject({ monthly: 3999, annual: 37999 })
+    expect(INDIVIDUAL_PLANS.complete).toMatchObject({ monthly: 4500, firstMonth: 4500, annual: 37999, assessment: 0 })
   })
   test('20 Complete players use graduated tiers and one assessment each', () => {
     expect(quoteProgram(20, 'complete', 'monthly')).toMatchObject({ monthly: 74480, annual: 704980, assessment: 99980, dueNow: 164460, recurring: 74480, firstYear: 983740 })

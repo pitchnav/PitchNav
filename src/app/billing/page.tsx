@@ -20,7 +20,7 @@ export default function BillingPage() {
           <p className="mt-3">For a duplicate charge, a renewal or a question about an earlier offer, include the charge date and reference from your receipt. <a href="mailto:support@pitchnav.com?subject=Billing%20or%20refund%20request">Email billing support</a>.</p>
         </PolicySection>
         <PolicySection title="Your charge">
-          <p>A standalone assessment is a one-time purchase. Some development subscriptions include an initial assessment charge in the first payment. Review the first payment, renewal amount, billing interval and any taxes at checkout. Your receipt identifies the plan you purchased.</p>
+          <p>A standalone assessment is a one-time purchase. Individual Complete includes one assessment. Team quotes list any separate assessment fees. Review the first payment, renewal amount, billing interval and any taxes at checkout. Your receipt identifies the plan you purchased.</p>
         </PolicySection>
     </PolicyDocument>
   )

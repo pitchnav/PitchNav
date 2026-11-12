@@ -16,18 +16,18 @@ describe('individual checkout disclosures', () => {
   })
   afterEach(() => { process.env = oldEnvironment })
   test('reviews the exact annual first payment and renewal before linking to the processor', async () => {
-    process.env.STRIPE_CHECKOUT_COMPLETE_ANNUAL_URL = 'https://buy.stripe.com/test_annual'
+    process.env.STRIPE_CHECKOUT_V2_COMPLETE_ANNUAL_URL = 'https://buy.stripe.com/test_annual'
     const html = await page('complete', 'annual')
-    for (const term of ['$429.98', '$49.99', '$379.99', 'until canceled', '/billing', 'https://buy.stripe.com/test_annual']) expect(html).toContain(term)
+    for (const term of ['$379.99', 'One pitching assessment is included', 'until canceled', '/billing', 'https://buy.stripe.com/test_annual']) expect(html).toContain(term)
   })
   test('no monthly fallback when an annual link is missing', async () => {
-    process.env.STRIPE_CHECKOUT_THROWING_MONTHLY_URL = 'https://buy.stripe.com/test_monthly'
-    delete process.env.STRIPE_CHECKOUT_THROWING_ANNUAL_URL
+    process.env.STRIPE_CHECKOUT_V2_THROWING_MONTHLY_URL = 'https://buy.stripe.com/test_monthly'
+    delete process.env.STRIPE_CHECKOUT_V2_THROWING_ANNUAL_URL
     expect(await page('throwing', 'annual')).not.toContain('buy.stripe.com')
   })
   test('payments remain unavailable until fulfillment is enabled', async () => {
     process.env.INDIVIDUAL_CHECKOUT_READY = 'false'
-    process.env.STRIPE_CHECKOUT_ASSESSMENT_URL = 'https://buy.stripe.com/test_assessment'
+    process.env.STRIPE_CHECKOUT_V2_ASSESSMENT_URL = 'https://buy.stripe.com/test_assessment'
     const html = await page('assessment', 'one-time')
     expect(html).not.toContain('buy.stripe.com')
     expect(html).toContain('No recurring charge')
@@ -39,7 +39,7 @@ describe('individual checkout disclosures', () => {
     expect(await page('metrics', 'monthly')).toContain('https://buy.stripe.com/test_metrics')
   })
   test('suppresses external purchasing inside the native wrapper only', async () => {
-    process.env.STRIPE_CHECKOUT_ASSESSMENT_URL = 'https://buy.stripe.com/test_assessment'
+    process.env.STRIPE_CHECKOUT_V2_ASSESSMENT_URL = 'https://buy.stripe.com/test_assessment'
     mockUserAgent = 'Mozilla iPhone PitchNavIOS/1.0 Mobile Safari'
     const html = await page('assessment', 'one-time')
     expect(html).not.toContain('buy.stripe.com')

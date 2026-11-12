@@ -1,0 +1,26 @@
+.plans { display: grid; gap: .75rem; }
+.plan { position: relative; display: flex; flex-direction: column; min-width: 0; padding: 2.4rem 1.15rem 1.1rem; color: var(--ink); background: var(--paper); border-radius: 5px; border-top: 3px solid var(--blue); }
+.plan[data-recommended="true"] { background: #fff6ea; border-top-color: #ff5e00; box-shadow: inset 0 0 0 1px #ff853b; }
+.flag { position: absolute; top: -3px; left: 1.15rem; border-radius: 0 0 4px 4px; background: #ff5e00; padding: .23rem .65rem; font-size: .72rem; font-weight: 800; }
+.plan h3, .assessment h3 { font-size: 1.45rem; font-weight: 750; line-height: 1.1; letter-spacing: -.035em; }
+.price { margin-top: 1rem; line-height: 1.15; }
+.price strong { font-size: clamp(2.1rem, 3.5vw, 2.8rem); }
+.price span { font-size: .85rem; font-weight: 600; }
+.terms, .status { margin-top: .5rem; font-size: .88rem; line-height: 1.4; color: #3c5564; }
+.status { font-weight: 700; }
+.features { display: grid; align-content: start; gap: .2rem; flex: 1; border-top: 1px solid #abbcbf; padding-top: .7rem; margin: 1.2rem 0; }
+.features li { display: flex; align-items: baseline; gap: .45rem; padding: .36rem .4rem; border-inline-start: 3px solid transparent; border-radius: 2px; line-height: 1.4; font-size: .89rem; scroll-margin-top: 32vh; }
+.features svg { flex: none; align-self: start; margin-top: .11rem; }
+.features li[data-highlighted="true"] { font-weight: 800; background: #ffe2c7; border-inline-start-color: #d44c00; }
+.actions { display: flex; flex-wrap: wrap; align-items: center; gap: .25rem .8rem; }
+.actions a, .compare { min-height: 44px; display: inline-flex; align-items: center; gap: .35rem; }
+.compare { font-size: .82rem; font-weight: 650; text-decoration: underline; text-underline-offset: .22em; }
+.assessment { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 1rem 2rem; margin-top: 1rem; border: 1px solid #507184; border-radius: 5px; background: #16384c; padding: 1.5rem; color: white; }
+.assessment > div:first-child { max-width: 32rem; }
+.assessment h3 + p { margin-top: .5rem; color: #c3d5df; }
+.assessment .compare { color: var(--blue); }
+.assessment .price { margin: 0 0 .75rem; }
+@media (min-width: 960px) {
+  .plans { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .plan h3 { min-height: 2.25em; }
+}

@@ -10,7 +10,7 @@ export function checkoutPath(plan: IndividualProduct, billing: CheckoutBilling =
 export function getCheckoutOption(plan: string | undefined, billing: string | undefined) {
   if (plan === 'assessment' && billing === 'one-time') {
     return { plan, billing, name: 'Standalone Pitching Assessment', initialTotal: STANDALONE_ASSESSMENT_CENTS,
-      assessment: 0, recurring: 0, environmentKey: 'STRIPE_CHECKOUT_ASSESSMENT_URL' }
+      assessment: 0, recurring: 0, environmentKey: 'STRIPE_CHECKOUT_V2_ASSESSMENT_URL' }
   }
   if ((plan !== 'throwing' && plan !== 'complete' && plan !== 'metrics') ||
       (billing !== 'monthly' && billing !== 'annual')) return null
@@ -18,7 +18,7 @@ export function getCheckoutOption(plan: string | undefined, billing: string | un
   return { plan, billing, name: price.name,
     initialTotal: (billing === 'annual' ? price.annual : price.firstMonth) + price.assessment,
     assessment: price.assessment, recurring: billing === 'annual' ? price.annual : price.monthly,
-    environmentKey: `STRIPE_CHECKOUT_${plan.toUpperCase()}_${billing.toUpperCase()}_URL` }
+    environmentKey: `STRIPE_CHECKOUT_${plan === 'metrics' ? '' : 'V2_'}${plan.toUpperCase()}_${billing.toUpperCase()}_URL` }
 }
 
 // Server-owned configuration only. Never accept a destination from query params.

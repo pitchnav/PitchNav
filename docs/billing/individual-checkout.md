@@ -9,17 +9,15 @@ request. The route does not create Stripe products or change existing membership
 
 | Option | First checkout | Renewal | Assessment included in first checkout |
 |---|---:|---:|---:|
-| Standalone assessment | $59.99 | None | — |
-| Throwing monthly | $69.98 | $24.99/month | $49.99 |
-| Throwing annual | $289.98 | $239.99/year | $49.99 |
-| Complete monthly | $84.98 | $39.99/month | $49.99 |
-| Complete annual | $429.98 | $379.99/year | $49.99 |
+| Standalone assessment | $20.00 | None | — |
+| Throwing monthly | $25.00 | $25.00/month | None |
+| Throwing annual | $239.99 | $239.99/year | None |
+| Complete monthly | $45.00 | $45.00/month | Included |
+| Complete annual | $379.99 | $379.99/year | Included |
 | Tracking monthly | $19.99 | $24.99/month | None |
 | Tracking annual | $239.99 | $239.99/year | None |
 
-Monthly subscriptions need a $5 discount on the first invoice only. Annual
-subscriptions do not also receive that discount. Assessment fees are one-time,
-never recurring. Prices are before tax; keep checkout disclosures consistent.
+Only standalone monthly Pitch Tracking has a $5 first-invoice discount. Individual Complete includes one assessment at no extra charge. The standalone assessment is a one-time purchase. Prices are before tax; keep checkout disclosures consistent.
 
 ## Required before enabling sales
 
@@ -34,7 +32,7 @@ never recurring. Prices are before tax; keep checkout disclosures consistent.
    account, create the assessment work item when needed, update subscription
    entitlements, and keep paid reports accessible after cancellation. Do not grant
    access based on a success URL or email alone.
-3. Supply the seven server-only `STRIPE_CHECKOUT_*_URL` variables from `.env.example`.
+3. Supply the seven server-only `STRIPE_CHECKOUT_*_URL` variables from `.env.example`. The V2 assessment and coaching keys must point to links matching this catalog.
    Use only real `https://buy.stripe.com/...` destinations. Test each pricing card
    and the development/tracking page buttons against the correct checkout.
 4. After price AND fulfillment verification, set `INDIVIDUAL_CHECKOUT_READY=true`.

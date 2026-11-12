@@ -1,41 +1,95 @@
 'use client'
 
-import { useState } from 'react'
-import { checkoutPath } from '@/lib/individual-checkout'
+import { useState, type FocusEvent } from 'react'
 import Link from 'next/link'
-import { CheckCircle } from 'lucide-react'
+import { ArrowRight, Check } from 'lucide-react'
+import { checkoutPath } from '@/lib/individual-checkout'
 import { INDIVIDUAL_PLANS, STANDALONE_ASSESSMENT_CENTS, money, type Billing } from '@/lib/pricing-catalog'
+import styles from './IndividualPricing.module.css'
+
+type Inclusion = 'throwing' | 'assessment' | 'metrics'
 
 const features = {
-  throwing: ['Tailored throwing plan', 'Staff-reviewed mechanics feedback', 'Drills and progress tracking'],
-  complete: ['Initial tailored assessment', 'Lifting and mobility plans', 'Pitch Tracking included when released'],
-  metrics: ['iPhone tracking in development', 'Pitch maps, tracers and history in development', 'No assessment required'],
+  throwing: ['Personal throwing calendar', 'Mechanics drills', 'One brief monthly coach check-in'],
+  metrics: ['iPhone pitch recording', 'Pitch maps and tracers', 'Pitch history'],
 }
+const completeFeatures: { source?: Inclusion; text: string }[] = [
+  { source: 'throwing', text: 'Everything in Throwing Development' },
+  { source: 'assessment', text: 'One full pitching assessment' },
+  { text: 'Strength and mobility plans' },
+  { source: 'metrics', text: 'All Pitch Tracking features at launch' },
+]
+
 export function IndividualPricing() {
   const [billing, setBilling] = useState<Billing>('monthly')
+  const [hovered, setHovered] = useState<Inclusion | null>(null)
+  const [focused, setFocused] = useState<Inclusion | null>(null)
+  const active = hovered ?? focused
+  const unit = billing === 'annual' ? 'year' : 'month'
+
+  function clearFocus(event: FocusEvent<HTMLElement>) {
+    if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setFocused(null)
+  }
+
+  function sourceEvents(source: Inclusion) {
+    return {
+      onPointerEnter: (event: React.PointerEvent<HTMLElement>) => {
+        if (event.pointerType === 'mouse' || event.pointerType === 'pen') setHovered(source)
+      },
+      onPointerLeave: () => setHovered(null),
+      onFocusCapture: () => setFocused(source),
+      onBlurCapture: clearFocus,
+    }
+  }
+
+  function compare(source: Inclusion) {
+    return <a className={styles.compare} href={`#complete-includes-${source}`}
+      onClick={() => { setHovered(null); document.getElementById(`complete-includes-${source}`)?.focus({ preventScroll: true }) }}>
+      See in Complete <ArrowRight size={15} aria-hidden="true" />
+    </a>
+  }
+
   return <div>
     <div className="mb-6 inline-flex gap-1 rounded-md border border-surface-border bg-brand-band p-1" role="group" aria-label="Individual billing">
-      {(['monthly','annual'] as const).map(option => <button key={option} type="button" aria-pressed={billing === option} onClick={() => setBilling(option)} className="min-h-11 rounded px-5 text-sm font-semibold text-brand-muted aria-pressed:bg-brand-blue aria-pressed:text-brand-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-electric-blue-light">{option === 'monthly' ? 'Monthly' : 'Annual'}</button>)}
+      {(['monthly', 'annual'] as const).map(option => <button key={option} type="button" aria-pressed={billing === option}
+        onClick={() => setBilling(option)} className="min-h-11 rounded px-5 text-sm font-semibold text-brand-muted aria-pressed:bg-brand-blue aria-pressed:text-brand-ink">
+        {option === 'monthly' ? 'Monthly' : 'Annual'}
+      </button>)}
     </div>
-    <div className="paper-sheet grid divide-y divide-brand-paperLine lg:grid-cols-3 lg:divide-x lg:divide-y-0">
+    <div className={styles.plans}>
       {(Object.keys(INDIVIDUAL_PLANS) as (keyof typeof INDIVIDUAL_PLANS)[]).map(key => {
         const plan = INDIVIDUAL_PLANS[key]
-        const periodPrice = billing === 'annual' ? plan.annual : plan.firstMonth
-        return <article key={key} className="flex min-w-0 flex-col p-5 text-left sm:p-6">
-          <h3 className="min-h-14 text-2xl font-bold leading-tight text-brand-ink">{plan.name}</h3>
-          <p className="price-figure mt-5 text-4xl text-brand-ink">{money(periodPrice + plan.assessment)}</p>
-          <p className="mt-2 text-sm text-brand-paperText">First payment before tax · {billing === 'annual' ? 'annual plan' : 'monthly plan'}</p>
-          <p className="mt-2 text-sm text-brand-paperText">{plan.assessment ? `Includes ${money(periodPrice)} for the first ${billing === 'annual' ? 'year' : 'month'} and a one-time ${money(plan.assessment)} assessment.` : 'No assessment fee.'}</p>
-          <p className="mt-2 text-sm text-brand-paperText">Renews at {money(billing === 'annual' ? plan.annual : plan.monthly)}/{billing === 'annual' ? 'year' : 'month'} until canceled.</p>
-          <ul className="my-6 border-t border-brand-paperLine pt-4 flex-1 space-y-3">{features[key].map(item => <li className="flex gap-2 text-sm text-brand-paperText" key={item}><CheckCircle className="h-4 w-4 shrink-0 text-brand-paperText mt-0.5" />{item}</li>)}</ul>
-          <Link className="paper-link inline-flex min-h-11 items-center" href={checkoutPath(key, billing)}>View {billing} plan details</Link>
+        const complete = key === 'complete'
+        const price = billing === 'annual' ? plan.annual : plan.firstMonth
+        const introductory = billing === 'monthly' && price < plan.monthly
+        return <article key={key} className={styles.plan} data-recommended={complete} {...(key !== 'complete' ? sourceEvents(key) : {})}>
+          {complete && <span className={styles.flag}>Best value</span>}
+          <h3>{plan.name}</h3>
+          <p className={styles.price}><strong className="price-figure">{money(price).replace(/\.00$/, '')}</strong> <span>/ {unit}</span></p>
+          <p className={styles.terms}>{introductory ? <><s>{money(plan.monthly)}</s> · {money(price)} for the first month. Renews at {money(plan.monthly)}/month.</>
+            : <>Billed {billing === 'annual' ? 'annually' : 'monthly'} until canceled.</>}</p>
+          {key === 'metrics' && <p className={styles.status}>In development</p>}
+          <ul className={styles.features}>
+            {complete ? completeFeatures.map(({ source, text }) => <li key={text}
+              id={source && `complete-includes-${source}`} tabIndex={source ? -1 : undefined}
+              data-highlighted={Boolean(source && active === source)}
+              onFocus={source ? () => setFocused(source) : undefined} onBlur={clearFocus}>
+              <Check aria-hidden="true" size={17} />{text}
+            </li>) : features[key].map(text => <li key={text}><Check aria-hidden="true" size={17} />{text}</li>)}
+          </ul>
+          <div className={styles.actions}>
+            <Link className={complete ? 'btn-action' : 'paper-link'} href={checkoutPath(key, billing)}>View plan details <span className="sr-only">for {plan.name}, {billing}</span><ArrowRight size={16} aria-hidden="true" /></Link>
+            {key !== 'complete' && compare(key)}
+          </div>
         </article>
       })}
     </div>
-    <article className="card mt-6 flex flex-wrap items-center justify-between gap-6 text-left">
-      <div className="max-w-xl"><p className="text-xs font-bold uppercase tracking-widest text-electric-blue-light">One-time option</p><h3 className="mt-2 text-xl font-bold text-white">Standalone Pitching Assessment</h3><p className="mt-3 text-sm text-slate-300">Get a mechanics review, a written report and drills to take to practice. One payment. No subscription or ongoing updates.</p><p className="mt-2 text-xs text-slate-400">Starting a Throwing or Complete plan? Your assessment is $49.99. The standalone assessment does not include Pitch Tracking.</p></div>
-      <div><p className="price-figure text-4xl text-white">{money(STANDALONE_ASSESSMENT_CENTS)}</p><p className="mt-1 text-sm text-slate-400">one time · no recurring charge</p><Link className="btn-secondary mt-4" href={checkoutPath('assessment')}>View assessment details</Link></div>
+    <article className={styles.assessment} {...sourceEvents('assessment')}>
+      <div><h3>Standalone Pitching Assessment</h3><p>A mechanics review, a written report and drills for your next session. One payment.</p>
+        {compare('assessment')}</div>
+      <div><p className={styles.price}><strong className="price-figure">{money(STANDALONE_ASSESSMENT_CENTS).replace(/\.00$/, '')}</strong> <span>one time</span></p>
+        <Link className="btn-secondary" href={checkoutPath('assessment')}>View assessment details</Link></div>
     </article>
-    <p className="mt-5 text-sm text-slate-400">Prices are in USD. Pitch Tracking is in testing. Check plan details for availability. <Link className="text-electric-blue-light underline" href="/billing">Cancellation and refunds</Link>.</p>
+    <p className="mt-5 text-sm text-slate-400">Prices in USD before tax. <Link className="text-electric-blue-light underline" href="/billing">Cancellation and refunds</Link>.</p>
   </div>
 }
