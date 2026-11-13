@@ -2,6 +2,7 @@
 
 import { isMechanicsOverview, overviewEvidence } from '@/lib/mechanics-overview'
 import { MechanicsReviewEditor } from '@/components/admin/MechanicsReviewEditor'
+import { PracticeEvidenceImport } from '@/components/admin/PracticeEvidenceImport'
 import { MechanicsFindings } from '@/components/reports/MechanicsFindings'
 import type { MechanicsFinding } from '@/lib/mechanics-findings'
 import { AssessmentReviewGuide } from '@/components/admin/AssessmentReviewGuide'
@@ -854,6 +855,7 @@ export default function AdminOrderDetailPage() {
               frames={findingFrames}
               onSaved={async () => { await loadData(); setDraftMessage('Review saved. Apply the reviewed findings to the report.') }} onDirty={setReviewDirty} />
           )}
+          {!automatedAnalysis && order.payment_confirmed_at && !order.refunded_at && !['complete','cancelled','refunded'].includes(order.status) && <PracticeEvidenceImport orderId={id} onSaved={loadData} />}
           {/* Reviewers may score supported categories separately from their findings. */}
           <details className="card">
             <summary className="cursor-pointer text-base font-semibold text-white mb-4">Optional scorecard</summary>
