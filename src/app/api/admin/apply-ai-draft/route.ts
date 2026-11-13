@@ -1,9 +1,13 @@
+import { scheduleAssessmentFollowup } from '@/lib/assessment-followup-jobs'
+import { buildBaseballPerformancePlan, type CategoryAssessment } from '@/lib/performance-plan'
+import { buildEightWeekThrowingPlan } from '@/lib/throwing-plan'
 import { NextResponse } from 'next/server'
 import { createAdminClient, createClient } from '@/lib/supabase/server'
+import { landingSampleTimes, validateMechanicsFindings } from '@/lib/mechanics-findings'
 import { calculateDeliveryScore } from '@/lib/utils'
 
 export const runtime = 'nodejs'
-export const maxDuration = 60
+export const maxDuration = 120
 
 const POSITION_FROM_AUTOMATED: Record<string, string> = {
   peak_leg_lift: 'peak_leg_lift',
@@ -16,6 +20,48 @@ const POSITION_FROM_AUTOMATED: Record<string, string> = {
 
 function scorecardKey(category: string) {
   return category.toLowerCase().replace(/[–—-]+/g, '_').replace(/\s+/g, '_')
+}
+
+// Both AI-assisted and manually authored reviews use the staff-approved evidence.
+async function reviewedPlanUpdate(
+  admin: ReturnType<typeof createAdminClient>,
+  analysisId: string,
+  orderId: string,
+  categories: CategoryAssessment[],
+  priorities: string[]
+) {
+  const { data: plan, error: planLoadError } = await admin.from('training_plans')
+    .select('id,starts_on,strength_mobility_weeks')
+    .eq('motion_analysis_id', analysisId)
+    .maybeSingle()
+  if (planLoadError) throw new Error(`Could not load the training plan: ${planLoadError.message}`)
+  if (!plan) return null
+  const planStart = plan.starts_on ? new Date(`${plan.starts_on}T12:00:00Z`) : new Date()
+  const finalReview = new Date(planStart)
+  finalReview.setUTCDate(finalReview.getUTCDate() + 56)
+  const planUpdate = {
+    duration_weeks: 8,
+    title: '8-Week Pitching Development Plan',
+    weeks: [] as ReturnType<typeof buildEightWeekThrowingPlan>,
+    strength_mobility_weeks: [] as ReturnType<typeof buildBaseballPerformancePlan>,
+    rolling_window_days: 14,
+    follow_up_date: finalReview.toISOString().slice(0, 10),
+  }
+  // A cue without a routed category remains in the report. It is insufficient
+  // to select a drill, diagnose a strength limitation, or prescribe a program.
+  if (!priorities.length || !categories.length) return planUpdate
+
+  const { data: drillCatalog, error: drillsError } = await admin.from('drills')
+    .select('name,category,description,coaching_cues,sets,reps')
+    .eq('is_active', true)
+  if (drillsError) throw new Error(`Could not load the drill library: ${drillsError.message}`)
+  const { data: order, error: orderError } = await admin.from('orders').select('amount_paid_cents').eq('id', orderId).single()
+  if (orderError || !order) throw new Error('Could not verify the purchased plan.')
+  const includesStrength = (order.amount_paid_cents ?? 0) >= 4000 ||
+    (Array.isArray(plan.strength_mobility_weeks) && plan.strength_mobility_weeks.length > 0)
+  planUpdate.weeks = buildEightWeekThrowingPlan(categories, priorities, drillCatalog ?? [])
+  if (includesStrength) planUpdate.strength_mobility_weeks = buildBaseballPerformancePlan(categories, priorities)
+  return planUpdate
 }
 
 export async function POST(request: Request) {
@@ -32,53 +78,68 @@ export async function POST(request: Request) {
 
     const admin = createAdminClient()
     const { data: analysis, error: analysisError } = await admin.from('motion_analyses')
-      .select('id,delivery_score,category_scores,phase_snapshots,strengths,development_priorities,coach_feedback,biggest_opportunity,velocity_estimate_low,velocity_estimate_high,velocity_confidence,ai_draft_status')
+      .select('id,user_id,order_id,updated_at,published_at,status,clip_summary,delivery_score,category_scores,phase_snapshots,strengths,development_priorities,coach_feedback,biggest_opportunity,velocity_estimate_low,velocity_estimate_high,velocity_confidence,ai_draft_status')
       .eq('id', analysisId)
       .single()
 
     if (analysisError) return NextResponse.json({ error: `Could not load AI draft: ${analysisError.message}` }, { status: 500 })
     if (!analysis) return NextResponse.json({ error: 'Saved Motion Lab analysis not found.' }, { status: 404 })
-    if (analysis.ai_draft_status !== 'ready_for_staff_review') {
-      return NextResponse.json({ error: 'Generate the AI coaching draft before applying it.' }, { status: 409 })
+    if (analysis.published_at || analysis.status === 'published' || analysis.ai_draft_status !== 'ready_for_staff_review') {
+      return NextResponse.json({ error: 'Only a saved, unpublished review can be applied.' }, { status: 409 })
     }
 
+    if (analysis.order_id && analysis.order_id !== orderId) {
+      return NextResponse.json({ error: 'This analysis belongs to a different order.' }, { status: 409 })
+    }
+    if (!analysis.order_id) {
+      const { data: order } = await admin.from('orders').select('user_id').eq('id', orderId).single()
+      if (!order || order.user_id !== analysis.user_id) {
+        return NextResponse.json({ error: 'The order and analysis must belong to the same athlete.' }, { status: 409 })
+      }
+    }
     const categories = Array.isArray(analysis.category_scores) ? analysis.category_scores as Array<Record<string, unknown>> : []
-    const deliveryScore = calculateDeliveryScore(
-      categories as Array<{ score?: number | null }>,
-      analysis.delivery_score,
-    )
-    const phases = Array.isArray(analysis.phase_snapshots) ? analysis.phase_snapshots as Array<Record<string, unknown>> : []
-    const strengths = Array.isArray(analysis.strengths) ? analysis.strengths.slice(0, 3) : []
-    const priorities = Array.isArray(analysis.development_priorities) ? analysis.development_priorities.slice(0, 3) : []
+    const snapshots = Array.isArray(analysis.phase_snapshots) ? analysis.phase_snapshots as Array<Record<string, unknown>> : []
+    const phases = snapshots.filter(shot => {
+      const key = String(shot.key)
+      return Object.hasOwn(POSITION_FROM_AUTOMATED, key) && shot.storage_path === `${analysis.user_id}/motion-lab/${analysis.id}/phases/${key}.png`
+    })
+    const strengths = Array.isArray(analysis.strengths) ? analysis.strengths : []
+    const priorities = Array.isArray(analysis.development_priorities) ? analysis.development_priorities : []
     const opportunity = analysis.biggest_opportunity && typeof analysis.biggest_opportunity === 'object'
       ? analysis.biggest_opportunity as Record<string, unknown>
       : {}
-    const opportunityText = [
-      opportunity.title,
-      opportunity.observation,
-      opportunity.why_it_matters,
-      opportunity.coaching_cue ? `Coaching cue: ${opportunity.coaching_cue}` : null,
-    ].filter(Boolean).join('\n\n')
+    const expectedOverview = `${analysis.user_id}/motion-lab/${analysis.id}/phases/delivery_overview.png`
+    const overviewPath = analysis.clip_summary?.delivery_overview?.storage_path === expectedOverview ? expectedOverview : null
+    const evidenceKeys = phases.map(shot => String(shot.key))
+    if (overviewPath) evidenceKeys.push('delivery_overview')
+    let findings = null
+    if (Array.isArray(opportunity.findings)) {
+      try {
+        findings = validateMechanicsFindings(opportunity.findings, evidenceKeys, landingSampleTimes(phases))
+      } catch (error) {
+        return NextResponse.json({ error: error instanceof Error ? error.message : 'Review the landing evidence.' }, { status: 409 })
+      }
+    }
+    // An older assessment can still be verified from the actual notes and scorecard.
+    const legacyFocus = [opportunity.title, opportunity.observation, opportunity.why_it_matters,
+      typeof opportunity.coaching_cue === 'string' ? opportunity.coaching_cue : null].filter(v => typeof v === 'string' && v.trim()).join('\n\n')
+    const deliveryScore = findings && categories.length !== 6 ? null : calculateDeliveryScore(categories, analysis.delivery_score)
     // Decision D-010 removed video-estimated velocity, so there is no estimated
     // range to report and the athlete's radar-verified number comes from intake.
     // The note is now constant rather than a branch on a column nothing writes.
     const velocityRange = 'Velocity is not estimated from video. Use the athlete-reported radar number from intake, and do not infer exact velocity from mechanics scores.'
 
-    const { data: report, error: reportError } = await admin.from('analysis_reports').upsert({
-      order_id: orderId,
-      analyst_id: user.id,
+    const report = {
       delivery_score: deliveryScore,
       three_strengths: strengths,
       three_priorities: priorities,
-      main_focus: opportunityText || analysis.coach_feedback || 'Your primary focus will be confirmed in the completed report.',
+      main_focus: findings ? analysis.coach_feedback : legacyFocus || analysis.coach_feedback,
+      mechanics_findings: findings,
+      mechanics_overview_path: overviewPath,
       secondary_focuses: priorities.slice(1),
       reviewer_velocity_notes: velocityRange,
-    }, { onConflict: 'order_id' }).select('id').single()
-
-    if (reportError || !report) {
-      return NextResponse.json({ error: `Could not create report draft: ${reportError?.message ?? 'unknown error'}` }, { status: 500 })
     }
-
+    const scores = []
     for (const category of categories) {
       const key = scorecardKey(String(category.category ?? ''))
       if (!key) continue
@@ -89,15 +150,13 @@ export async function POST(request: Request) {
         category.confidence ? `Confidence: ${category.confidence}` : null,
         category.likely_cause ? `Likely cause: ${String(category.likely_cause).replaceAll('_', ' ')}` : null,
       ].filter(Boolean).join(' ')
-      const { error } = await admin.from('scorecard_categories').upsert({
-        report_id: report.id,
+      scores.push({
         category: key,
         score: Math.max(1, Math.min(5, Number(category.score) || 3)),
         notes: note,
-      }, { onConflict: 'report_id,category' })
-      if (error) return NextResponse.json({ error: `Could not apply ${key} score: ${error.message}` }, { status: 500 })
+      })
     }
-
+    const pictures = []
     for (let index = 0; index < phases.length; index += 1) {
       const phase = phases[index]
       const phaseKey = String(phase.key ?? '')
@@ -105,11 +164,10 @@ export async function POST(request: Request) {
       const storagePath = typeof phase.storage_path === 'string' ? phase.storage_path : ''
       if (!position || !storagePath) continue
       const time = Number(phase.time)
-      const { error } = await admin.from('position_screenshots').upsert({
-        report_id: report.id,
+      pictures.push({
         position,
         storage_path: storagePath,
-        reviewer_notes: Number.isFinite(time)
+        reviewer_notes: typeof phase.answer === 'string' ? phase.answer : Number.isFinite(time)
           ? `Key frame from your delivery at ${time.toFixed(2)} seconds.`
           : 'Key frame from your delivery.',
         strengths: typeof phase.strength === 'string' ? phase.strength : null,
@@ -117,20 +175,18 @@ export async function POST(request: Request) {
         coaching_cue: typeof phase.coaching_cue === 'string' ? phase.coaching_cue : null,
         quality_note: typeof phase.confidence_note === 'string' ? phase.confidence_note : null,
         sort_order: index,
-      }, { onConflict: 'report_id,position' })
-      if (error) return NextResponse.json({ error: `Could not apply ${phaseKey} frame: ${error.message}` }, { status: 500 })
+      })
     }
 
-    const { error: analysisUpdateError } = await admin.from('motion_analyses').update({
-      delivery_score: deliveryScore,
-      ai_draft_status: 'staff_verified',
-      reviewed_by: user.id,
-      reviewed_at: new Date().toISOString(),
-    }).eq('id', analysisId)
-    if (analysisUpdateError) return NextResponse.json({ error: `Report was created, but verification status failed: ${analysisUpdateError.message}` }, { status: 500 })
-
-    await admin.from('orders').update({ status: 'report_being_prepared' }).eq('id', orderId)
-    return NextResponse.json({ ok: true, reportId: report.id })
+    const actions = findings?.flatMap(finding => finding.coaching_action ? [finding.coaching_action] : []) ?? []
+    const plan = findings ? await reviewedPlanUpdate(admin, analysisId, orderId, categories as CategoryAssessment[], actions) : null
+    const { data: reportId, error } = await admin.rpc('apply_reviewed_mechanics', {
+      analysis_id: analysisId, order_id_arg: orderId, staff_id: user.id, expected_revision: analysis.updated_at,
+      report_data: report, score_rows: scores, phase_rows: pictures, plan_data: plan,
+    })
+    if (error) return NextResponse.json({ error: error.message }, { status: error.code === 'P0001' ? 409 : 500 })
+    scheduleAssessmentFollowup(analysisId)
+    return NextResponse.json({ ok: true, reportId })
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : 'Could not apply the verified AI draft.' }, { status: 500 })
   }

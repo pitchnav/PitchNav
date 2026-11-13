@@ -15,6 +15,14 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
+        source: '/assessment-followup-bridge',
+        headers: [
+          { key: 'Content-Security-Policy', value: "frame-ancestors 'none'" },
+          { key: 'Referrer-Policy', value: 'no-referrer' },
+          { key: 'Cache-Control', value: 'private, no-store' },
+        ],
+      },
+      {
         source: '/api/webhooks/:path*',
         headers: [{ key: 'Cache-Control', value: 'no-store' }],
       },

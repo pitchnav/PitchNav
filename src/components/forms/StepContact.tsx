@@ -8,16 +8,18 @@ import { stepContactSchema, type StepContactData } from './intakeSchema'
 import { calculateAge } from '@/lib/utils'
 import type { IntakeFormData } from './intakeSchema'
 import Link from 'next/link'
+import { AI_DRAFT_PERMISSION_VERSION } from '@/lib/ai-draft-permission'
 
 interface Props {
   canSaveOptionalPermissions: boolean
+  canSaveAiPermission: boolean
   initialData: Partial<IntakeFormData>
   userId: string
   existingProfileId?: string | null
   onComplete: (data: Partial<IntakeFormData>, profileId?: string) => void
 }
 
-export function StepContact({ canSaveOptionalPermissions, initialData, userId, existingProfileId, onComplete }: Props) {
+export function StepContact({ canSaveOptionalPermissions, canSaveAiPermission, initialData, userId, existingProfileId, onComplete }: Props) {
   const [loading, setLoading] = useState(false)
   const [serverError, setServerError] = useState('')
   const supabase = createClient()
@@ -60,9 +62,12 @@ export function StepContact({ canSaveOptionalPermissions, initialData, userId, e
           terms_agreed_at: data.termsAgreed ? new Date().toISOString() : null,
           privacy_agreed: data.privacyAgreed,
           privacy_agreed_at: data.privacyAgreed ? new Date().toISOString() : null,
+          ...(canSaveAiPermission ? {
+            consent_ai_draft: data.consentAiDraft === true,
+            ai_draft_permission_version: data.consentAiDraft ? AI_DRAFT_PERMISSION_VERSION : 0,
+          } : {}),
           ...(canSaveOptionalPermissions ? {
             public_permission_version: 1,
-            consent_ai_draft: data.consentAiDraft === true,
             consent_anonymous_clips: data.consentAnonymousClips ?? false,
             consent_athlete_name: data.consentAthleteName ?? false,
             consent_testimonial: data.consentTestimonial ?? false,
@@ -202,17 +207,17 @@ export function StepContact({ canSaveOptionalPermissions, initialData, userId, e
       </div>
 
       {/* Optional educational use consents */}
-      {canSaveOptionalPermissions && <div className="space-y-3 pt-2 border-t border-surface-border">
+      {(canSaveOptionalPermissions || canSaveAiPermission) && <div className="space-y-3 pt-2 border-t border-surface-border">
         <div>
           <h3 className="text-sm font-semibold text-white">Optional Permissions</h3>
           <p className="text-xs text-slate-500 mt-1">You can leave every box unchecked and receive staff review. A guardian chooses for an athlete aged 13–17. You can change these choices here or <a href="/contact?topic=privacy" className="text-electric-blue-light underline">ask support to withdraw permission</a> for future use.</p>
         </div>
         {[
-          { name: 'consentAiDraft', label: 'Allow Pitch Nav staff to send six pitching images, age, body and pitching measurements, and relevant movement-screen results to OpenAI to draft feedback for this athlete. Staff reviews the draft.' },
-          { name: 'consentAnonymousClips', label: 'Pitch Nav may share anonymized clips from my analysis in public educational material after removing or obscuring identifying details.' },
+          ...(canSaveAiPermission ? [{ name: 'consentAiDraft', label: 'Allow staff to send OpenAI still images from across this delivery, including six phase panels and a delivery overview, their times and measurements, and relevant age, body, pitching and movement-screen information. This includes the pitching goal and mechanics concern entered in this intake. After staff verifies my assessment, Pitch Nav may also send the reviewed findings, assigned drills and plan to OpenAI to draft my coaching follow-up automatically. Staff reviews both drafts.' }] : []),
+          ...(canSaveOptionalPermissions ? [{ name: 'consentAnonymousClips', label: 'Pitch Nav may share anonymized clips from my analysis in public educational material after removing or obscuring identifying details.' },
           { name: 'consentAthleteName', label: "Pitch Nav may use the athlete's name in public educational content." },
           { name: 'consentTestimonial', label: 'Pitch Nav may publish a testimonial provided by this athlete.' },
-          { name: 'consentBeforeAfter', label: 'Pitch Nav may share before-and-after clips of this athlete in public educational material.' },
+          { name: 'consentBeforeAfter', label: 'Pitch Nav may share before-and-after clips of this athlete in public educational material.' }] : []),
         ].map(({ name, label }) => (
           <label key={name} className="flex items-start gap-3 cursor-pointer">
             <input

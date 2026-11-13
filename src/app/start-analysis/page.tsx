@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { AI_DRAFT_PERMISSION_VERSION } from '@/lib/ai-draft-permission'
 import { StepProgress } from '@/components/ui/ProgressBar'
 import { SafetyDisclaimer } from '@/components/ui/SafetyDisclaimer'
 import { StepContact } from '@/components/forms/StepContact'
@@ -25,6 +26,7 @@ export default function StartAnalysisPage() {
   const [formData, setFormData] = useState<Partial<IntakeFormData>>({})
   const [athleteProfileId, setAthleteProfileId] = useState<string | null>(null)
   const [userId, setUserId] = useState<string | null>(null)
+  const [canSaveAiPermission, setCanSaveAiPermission] = useState(false)
   const [canSaveOptionalPermissions, setCanSaveOptionalPermissions] = useState(false)
   const [loading, setLoading] = useState(true)
   const [membershipPlan, setMembershipPlan] = useState<'throwing' | 'performance'>('throwing')
@@ -49,11 +51,14 @@ export default function StartAnalysisPage() {
       }
       setUserId(user.id)
       const { data: base } = await supabase.from('athlete_profiles').select('id,athlete_full_name,athlete_email,phone_number,date_of_birth,communication_pref,guardian_name,guardian_email,guardian_consented,consent_anonymous_clips,consent_athlete_name,consent_testimonial,consent_before_after,height_feet,height_inches,weight_lbs,throwing_hand,primary_position,school_org,graduation_year,playing_level,current_avg_velocity,current_max_velocity,goal_velocity,velocity_source,velocity_measured_at,bullpen_intensity,pitches_per_week,health_notes,fastball_type,secondary_pitches,years_pitching,throwing_program,strength_program,main_goal,mechanical_concern,previous_feedback,upcoming_deadline').eq('user_id', user.id).order('updated_at', { ascending: false }).limit(1).maybeSingle()
-      let choices = supabase.from('athlete_profiles').select('consent_ai_draft,public_permission_version').eq('user_id', user.id)
+      let choices = supabase.from('athlete_profiles').select('public_permission_version').eq('user_id', user.id)
       choices = base ? choices.eq('id', base.id) : choices.limit(0)
-      const permission = await choices.maybeSingle()
+      let aiChoice = supabase.from('athlete_profiles').select('consent_ai_draft,ai_draft_permission_version').eq('user_id', user.id)
+      aiChoice = base ? aiChoice.eq('id', base.id) : aiChoice.limit(0)
+      const [permission, ai] = await Promise.all([choices.maybeSingle(), aiChoice.maybeSingle()])
+      setCanSaveAiPermission(!ai.error)
       setCanSaveOptionalPermissions(!permission.error)
-      const saved = base && { ...base, consent_ai_draft: permission.data?.consent_ai_draft, public_permission_version: permission.data?.public_permission_version }
+      const saved = base && { ...base, consent_ai_draft: ai.data?.consent_ai_draft, public_permission_version: permission.data?.public_permission_version }
       if (saved) {
         setAthleteProfileId(saved.id)
         setFormData({
@@ -62,7 +67,7 @@ export default function StartAnalysisPage() {
           phoneNumber: saved.phone_number ?? '', dateOfBirth: saved.date_of_birth,
           communicationPref: saved.communication_pref ?? 'email',
           guardianName: saved.guardian_name ?? '', guardianEmail: saved.guardian_email ?? '', guardianConsented: saved.guardian_consented,
-          consentAiDraft: saved.consent_ai_draft === true,
+          consentAiDraft: saved.consent_ai_draft === true && ai.data?.ai_draft_permission_version === AI_DRAFT_PERMISSION_VERSION,
           consentAnonymousClips: saved.public_permission_version === 1 && saved.consent_anonymous_clips === true, consentAthleteName: saved.public_permission_version === 1 && saved.consent_athlete_name === true, consentTestimonial: saved.public_permission_version === 1 && saved.consent_testimonial === true, consentBeforeAfter: saved.public_permission_version === 1 && saved.consent_before_after === true,
           heightFeet: saved.height_feet ?? undefined, heightInches: saved.height_inches ?? undefined, weightLbs: saved.weight_lbs ?? undefined,
           throwingHand: saved.throwing_hand ?? undefined, primaryPosition: saved.primary_position ?? undefined, schoolOrg: saved.school_org ?? '', graduationYear: saved.graduation_year ?? undefined, playingLevel: saved.playing_level ?? undefined,
@@ -123,6 +128,7 @@ export default function StartAnalysisPage() {
         <div className="card">
           {currentStep === 1 && (
             <StepContact
+              canSaveAiPermission={canSaveAiPermission}
               canSaveOptionalPermissions={canSaveOptionalPermissions}
               initialData={formData}
               userId={userId!}

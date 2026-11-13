@@ -96,7 +96,7 @@ export default function ProfilePage() {
       <h2 className="text-lg font-semibold text-white">Your data and permissions</h2>
       <p className="text-sm text-slate-300">Request a copy or correction of your information, change a permission, or contact us on behalf of a minor. We may ask for details to verify the request.</p>
       <p><Link href="/contact?topic=privacy" className="text-electric-blue-light underline">Contact privacy support</Link></p>
-      <p><Link href="/start-analysis" className="text-electric-blue-light underline">Edit athlete intake and optional permissions</Link></p>
+      <p><Link href="/start-analysis" className="text-electric-blue-light underline">Update athlete or guardian permission for AI coaching drafts and other optional uses</Link></p>
       <p><Link href="/billing" className="text-electric-blue-light underline">Manage or cancel a subscription</Link></p>
     </section>
 

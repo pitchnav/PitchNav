@@ -17,13 +17,16 @@ beforeEach(() => {
   ;(createClient as jest.Mock).mockResolvedValue({ auth: { getUser: async () => ({ data: { user: { id: 'staff' } } }) }, from: () => single({ is_admin: true }) })
 })
 afterAll(() => { global.fetch = savedFetch; if (savedKey === undefined) delete process.env.OPENAI_API_KEY; else process.env.OPENAI_API_KEY = savedKey })
+const adult = { date_of_birth: '1990-01-01', terms_agreed: true, privacy_agreed: true }
 test.each([
-  [false, uid, 'correct', 403],
-  [true, 'different-athlete', 'correct', 403],
-  [true, uid, 'wrong-owner', 409],
-])('permission and ownership must match before signing frames or contacting OpenAI', async (consent, profileUser, path, expected) => {
+  [false, 2, uid, 'correct', 403],
+  [true, 0, uid, 'correct', 403],
+  [true, 2, uid, 'minor-without-guardian', 403],
+  [true, 2, 'different-athlete', 'correct', 403],
+  [true, 2, uid, 'wrong-owner', 409],
+])('permission and ownership must match before signing frames or contacting OpenAI', async (consent, version, profileUser, path, expected) => {
   const storagePath = path === 'correct' ? uid + '/motion-lab/' + aid + '/phases/finish.png' : 'unrelated-frame.png'
-  const analysis = { id: aid, user_id: uid, athlete_profiles: { consent_ai_draft: consent, user_id: profileUser }, phase_snapshots: [{ key: 'finish', storage_path: storagePath }] }
+  const analysis = { id: aid, user_id: uid, athlete_profiles: { ...adult, date_of_birth: path === 'minor-without-guardian' ? '2011-01-01' : adult.date_of_birth, consent_ai_draft: consent, ai_draft_permission_version: version, user_id: profileUser }, phase_snapshots: [{ key: 'finish', storage_path: storagePath }] }
   ;(createAdminClient as jest.Mock).mockReturnValue({ from: () => single(analysis), storage: { from: () => ({ createSignedUrl: sign }) } })
   const result = await POST(new Request('http://localhost/api/admin/ai-mechanics', { method: 'POST', body: JSON.stringify({ analysisId: aid }) }))
   expect(result.status).toBe(expected)
@@ -31,12 +34,21 @@ test.each([
   expect(send).not.toHaveBeenCalled()
 })
 
-test('affirmative consent permits exactly six same-analysis frames for a staff draft', async () => {
+test('staff draft uses six authorized frames and measured screens without diagnosing a block from unsigned knee range', async () => {
   const keys = ['peak_leg_lift','hand_separation','lead_foot_contact','maximum_external_rotation','ball_release','finish']
   const snapshots = keys.map(key => ({ key, storage_path: uid + '/motion-lab/' + aid + '/phases/' + key + '.png' }))
-  const analysis = { id: aid, user_id: uid, athlete_profiles: { id: 'profile-id', user_id: uid, consent_ai_draft: true }, phase_snapshots: snapshots }
+  const analysis = {
+    id: aid, user_id: uid, athlete_profiles: { ...adult, id: 'profile-id', user_id: uid, consent_ai_draft: true, ai_draft_permission_version: 2 }, phase_snapshots: snapshots,
+    clip_summary: { mechanics_timeline: { version: 1 }, widestStrideTime: 2, leadKneeChangeAfterStride: 48 },
+  }
+  const screenResults = [
+    { screen_id: 'ankle_dorsiflexion', side: 'left', value: 18 },
+    { screen_id: 'ankle_dorsiflexion', side: 'right', value: 19 },
+    { screen_id: 'overhead_reach', side: 'left', value: 172 },
+    { screen_id: 'overhead_reach', side: 'right', value: 171 },
+  ]
   sign.mockImplementation(async (path: string) => ({ data: { signedUrl: 'https://offline.invalid/' + path } }))
-  const screens = { eq: jest.fn(), order: jest.fn(), limit: jest.fn(), maybeSingle: jest.fn().mockResolvedValue({ data: null }) }
+  const screens = { eq: jest.fn(), order: jest.fn(), limit: jest.fn(), maybeSingle: jest.fn().mockResolvedValue({ data: { results: screenResults } }) }
   screens.eq.mockReturnValue(screens)
   screens.order.mockReturnValue(screens)
   screens.limit.mockReturnValue(screens)
@@ -53,5 +65,50 @@ test('affirmative consent permits exactly six same-analysis frames for a staff d
   expect(send).toHaveBeenCalledTimes(1)
   const body = JSON.parse(send.mock.calls[0][1].body)
   expect(body.store).toBe(false)
+  const prompt = body.input[0].content[0].text
+  expect(prompt).toContain('ankle_dorsiflexion')
+  expect(prompt).toContain('18°')
+  expect(prompt).not.toContain('unstable-landing pattern')
+  expect(prompt).not.toContain('48° after landing')
   expect(body.input[0].content.filter((item: { type: string }) => item.type === 'input_image')).toHaveLength(6)
+})
+
+test('a library review with only a visibility limit is persisted without fabricated strengths, priorities, or a total score', async () => {
+  const keys = ['peak_leg_lift', 'hand_separation', 'lead_foot_contact', 'maximum_external_rotation', 'ball_release', 'finish']
+  const snapshots = keys.map(key => ({ key, storage_path: uid + '/motion-lab/' + aid + '/phases/' + key + '.png', sample_times: [1.1, 1.2, 1.3] }))
+  const analysis = { id: aid, user_id: uid, updated_at: '2026-11-12T12:00:00Z', athlete_profiles: { ...adult, id: 'profile-id', user_id: uid, consent_ai_draft: true, ai_draft_permission_version: 2 }, phase_snapshots: snapshots, clip_summary: { elbowRange: [1, 172], legacy_angle_marker: 'unsupported_angle', delivery_overview: { storage_path: uid + '/motion-lab/' + aid + '/phases/delivery_overview.png', sample_times: [0, 1, 2] } } }
+  sign.mockImplementation(async () => ({ data: { signedUrl: 'https://offline.invalid/phase' } }))
+  const screens = { eq: jest.fn(), order: jest.fn(), limit: jest.fn(), maybeSingle: jest.fn().mockResolvedValue({ data: null }) }
+  for (const fn of [screens.eq, screens.order, screens.limit]) fn.mockReturnValue(screens)
+  const cas = { eq: jest.fn(), is: jest.fn(), neq: jest.fn(), select: jest.fn(), maybeSingle: async () => ({ data: { id: aid }, error: null }) }
+  for (const fn of [cas.eq, cas.is, cas.neq, cas.select]) fn.mockReturnValue(cas)
+  const save = jest.fn(() => cas)
+  const analysisTable = { ...single(analysis), update: save }
+  ;(createAdminClient as jest.Mock).mockReturnValue({
+    from: (table: string) => table === 'motion_analyses' ? analysisTable : { select: () => screens },
+    storage: { from: () => ({ createSignedUrl: sign }) },
+  })
+  const limit = { flag_id: 154, topic: 'Glove-side lean', verdict: 'unable_to_assess', answer: 'This side view combines forward and sideways movement.', evidence_keys: ['ball_release', 'delivery_overview'], evidence: 'Your head is ahead of your belt on the side-view release panels.', coaching_action: null }
+  const footStrike = { hand_up_l: 'unresolved', contact_status: 'unresolved', last_airborne_time: null, first_planted_time: null,
+    arm_timing: 'unresolved', arm_observation: 'Your wrist is below the elbow in the first panel.',
+    torso_opening: 'unresolved', torso_observation: 'The far shoulder is hidden at landing.',
+    evidence: 'The shoe overlaps the mound in the three landing panels.', coaching_action: null }
+  send.mockResolvedValue({ ok: true, json: async () => ({ output_text: JSON.stringify({
+    foot_strike: footStrike,
+    overall_assessment: limit.answer, strengths: [], findings: [limit],
+    phase_notes: keys.map(key => ({ key, answer: 'A visible phase observation.' })), program_categories: [],
+  }) }) })
+  const result = await POST(new Request('http://localhost/api/admin/ai-mechanics', { method: 'POST', body: JSON.stringify({ analysisId: aid }) }))
+  expect(result.status).toBe(200)
+  const body = JSON.parse(send.mock.calls[0][1].body)
+  expect(body.input[0].content[0].text).toContain('270 |')
+  expect(body.input[0].content[0].text).not.toContain('unsupported_angle')
+  expect(body.input[0].content[1].text).toContain('1.1, 1.2, 1.3')
+  expect(body.input[0].content.filter((item: { type: string }) => item.type === 'input_image')).toHaveLength(7)
+  expect(body.input[0].content.at(-2).text).toContain('Whole delivery')
+  expect(cas.eq).toHaveBeenCalledWith('updated_at', analysis.updated_at)
+  expect(save).toHaveBeenCalledWith(expect.objectContaining({ biggest_opportunity: { findings: [limit, expect.objectContaining({
+    topic: 'Arm and torso at foot strike', evidence_keys: ['lead_foot_contact'], verdict: 'unable_to_assess',
+    answer: footStrike.arm_observation + ' ' + footStrike.torso_observation, coaching_action: null,
+  })] }, development_priorities: [], strengths: [], delivery_score: null }))
 })

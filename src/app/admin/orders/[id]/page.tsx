@@ -1,5 +1,9 @@
 'use client'
 
+import { isMechanicsOverview, overviewEvidence } from '@/lib/mechanics-overview'
+import { MechanicsReviewEditor } from '@/components/admin/MechanicsReviewEditor'
+import { MechanicsFindings } from '@/components/reports/MechanicsFindings'
+import type { MechanicsFinding } from '@/lib/mechanics-findings'
 import { AssessmentReviewGuide } from '@/components/admin/AssessmentReviewGuide'
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useParams } from 'next/navigation'
@@ -39,6 +43,9 @@ type AutomatedCategory = {
 }
 
 type AutomatedPhase = {
+  columns?: number
+  sample_times?: number[]
+  measurements?: Array<{ time: number; lead_knee_inside_deg: number | null; throwing_elbow_inside_deg: number | null; trunk_lean_from_vertical_deg: number | null }>
   key: string
   label: string
   time: number
@@ -47,6 +54,11 @@ type AutomatedPhase = {
 }
 
 type AutomatedAnalysis = {
+  user_id: string
+  clip_summary?: { delivery_overview?: { storage_path: string; sample_times?: number[]; columns?: number } } | null
+  updated_at: string
+  published_at: string | null
+  biggest_opportunity?: { findings?: MechanicsFinding[] } | null
   id: string
   order_id?: string | null
   delivery_score: number | null
@@ -85,6 +97,7 @@ const STATUS_OPTIONS: OrderStatus[] = [
   'complete', 'follow_up_available', 'cancelled', 'refunded',
 ]
 
+
 export default function AdminOrderDetailPage() {
   const { id } = useParams<{ id: string }>()
   // Memoize the client so it's stable across renders and won't trigger infinite loops
@@ -102,11 +115,13 @@ export default function AdminOrderDetailPage() {
   const [scorecard, setScorecard] = useState<ScorecardCategory[]>([])
   const [positions, setPositions] = useState<PositionScreenshot[]>([])
   const [automatedAnalysis, setAutomatedAnalysis] = useState<AutomatedAnalysis | null>(null)
+  const [overviewUrl, setOverviewUrl] = useState<string | null>(null)
   const [phaseUrls, setPhaseUrls] = useState<Record<string, string>>({})
   const [skeletonVideoUrl, setSkeletonVideoUrl] = useState<string | null>(null)
   const [trackedVideoUrl, setTrackedVideoUrl] = useState<string | null>(null)
   const [originalVideoDownloadUrl, setOriginalVideoDownloadUrl] = useState<string | null>(null)
   const [draftMessage, setDraftMessage] = useState('')
+  const [reviewDirty, setReviewDirty] = useState(false)
   const [generatingAi, setGeneratingAi] = useState(false)
   const [saving, setSaving] = useState(false)
   const [statusNote, setStatusNote] = useState('')
@@ -121,6 +136,10 @@ export default function AdminOrderDetailPage() {
   const [sendingEmail, setSendingEmail] = useState(false)
   const [publishingReport, setPublishingReport] = useState(false)
   const [emailSent, setEmailSent] = useState(false)
+
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('tab') === 'report') setActiveTab('report')
+  }, [])
 
   const loadData = useCallback(async () => {
     // Everything below runs inside one try/catch. Without it, any throw left
@@ -150,7 +169,7 @@ export default function AdminOrderDetailPage() {
     setNewStatus(orderData.status as OrderStatus)
 
     const athleteProfileId = orderData.athlete_profiles?.id
-    const automatedSelect = 'id,order_id,delivery_score,category_scores,phase_snapshots,strengths,development_priorities,coach_feedback,velocity_estimate_low,velocity_estimate_high,velocity_confidence,ai_draft_status,ai_generated_at,ai_model,source_video_storage_path,tracked_video_storage_path,rendered_video_storage_path'
+    const automatedSelect = 'id,user_id,order_id,updated_at,published_at,clip_summary,biggest_opportunity,delivery_score,category_scores,phase_snapshots,strengths,development_priorities,coach_feedback,velocity_estimate_low,velocity_estimate_high,velocity_confidence,ai_draft_status,ai_generated_at,ai_model,source_video_storage_path,tracked_video_storage_path,rendered_video_storage_path'
     const { data: orderAnalysis } = await supabase
       .from('motion_analyses')
       .select(automatedSelect)
@@ -165,6 +184,7 @@ export default function AdminOrderDetailPage() {
       const { data: legacyAnalysis } = await supabase
         .from('motion_analyses')
         .select(automatedSelect)
+        .is('order_id', null)
         .eq('athlete_profile_id', athleteProfileId)
         .order('created_at', { ascending: false })
         .limit(1)
@@ -173,6 +193,7 @@ export default function AdminOrderDetailPage() {
     }
 
     setAutomatedAnalysis(typed)
+    setReviewDirty(false)
 
     if (typed?.rendered_video_storage_path) {
       const { data } = await supabase.storage.from('pitch-videos').createSignedUrl(typed.rendered_video_storage_path, 3600, { download: true })
@@ -195,6 +216,13 @@ export default function AdminOrderDetailPage() {
 
     const snapshots = Array.isArray(typed?.phase_snapshots) ? typed.phase_snapshots : []
     const signed: Record<string, string> = {}
+    const overview = typed?.clip_summary?.delivery_overview?.storage_path
+    if (typed && isMechanicsOverview(overview, typed.user_id, typed.id)) {
+      const { data } = await supabase.storage.from('analysis-assets').createSignedUrl(overview, 3600)
+      setOverviewUrl(data?.signedUrl ?? null)
+    } else {
+      setOverviewUrl(null)
+    }
     for (const snapshot of snapshots) {
       if (!snapshot.storage_path) continue
       const { data } = await supabase.storage.from('analysis-assets').createSignedUrl(snapshot.storage_path, 3600)
@@ -336,7 +364,7 @@ export default function AdminOrderDetailPage() {
       if (!response.ok) throw new Error(result.error || 'Could not apply the verified AI draft.')
       if (result.reportId) setReportId(result.reportId)
       await loadData()
-      setDraftMessage('Verified AI draft applied. Review the populated scores and phase frames before publishing.')
+      setDraftMessage('Findings applied. Review the report before publishing.')
     } catch (reason) {
       setDraftMessage(reason instanceof Error ? reason.message : 'Could not apply the verified AI draft.')
     } finally {
@@ -497,6 +525,11 @@ export default function AdminOrderDetailPage() {
     { key: 'report', label: 'Report Entry' },
     { key: 'drills', label: 'Drills' },
   ] as const
+
+  const findingFrames = [
+    ...(automatedAnalysis?.phase_snapshots ?? []).map(phase => ({ ...phase, sampleTimes:phase.sample_times, columns:phase.columns ?? phase.sample_times?.length, url:phaseUrls[phase.key] })),
+    ...(overviewUrl ? [{ ...overviewEvidence, url:overviewUrl, sampleTimes:automatedAnalysis?.clip_summary?.delivery_overview?.sample_times, columns:automatedAnalysis?.clip_summary?.delivery_overview?.columns }] : []),
+  ]
 
   return (
     <div className="max-w-6xl mx-auto">
@@ -754,17 +787,19 @@ export default function AdminOrderDetailPage() {
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.18em] text-electric-blue-light">Automated review draft</p>
-                <h2 className="mt-1 text-lg font-bold text-white">Staff review and optional AI draft</h2>
-                <p className="mt-2 max-w-3xl text-sm text-slate-400">Pose tracking can generate score candidates and six phase images. Peak leg lift and finish are stronger candidates. Hand separation, foot contact, maximum external rotation, and ball release must be visually confirmed; ordinary 2D phone video cannot identify all of those events exactly.</p>
+                <h2 className="mt-1 text-lg font-bold text-white">Delivery review</h2>
+                <p className="mt-2 max-w-3xl text-sm text-slate-400">Inspect the source footage alongside the phase images. Check foot contact and ball release before using them as timing evidence.</p>
               </div>
               {automatedAnalysis ? (
                 <div className="flex shrink-0 flex-col gap-2">
-                  <button onClick={generateAiDraft} disabled={generatingAi || !profile?.consent_ai_draft} className="btn-accent">
+                  <button onClick={generateAiDraft} disabled={generatingAi || saving || reviewDirty || !!automatedAnalysis.published_at || !profile?.consent_ai_draft} className="btn-accent">
                     {generatingAi ? 'AI reviewing six phases…' : automatedAnalysis.ai_draft_status === 'ready_for_staff_review' ? 'Regenerate AI coaching draft' : 'Generate AI coaching draft'}
                   </button>
-                  <button onClick={applyAutomatedDraft} disabled={saving || automatedAnalysis.ai_draft_status !== 'ready_for_staff_review'} className="btn-primary">
-                    <CheckCircle className="h-4 w-4" /> {saving ? 'Applying…' : 'Apply verified AI draft'}
+                  <button onClick={applyAutomatedDraft} disabled={saving || generatingAi || reviewDirty || automatedAnalysis.ai_draft_status !== 'ready_for_staff_review'} className="btn-primary">
+                    <CheckCircle className="h-4 w-4" /> {saving ? 'Applying…' : 'Apply reviewed findings'}
                   </button>
+                  {(automatedAnalysis.ai_draft_status === 'staff_verified' || automatedAnalysis.published_at) &&
+                    <a className="btn-secondary" href={'/admin/assessment-followups?analysisId=' + automatedAnalysis.id}>Review coaching follow-up</a>}
                   {order.status !== 'complete' && (
                     <button onClick={deleteAnalysis} disabled={saving} className="btn-secondary border-red-500/30 text-red-400 hover:border-red-500">
                       <Trash2 className="h-4 w-4" /> Delete faulty analysis
@@ -778,7 +813,7 @@ export default function AdminOrderDetailPage() {
               ) : null}
             </div>
             {!automatedAnalysis && <p className="mt-3 text-sm text-yellow-300">Automatic processing has not finished for this order. The athlete does not need to run Motion Lab again. Use “Retry automatic processing” only if the original processing screen was closed or interrupted.</p>}
-            {automatedAnalysis && <p className="mt-3 text-xs text-slate-400">With athlete or guardian permission, staff may generate an AI draft from six saved images. Otherwise, prepare feedback manually. Step 2: visually verify it. Step 3: apply the verified draft. AI output is educational and is not laboratory or medical analysis.</p>}
+            {automatedAnalysis && <p className="mt-3 text-xs text-slate-400">Save your review, then apply the findings to the report. An optional AI draft uses the submitted evidence when the athlete has given permission.</p>}
             {automatedAnalysis && (originalVideoDownloadUrl || trackedVideoUrl || skeletonVideoUrl) && (
               <div className="mt-3 flex flex-wrap gap-2">
                 {originalVideoDownloadUrl && (
@@ -793,11 +828,15 @@ export default function AdminOrderDetailPage() {
                 )}
                 {skeletonVideoUrl && (
                   <a href={skeletonVideoUrl} download className="btn-secondary text-sm">
-                    <Download className="h-4 w-4" /> Download skeleton video
+                    <Download className="h-4 w-4" /> Download saved 2D review
                   </a>
                 )}
               </div>
             )}
+            {overviewUrl && <details className="mt-4">
+              <summary className="cursor-pointer font-semibold text-white">Whole delivery filmstrip</summary>
+              <a href={overviewUrl} target="_blank" rel="noreferrer"><img src={overviewUrl} alt="Timestamped views across the submitted delivery" className="mt-3 w-full rounded-md" /></a>
+            </details>}
             {automatedAnalysis && (!trackedVideoUrl || !skeletonVideoUrl) && (
               <p className="mt-3 text-xs text-slate-500">{!trackedVideoUrl && !skeletonVideoUrl ? 'No tracker or skeleton video saved yet for this analysis' : !trackedVideoUrl ? 'No tracker-overlay video saved yet for this analysis' : 'No skeleton video saved yet for this analysis'} — it&apos;s produced automatically the next time this video runs through Motion Lab (use &quot;Retry automatic processing&quot; on the Videos tab, or Reset for Testing then re-upload).</p>
             )}
@@ -806,9 +845,18 @@ export default function AdminOrderDetailPage() {
             )}
             {draftMessage && <p className="mt-3 text-sm text-accent-green">{draftMessage}</p>}
           </div>
-          {/* Scorecard */}
-          <div className="card">
-            <h2 className="text-base font-semibold text-white mb-6">Scorecard (1–5 each)</h2>
+          {automatedAnalysis && (automatedAnalysis.published_at || ['complete','cancelled','refunded'].includes(order.status) ?
+            <MechanicsFindings findings={automatedAnalysis.biggest_opportunity?.findings}
+              frames={findingFrames} /> :
+            <MechanicsReviewEditor key={automatedAnalysis.id + automatedAnalysis.updated_at}
+              analysisId={automatedAnalysis.id} orderId={id} revision={automatedAnalysis.updated_at}
+              recap={automatedAnalysis.coach_feedback ?? ''} initialFindings={automatedAnalysis.biggest_opportunity?.findings ?? []}
+              frames={findingFrames}
+              onSaved={async () => { await loadData(); setDraftMessage('Review saved. Apply the reviewed findings to the report.') }} onDirty={setReviewDirty} />
+          )}
+          {/* Reviewers may score supported categories separately from their findings. */}
+          <details className="card">
+            <summary className="cursor-pointer text-base font-semibold text-white mb-4">Optional scorecard</summary>
             <div className="space-y-4">
               {SCORECARD_CATEGORIES.map(({ key, label }) => {
                 const existing = scorecard.find((s) => s.category === key)
@@ -840,7 +888,7 @@ export default function AdminOrderDetailPage() {
                         const score = parseInt(
                           (document.querySelector(`[data-key="${key}"]`) as HTMLSelectElement)?.value ?? ''
                         )
-                        saveScorecardItem(key, score || existing?.score || 3, e.target.value)
+                        if (score && e.target.value !== existing?.notes) saveScorecardItem(key, score, e.target.value)
                       }}
                       className="input text-sm"
                     />
@@ -877,13 +925,13 @@ export default function AdminOrderDetailPage() {
                 )
               })}
             </div>
-          </div>
+          </details>
 
           {/* Position screenshots */}
           <div className="card">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-base font-semibold text-white">Position Screenshots</h2>
-              <p className="text-xs text-slate-500">Upload via private file storage → analysis-assets bucket</p>
+
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
               {Object.entries(PITCH_POSITION_LABELS).map(([pos, label]) => {
@@ -895,6 +943,15 @@ export default function AdminOrderDetailPage() {
                   <div key={pos} className="rounded-lg border border-surface-border bg-navy-800 p-3">
                     <p className="text-xs text-slate-400 mb-2">{label}</p>
                     {imageUrl && <img src={imageUrl} alt={`${label} automatically selected candidate frame`} className="mb-3 aspect-video w-full rounded-md object-contain bg-black" />}
+                    {autoPhase?.measurements?.length ? <details className="mb-3 text-sm text-slate-300">
+                      <summary className="cursor-pointer">Projected angles</summary>
+                      <table className="mt-2 text-xs"><thead><tr><th>Time</th><th>Lead knee</th><th>Throwing elbow</th><th>Trunk tilt</th></tr></thead>
+                        <tbody>{autoPhase.measurements.map(row => <tr key={row.time}>
+                          <td className="p-1">{row.time.toFixed(2)} s</td>
+                          {[row.lead_knee_inside_deg,row.throwing_elbow_inside_deg,row.trunk_lean_from_vertical_deg].map((value, i)=><td className="p-1" key={i}>{value == null ? '—' : value + '°'}</td>)}
+                        </tr>)}</tbody>
+                      </table><p className="mt-1 text-xs text-slate-400">Straight knee or elbow is 180°. Trunk tilt is relative to vertical in this view.</p>
+                    </details> : null}
                     {existing?.storage_path ? (
                       <div className="flex items-center gap-1 text-xs text-accent-green">
                         <CheckCircle className="h-3.5 w-3.5" /> Uploaded
@@ -946,7 +1003,7 @@ export default function AdminOrderDetailPage() {
             {automatedAnalysis && (
               <button
                 onClick={publishAndSendReport}
-                disabled={publishingReport || automatedAnalysis.ai_draft_status === 'ready_for_staff_review'}
+                disabled={publishingReport || saving || generatingAi || reviewDirty || automatedAnalysis.ai_draft_status === 'ready_for_staff_review'}
                 className="btn-accent"
               >
                 <Send className="h-4 w-4" />

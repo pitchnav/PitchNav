@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { WorkspaceLink } from '@/components/layout/WorkspaceLink'
 import { createClient } from '@/lib/supabase/server'
 import {
-  LayoutDashboard, ClipboardList, Users, Dumbbell, Settings, AlertTriangle, Activity, Film, Bot } from 'lucide-react'
+  LayoutDashboard, ClipboardList, Users, Dumbbell, Settings, AlertTriangle, Activity, Film, Bot, MessageSquare } from 'lucide-react'
 
 const ADMIN_NAV = [
   { href: '/admin', label: 'Overview', icon: LayoutDashboard },
@@ -12,6 +12,7 @@ const ADMIN_NAV = [
   { href: '/admin/athletes', label: 'Athletes', icon: Users },
   { href: '/admin/drills', label: 'Drill Library', icon: Dumbbell },
   { href: '/admin/motion-lab', label: 'Motion Reviews', icon: Activity },
+  { href: '/admin/assessment-followups', label: 'Assessment Follow-ups', icon: MessageSquare },
   { href: '/admin/tracker-studio', label: 'Tracker Studio', icon: Film },
   { href: '/admin/program-pricing', label: 'Program Pricing', icon: Users },
   { href: '/admin/settings', label: 'Settings', icon: Settings },

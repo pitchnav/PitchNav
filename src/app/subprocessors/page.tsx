@@ -11,7 +11,7 @@ export default function SubprocessorsPage() {
         <li><strong>Vercel</strong> hosts the website and its server routes. Requests can include IP addresses, browser details and data submitted to a route.</li>
         <li><strong>Supabase</strong> handles account authentication, private file storage and database records. These can include athlete and guardian intake, source footage, extracted frames, measurements, reports, order references and permission choices.</li>
         <li><strong>Resend</strong> delivers email from configured website features. It can receive the recipient address, subject, message body and delivery information.</li>
-        <li><strong>OpenAI</strong> provides an optional drafting service for staff. With current athlete or guardian permission, it receives still images from the delivery, timing and movement data, and relevant athlete intake and screen results. Staff reviews the draft.</li>
+        <li><strong>OpenAI</strong> provides an optional drafting service for staff. With current athlete or guardian permission, it receives still images from the delivery, timing and movement data, and relevant athlete intake and screen results. The updated permission also covers automatically drafting a coaching follow-up from staff-reviewed findings, assigned drills and plan details. Staff reviews the drafts.</li>
       </ul>
     </PolicySection>
     <PolicySection title="Payments and browser downloads">
