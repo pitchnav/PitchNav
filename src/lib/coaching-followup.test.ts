@@ -1,4 +1,4 @@
-import { readBiomechanics, reviewedSource, writeAthleteFollowup, designTrainingPlan, type CoachingDrill, type CoachingFollowupSource } from './coaching-followup'
+import { specialistFailureReason, readBiomechanics, reviewedSource, writeAthleteFollowup, designTrainingPlan, type CoachingDrill, type CoachingFollowupSource } from './coaching-followup'
 import { footStrikeFinding } from './foot-strike-review'
 
 jest.mock('server-only', () => ({}), { virtual: true })
@@ -110,4 +110,17 @@ test('automatic frame captions locate a phase but cannot become a coaching point
   ]})
   expect(enriched.findings.slice(source.findings.length).map(f => f.answer)).toEqual(['Keep your glove near the chest.'])
   expect(enriched.phaseNotes).toHaveLength(3)
+})
+
+test('specialist diagnostics allowlist reason codes and conceal private provider text', async () => {
+  const secret = 'private athlete or provider message'
+  expect(specialistFailureReason(new Error(secret))).toBe('unclassified')
+  expect(specialistFailureReason(new SyntaxError(secret))).toBe('invalid_json')
+  expect(specialistFailureReason(new Error('Training volume must come from the saved prescription.'))).toBe('unverified_workload')
+  for (const [status,code,expected] of [[400,'invalid_json_schema','provider_http_400_invalid_json_schema'],
+    [499,secret,'provider_http_other_other']] as const) {
+    send.mockResolvedValueOnce({ok:false,status,json:async()=>({error:{message:secret,code}})})
+    const failure = await readBiomechanics(source).catch(error => error)
+    expect(specialistFailureReason(failure)).toBe(expected)
+  }
 })

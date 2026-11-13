@@ -4,6 +4,44 @@ import type { MechanicsFinding } from './mechanics-findings'
 import { loadFollowUpVoice } from './followup-voice-settings'
 import { handUpAnswers } from './foot-strike-review'
 
+// Map only errors we create locally to operational reason codes. Provider bodies,
+// model output, schema issue details, and the athlete's source text never enter logs.
+const safeReasons = new Map<string, string>([
+  ['Assessment generation is not configured.', 'missing_configuration'],
+  ['The assessment specialist did not finish.', 'provider_incomplete'],
+  ['The assessment specialist declined the request.', 'provider_refusal'],
+  ['The specialist did not cover the reviewed findings.', 'finding_coverage'],
+  ['The interpretation changed a reviewed verdict.', 'changed_verdict'],
+  ['Each observed development priority needs a specific fix.', 'fix_coverage'],
+  ['The draft introduced an unverified angle or velocity.', 'unverified_quantity'],
+  ['The draft introduced a conclusion beyond the reviewed evidence.', 'unsupported_conclusion'],
+  ['Training work requires a supported correction.', 'unsupported_training_target'],
+  ['A training drill is outside the provided library.', 'unknown_drill'],
+  ['The plan did not address all assigned fixes.', 'missing_training_target'],
+  ['Training volume must come from the saved prescription.', 'unverified_workload'],
+  ['The assessment exceeds the staff editor limit.', 'report_too_long'],
+  ['Could not load the training library.', 'catalog_unavailable'],
+])
+const providerCodes = new Set([
+  'invalid_json_schema', 'invalid_api_key', 'insufficient_quota', 'rate_limit_exceeded',
+  'model_not_found', 'context_length_exceeded', 'server_error', 'invalid_value', 'unsupported_parameter',
+])
+class ProviderFailure extends Error {
+  constructor(readonly status: number, readonly providerCode: string) {super('The assessment specialist service is unavailable.')}
+}
+export function specialistFailureReason(error: unknown): string {
+  if (error instanceof ProviderFailure) {
+    const status = [400,401,403,404,408,413,422,429,500,502,503,504].includes(error.status) ? String(error.status) : 'other'
+    const code = providerCodes.has(error.providerCode) ? error.providerCode : 'other'
+    return 'provider_http_' + status + '_' + code
+  }
+  if (error instanceof z.ZodError) return 'invalid_schema'
+  if (error instanceof SyntaxError) return 'invalid_json'
+  if (!(error instanceof Error)) return 'unclassified'
+  if (error.name === 'AbortError' || error.name === 'TimeoutError') return 'provider_timeout'
+  return safeReasons.get(error.message) ?? 'unclassified'
+}
+
 export type CoachingDrill = {
   name: string
   description: string
@@ -131,7 +169,10 @@ async function specialistResponse<T extends z.ZodType>(name: string, instruction
       text: { format: { type: 'json_schema', name, strict: true, schema: jsonSchema } },
     }),
   })
-  if (!response.ok) throw new Error('The assessment specialist service is unavailable.')
+  if (!response.ok) {
+    const detail = await response.json().catch(() => null)
+    throw new ProviderFailure(response.status, typeof detail?.error?.code === 'string' ? detail.error.code : '')
+  }
   const payload = await response.json()
   if (payload.status !== 'completed') throw new Error('The assessment specialist did not finish.')
   const messages = z.array(z.object({ type: z.string(), content: z.array(z.object({

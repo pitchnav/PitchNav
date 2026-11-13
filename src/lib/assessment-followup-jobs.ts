@@ -1,7 +1,7 @@
 import 'server-only'
 import { after } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
-import { readBiomechanics, writeAthleteFollowup, designTrainingPlan, reviewedSource, type CoachingDrill, type CoachingFollowupSource } from '@/lib/coaching-followup'
+import { readBiomechanics, writeAthleteFollowup, designTrainingPlan, reviewedSource, specialistFailureReason, type CoachingDrill, type CoachingFollowupSource } from '@/lib/coaching-followup'
 
 const columns = 'analysis_id,source_revision,status,body,updated_at,source,pipeline_stage'
 
@@ -50,7 +50,9 @@ export async function generateAssessmentFollowup(id: string, backfill = false) {
         }
         default: throw new Error('The assessment has an unknown stage.')
       }
-    } catch {
+    } catch (reason) {
+      const stage = ['biomechanics','followup','training'].includes(claim.pipeline_stage) ? claim.pipeline_stage : 'unknown'
+      console.warn('Assessment specialist failed', {stage, reason: specialistFailureReason(reason)})
       const { error: releaseError } = await admin.rpc('finish_assessment_followup', { ...lease, draft_body: null })
       if (releaseError) throw new Error('Could not release the assessment specialist.')
       return

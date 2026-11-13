@@ -4,7 +4,7 @@ import { readBiomechanics, writeAthleteFollowup, designTrainingPlan } from '@/li
 
 jest.mock('server-only', () => ({}), { virtual: true })
 jest.mock('@/lib/supabase/server', () => ({createAdminClient: jest.fn(),createClient: jest.fn()}))
-jest.mock('@/lib/coaching-followup', () => ({readBiomechanics: jest.fn(),writeAthleteFollowup: jest.fn(),designTrainingPlan: jest.fn(),reviewedSource:(source: unknown) => source}))
+jest.mock('@/lib/coaching-followup', () => ({...jest.requireActual('@/lib/coaching-followup'), readBiomechanics: jest.fn(),writeAthleteFollowup: jest.fn(),designTrainingPlan: jest.fn(),reviewedSource:(source: unknown) => source}))
 
 const id = '196556b5-74d0-47d4-a859-ff9d721147dd'
 const url = 'http://localhost/api/admin/assessment-followup?analysisId=' + id
