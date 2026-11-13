@@ -5,15 +5,12 @@ import { createClient } from '@/lib/supabase/server'
 import { AssessmentFollowupEditor } from '@/components/admin/AssessmentFollowupEditor'
 import { FollowupVoiceEditor } from '@/components/admin/FollowupVoiceEditor'
 import { readFollowUpVoiceSettings } from '@/lib/followup-voice-settings'
+import { workflowStatusLabel, type AssessmentWorkflowStatus, type AssessmentStage } from '@/lib/assessment-workflow-progress'
 
 const batch = 25
-export const maxDuration = 120
+export const maxDuration = 300
 
 const fields = 'id,title,order_id,reviewed_at,published_at,updated_at,ai_draft_status,status,athlete_profiles(athlete_full_name)'
-const statuses = {
-  pending: 'Queued', generating: 'Writing draft', ready: 'Ready for review',
-  failed: 'Generation failed', permission_required: 'Permission needed',
-}
 type Source = {
   id: string; title: string | null; order_id: string | null; reviewed_at: string; published_at: string | null;
   athlete_profiles: { athlete_full_name?: string } | { athlete_full_name?: string }[] | null
@@ -57,12 +54,13 @@ export default async function FollowupsPage({ searchParams }: { searchParams: Pr
   if (shown.length) {
     const childTable = 'assessment_followup_drafts'
     const { data, error } = await db.from('motion_analyses')
-      .select('id,assessment_followup_drafts(status,source_revision)').in('id',shown.map(source => source.id))
+      .select('id,assessment_followup_drafts(status,source_revision,pipeline_stage)').in('id',shown.map(source => source.id))
       .order('source_revision',{referencedTable:childTable,ascending:false}).limit(1,{referencedTable:childTable})
     queueError = Boolean(error)
     for (const row of data ?? []) {
       const latest = row.assessment_followup_drafts[0]
-      if (latest) statusesById.set(row.id, statuses[latest.status as keyof typeof statuses] ?? 'Check status')
+      if (latest) statusesById.set(row.id, workflowStatusLabel(latest.status as AssessmentWorkflowStatus,
+        latest.pipeline_stage as AssessmentStage | null) ?? 'Check status')
     }
   }
   const findings = Array.isArray(report?.biggest_opportunity?.findings) ? report.biggest_opportunity.findings :
@@ -73,7 +71,7 @@ export default async function FollowupsPage({ searchParams }: { searchParams: Pr
   return <div className="mx-auto max-w-5xl space-y-6">
     <div>
       <h1 className="text-3xl font-black text-white">Assessment follow-ups</h1>
-      <p className="mt-2 text-slate-400">Review the coaching draft for a staff-approved assessment. Saving a follow-up keeps it in the staff workspace.</p>
+      <p className="mt-2 text-slate-400">After coach review, Biomechanics reads the assessment, Athlete Follow-Up explains the priorities, and Training Plans builds the athlete’s plan. Open a report to review or edit it.</p>
     </div>
     {analysisId && (report ? <>
       <div className="flex flex-wrap items-center justify-between gap-3">

@@ -4,7 +4,7 @@ import { createAdminClient, createClient } from '@/lib/supabase/server'
 import { generateAssessmentFollowup, latestAssessmentFollowup } from '@/lib/assessment-followup-jobs'
 
 export const runtime = 'nodejs'
-export const maxDuration = 120
+export const maxDuration = 300
 
 const requestId = z.string().uuid()
 const writeRequest = z.object({

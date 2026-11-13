@@ -1,9 +1,9 @@
 import 'server-only'
 import { after } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
-import { generateCoachingFollowup, selectFollowUpDrillCandidates, type CoachingFollowupSource } from '@/lib/coaching-followup'
+import { readBiomechanics, writeAthleteFollowup, designTrainingPlan, reviewedSource, type CoachingDrill, type CoachingFollowupSource } from '@/lib/coaching-followup'
 
-const columns = 'analysis_id,source_revision,status,body,updated_at,source'
+const columns = 'analysis_id,source_revision,status,body,updated_at,source,pipeline_stage'
 
 export async function latestAssessmentFollowup(id: string) {
   const { data, error } = await createAdminClient().from('assessment_followup_drafts')
@@ -18,32 +18,49 @@ export async function generateAssessmentFollowup(id: string, backfill = false) {
     const { error } = await admin.rpc('queue_assessment_followup', { target_id: id, only_if_missing: true })
     if (error) throw new Error('Could not load the verified assessment.')
   }
-  const { data: claim, error } = await admin.rpc('claim_assessment_followup', { target_id: id }).maybeSingle()
-  if (error) throw new Error('Could not start the coaching draft.')
-  if (!claim) return
-
-  let body: string | null = null
-  try {
-    const source = claim.source as CoachingFollowupSource
-    // A claim is granted only while the exact athlete's current permission is valid.
-    // The provider receives reviewed text. Account/guardian fields stay in the database.
-    if (!source.approvedDrills.length && source.findings.some(f => f.verdict === 'observed' && f.coaching_action)) {
-      const { data: catalog, error: catalogError } = await admin.from('drills')
-        .select('name,description,coaching_cues,sets,reps,common_mistakes,contraindications,what_it_trains').eq('is_active', true)
-      if (catalogError) throw new Error('Could not read the drills.')
-      source.suggestedDrills = selectFollowUpDrillCandidates(source.findings, (catalog ?? []).map((row: {
-        name: string; description: string | null; coaching_cues: string[] | null; common_mistakes: string[] | null
-        sets: number | null; reps: string | null; contraindications: string | null; what_it_trains: string | null
-      }) => ({ ...row, description: row.description ?? '', coaching_cues: row.coaching_cues ?? [], common_mistakes: row.common_mistakes ?? [] })), source.approvedDrills)
+  // Every handoff obtains a new lease and checks the current athlete's permission again.
+  for (let remaining = 3; remaining > 0; remaining--) {
+    const { data: claim, error } = await admin.rpc('claim_assessment_followup', { target_id: id }).maybeSingle()
+    if (error) throw new Error('Could not start the assessment specialist.')
+    if (!claim) return
+    const lease = { target_id: id, source_at: claim.source_revision, token: claim.claim_id }
+    let output: unknown
+    let body: string | null = null
+    try {
+      const source = reviewedSource(claim.source as CoachingFollowupSource)
+      switch (claim.pipeline_stage) {
+        case 'biomechanics':
+          output = await readBiomechanics(source)
+          break
+        case 'followup':
+          output = await writeAthleteFollowup(source, claim.biomechanics)
+          break
+        case 'training': {
+          const { data: drills, error: catalogError } = await admin.from('drills')
+            .select('name,description,coaching_cues,sets,reps,common_mistakes,contraindications,what_it_trains')
+            .eq('is_active', true).order('name')
+          if (catalogError) throw new Error('Could not load the training library.')
+          const catalog = (drills ?? []).map((drill: CoachingDrill) => ({
+            ...drill, description: drill.description ?? '', coaching_cues: drill.coaching_cues ?? [],
+          }))
+          const plan = await designTrainingPlan(source, claim.biomechanics, claim.followup, catalog)
+          output = plan.artifact
+          body = plan.body
+          break
+        }
+        default: throw new Error('The assessment has an unknown stage.')
+      }
+    } catch {
+      const { error: releaseError } = await admin.rpc('finish_assessment_followup', { ...lease, draft_body: null })
+      if (releaseError) throw new Error('Could not release the assessment specialist.')
+      return
     }
-    body = await generateCoachingFollowup(source)
-  } catch {
-    // Provider or source errors are retryable from the staff queue.
+    const { data: advanced, error: saveError } = await admin.rpc('advance_assessment_followup', {
+      ...lease, stage: claim.pipeline_stage, stage_output: output, draft_body: body,
+    })
+    if (saveError) throw new Error('Could not save the assessment handoff.')
+    if (!advanced || body !== null) return
   }
-  const { error: saveError } = await admin.rpc('finish_assessment_followup', {
-    target_id: id, source_at: claim.source_revision, token: claim.claim_id, draft_body: body,
-  })
-  if (saveError) throw new Error('Could not finish the coaching draft.')
 }
 
 export function scheduleAssessmentFollowup(id: string) {

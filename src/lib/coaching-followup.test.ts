@@ -1,6 +1,5 @@
-import { generateCoachingFollowup, selectFollowUpDrillCandidates, type CoachingDrill, type CoachingFollowupSource } from './coaching-followup'
+import { readBiomechanics, reviewedSource, writeAthleteFollowup, designTrainingPlan, type CoachingDrill, type CoachingFollowupSource } from './coaching-followup'
 import { footStrikeFinding } from './foot-strike-review'
-import type { MechanicsFinding } from './mechanics-findings'
 
 jest.mock('server-only', () => ({}), { virtual: true })
 jest.mock('./followup-voice-settings', () => ({ loadFollowUpVoice: async () => ({
@@ -15,75 +14,90 @@ afterAll(() => { global.fetch = originalFetch; if (sourceKey === undefined) dele
 
 const plant = footStrikeFinding({
   contact_status: 'bracketed', first_planted_time: 1, last_airborne_time: 0.95, hand_up_l: 'absent',
-  arm_timing: 'issue_visible', arm_observation: 'Your throwing hand was below your elbow at plant.',
-  torso_opening: 'unresolved', torso_observation: 'We cannot resolve chest rotation from this angle.',
+  arm_timing: 'no_clear_issue', arm_observation: 'Your hand is below the elbow at plant and rises before the next clear frame.',
+  torso_opening: 'unresolved', torso_observation: 'Chest rotation relative to the hips is unresolved.',
 }, 'The throwing hand rose after the front shoe settled.', null, ['private-attachment-key'])
-const knee: MechanicsFinding = { topic: 'Lead knee after plant', flag_id: 122, verdict: 'observed', answer: 'Your knee keeps bending.',
-  evidence: 'Your front knee moves forward from plant through release.', evidence_keys: ['private-attachment-key'], coaching_action: 'Take your weight on the front leg and turn around it.' }
-const drill: CoachingDrill = { name: 'Front-Leg Block Dry Reps', sets: 3, reps: '6 dry reps', description: 'Stride and turn without a ball.',
-  coaching_cues: ['Take your weight on the front leg.'], common_mistakes: ['Forcing the knee straight'], what_it_trains: 'Front-leg stability' }
-const source: CoachingFollowupSource = { summary: 'Prioritize the front leg.', strengths: ['A repeatable stride.'], findings: [knee, plant], approvedDrills: [drill] }
-const output = { executive: 'Start with what happens after your front shoe lands.', mechanical: [
-  { sourceIndex: 0, explanation: 'Your knee keeps bending as you turn.' },
-  { sourceIndex: 1, explanation: 'Your arm was ready and your chest was open.' },
-], transfer: 'Look at your knee after the shoe lands on your usual mound throws.', retest: 'Compare the knee at the same point on comparable throws.', recap: 'Keep the stride. Work on the front leg.' }
+const drill: CoachingDrill = { name: 'Hip-Lead Separation Dry Reps', sets: 3, reps: '6 dry reps', description: 'Stride and turn without a ball.',
+  coaching_cues: ['Let the front hip lead.'], common_mistakes: ['Pulling the shoulders ahead'], what_it_trains: 'Hip and shoulder sequencing' }
+const source: CoachingFollowupSource = {
+  summary: 'Keep the glove side organized.', strengths: ['A consistent stride.'], approvedDrills: [],
+  findings: [{ topic: 'Torso rotation', flag_id: null, verdict: 'observed', answer: 'Your shoulders and hips turn together after plant.',
+    evidence: 'The shoulder line follows the hips immediately after contact.', coaching_action: null, evidence_keys: ['private-attachment-key'] }, plant],
+}
+const mechanics = { overview: 'The hips and shoulders turn together after contact.', findings: [
+  { sourceIndex: 0, disposition: 'develop', interpretation: 'Your shoulders follow the pelvis immediately after plant.' },
+  { sourceIndex: 1, disposition: 'limited', interpretation: 'Published separately.' },
+] }
+const followup = { opening: 'Work on the turn after the shoe comes down.', points: [
+  { sourceIndex: 0, explanation: 'Your shoulders follow the hips as soon as you land.', fix: 'Let the front hip turn before the shirt follows.' },
+  { sourceIndex: 1, explanation: 'Published separately.', fix: null },
+], recap: 'Keep the stride; separate the turn.' }
+const plan = { focus: 'Begin with a dry rehearsal in your normal warm-up.', steps: [
+  { sourceIndexes: [0], task: 'Start from your usual stride, lead the turn with the hip, and finish naturally.',
+    drillName: drill.name, cue: 'Belt first, then shirt.', success: 'The belt starts turning before the chest on the next side clip.' },
+], transfer: 'Carry the cue into the throws that are already on the schedule.', retest: 'Compare hip and shoulder timing from the same camera position.' }
+
 function stub(body: unknown, status = 'completed') {
-  send.mockResolvedValue(Response.json({ status, output: [{ type: 'message', content: [{ type: 'output_text', text: JSON.stringify(body) }] }] }))
+  send.mockResolvedValueOnce(Response.json({ status, output: [{ type: 'message', content: [{ type: 'output_text', text: JSON.stringify(body) }] }] }))
 }
 
-test('renders the seven sections with the approved dose, separate landing judgments and signed-off work', async () => {
-  stub(output)
-  const body = await generateCoachingFollowup({ ...source, session: 'Use the controlled portion of Tuesday’s planned session.' })
-  expect(body.match(/^\d\. .+/gm)).toHaveLength(7)
-  for (const text of [drill.name, '3 sets × 6 dry reps', 'Watch for · Forcing the knee straight', 'Tuesday',
-    'has not reached the hand-up L', 'hand was below your elbow', 'cannot resolve chest rotation']) expect(body).toContain(text)
-  expect(body).not.toContain('your chest was open')
-  const request = JSON.parse(send.mock.calls[0][1].body)
-  expect(request.store).toBe(false)
-  expect(request.input).not.toContain('private-attachment-key')
-  expect(JSON.parse(request.input).assessment.findings).toHaveLength(2)
-  expect(JSON.parse(request.input).teamVoice.note).toContain('shoe lands')
-  expect(JSON.parse(request.input).teamVoice.specialistInstructions).toContain('short baseball cues')
-  expect(request.instructions).toContain('never a source of athlete facts')
+test('three independent specialists hand off a specific fix, drill and transfer without an outline, assignment or prewritten cue', async () => {
+  stub(mechanics); stub(followup); stub(plan)
+  const bio = await readBiomechanics(source)
+  const coach = await writeAthleteFollowup(source, bio)
+  const finished = await designTrainingPlan(source, bio, coach, [drill])
+  const requests = send.mock.calls.map(call => JSON.parse(call[1].body))
+  expect(requests.map(req => req.text.format.name)).toEqual(['pitchnav_biomechanics','pitchnav_athlete_followup','pitchnav_training_plan'])
+  expect(requests.every(req => req.store === false && !req.input.includes('private-attachment-key'))).toBe(true)
+  expect(JSON.parse(requests[1].input)).toMatchObject({ biomechanics:bio, teamVoice:{ specialistInstructions:expect.stringContaining('short baseball cues') } })
+  expect(JSON.parse(requests[2].input)).toMatchObject({ followup:coach, activeCatalog:[{name:drill.name}] })
+  for (const expected of [drill.name, plan.steps[0].task, plan.steps[0].cue, plan.steps[0].success, plan.transfer,
+    'has not reached the hand-up L', plant.foot_strike!.torso_observation, followup.points[0].fix]) expect(finished.body).toContain(expected)
+  expect(finished.body).toContain('Dry rehearsal · 3 sets × 6 dry reps within normal skill work.')
 })
 
-test('keeps the coach’s custom dose and prevents a voice example supplying an athlete’s velocity or a made-up elbow angle', async () => {
-  stub(output)
-  const body = await generateCoachingFollowup({ ...source, approvedDrills: [{ ...drill, custom_note: 'One walk-through during warmup.' }] })
-  expect(body).toContain('One walk-through')
-  expect(body).not.toContain('6 dry reps')
-  for (const claim of ['Your fastball reached 95 mph.', 'Your elbow measured 94 degrees.']) {
-    stub({ ...output, executive: claim })
-    await expect(generateCoachingFollowup(source)).rejects.toThrow('unverified angle or velocity')
+test('the signed-off dosage or custom note takes precedence and no unrelated library drills are added', async () => {
+  for (const [assigned, present, absent] of [
+    [drill, '3 sets × 6 dry reps','One walk-through'],
+    [{...drill,custom_note:'One walk-through in warmup.'},'One walk-through','6 dry reps'],
+  ] as const) {
+    stub(plan)
+    const finished = await designTrainingPlan({...source,approvedDrills:[assigned]},mechanics,followup,[])
+    expect(finished.body).toContain(present); expect(finished.body).not.toContain(absent)
   }
 })
 
-test('fails closed on incomplete output and missing findings', async () => {
-  stub(output, 'incomplete')
-  await expect(generateCoachingFollowup(source)).rejects.toThrow('did not finish')
-  stub({ ...output, mechanical: [output.mechanical[0], output.mechanical[0]] })
-  await expect(generateCoachingFollowup(source)).rejects.toThrow('did not cover')
+test('incomplete, invented quantities and reversals of observed evidence fail at their originating stage', async () => {
+  stub(mechanics, 'incomplete')
+  await expect(readBiomechanics(source)).rejects.toThrow('did not finish')
+  stub({...mechanics,findings:[mechanics.findings[1], mechanics.findings[1]]})
+  await expect(readBiomechanics(source)).rejects.toThrow('did not cover')
+  for (const invented of ['Your fastball reached 95 mph.', 'Your elbow measured 94 degrees.', 'Your torso opens early.']) {
+    stub({...followup,recap:invented})
+    await expect(writeAthleteFollowup(source, mechanics)).rejects.toThrow()
+  }
 })
 
-test('catches a recap or summary that reverses a reviewed torso judgment or invents a velocity gain', async () => {
-  for (const claim of ['Your torso opens early.', 'Your fastball gained velocity.']) {
-    stub({ ...output, recap: claim })
-    await expect(generateCoachingFollowup(source)).rejects.toThrow('beyond the reviewed evidence')
+test('training cannot attach a drill to a visibility limit, leave a fix unaddressed, or invent a catalog exercise', async () => {
+  for (const steps of [[], [{...plan.steps[0],sourceIndexes:[1]}], [{...plan.steps[0],drillName:'Invented throw'}]]) {
+    stub({...plan,steps})
+    await expect(designTrainingPlan(source, mechanics, followup, [drill])).rejects.toThrow()
   }
-  stub({ ...output, executive: 'This view cannot tell whether your chest opens early.' })
-  await expect(generateCoachingFollowup(source)).resolves.toContain('Mechanical breakdown')
 })
 
-test('proposes a specific catalog exercise for an observed flag only, without assigning its default workload', async () => {
-  const options = selectFollowUpDrillCandidates([knee, plant], [drill], [])
-  expect(options).toEqual([{ ...drill, findingIndex: 0, sets: null, reps: null }])
-  for (const findings of [[plant], [{ ...knee, verdict: 'unable_to_assess' as const }], [{ ...knee, coaching_action: 'Skip any front-leg work for now.' }]]) {
-    expect(selectFollowUpDrillCandidates(findings, [drill], [])).toEqual([])
-  }
-  expect(selectFollowUpDrillCandidates([knee], [drill], [drill])).toEqual([])
-  stub(output)
-  const body = await generateCoachingFollowup({ ...source, approvedDrills: [], suggestedDrills: options })
-  expect(body).toContain('Drill option for coach review · Front-Leg Block Dry Reps')
-  expect(body).toContain('No separate session was assigned')
-  expect(body).not.toContain('6 dry reps')
+test('a maintenance-only assessment produces a plan without manufacturing a corrective drill', async () => {
+  const baseline = {...source,findings:[],strengths:['Your sequence holds through release.']}
+  stub({focus:'Keep your normal warm-up and repeat your natural sequence.',steps:[],transfer:plan.transfer,retest:plan.retest})
+  const result = await designTrainingPlan(baseline,{overview:'No change indicated.',findings:[]},{opening:'Keep the sequence.',points:[],recap:'Stay with your timing.'},[])
+  expect(result.body).toContain('repeat your natural sequence')
+  expect(result.body).not.toContain('Your adjustment')
+})
+
+test('indexes additional phase opportunities and textual priorities without doubling identical evidence or inferring flaws from scores', () => {
+  const enriched = reviewedSource({...source, priorities:[source.findings[0].answer,'Your weight shifts back before landing.'],
+    phaseNotes:[{position:'peak_leg_lift',development_opportunity:'Build forward direction.',coaching_cue:'Let your belt move toward the plate.'}],
+    scorecard:[{category:'Direction',score:2}]})
+  expect(enriched.findings).toHaveLength(4)
+  expect(enriched.findings[2]).toMatchObject({topic:'peak leg lift',coaching_action:'Let your belt move toward the plate.'})
+  expect(reviewedSource({...source,findings:[],summary:'Your knee keeps giving way after plant.'}).findings[0].answer).toContain('after plant')
 })

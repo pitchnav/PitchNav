@@ -7,7 +7,7 @@ import { landingSampleTimes, validateMechanicsFindings } from '@/lib/mechanics-f
 import { calculateDeliveryScore } from '@/lib/utils'
 
 export const runtime = 'nodejs'
-export const maxDuration = 120
+export const maxDuration = 300
 
 const POSITION_FROM_AUTOMATED: Record<string, string> = {
   peak_leg_lift: 'peak_leg_lift',

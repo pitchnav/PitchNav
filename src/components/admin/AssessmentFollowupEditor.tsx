@@ -2,13 +2,10 @@
 
 import { useEffect, useState } from 'react'
 import type { CoachingFollowupSource } from '@/lib/coaching-followup'
+import { assessmentStages, handoffStatus, workflowStatusLabel, type AssessmentStage } from '@/lib/assessment-workflow-progress'
 import { FollowupReviewedSource } from './FollowupReviewedSource'
 
 export type FollowupStatus = 'pending' | 'generating' | 'ready' | 'failed' | 'permission_required'
-export const followupLabels: Record<FollowupStatus, string> = {
-  pending: 'Queued', generating: 'Writing draft', ready: 'Ready for review',
-  failed: 'Generation failed', permission_required: 'Permission needed',
-}
 type FollowupDraft = {
   analysis_id: string
   source_revision: string
@@ -16,6 +13,7 @@ type FollowupDraft = {
   body: string | null
   updated_at: string
   source: CoachingFollowupSource
+  pipeline_stage?: AssessmentStage | null
 }
 type Result = { draft?: FollowupDraft | null; error?: string }
 const endpoint = '/api/admin/assessment-followup'
@@ -54,7 +52,7 @@ export function AssessmentFollowupEditor({ analysisId, hasFindings }: { analysis
         setError('')
         setConflict(false)
         if (current?.status === 'pending' || current?.status === 'generating') {
-          if (++polls <= 15) timer = setTimeout(loadDraft, 4000)
+          if (++polls <= 75) timer = setTimeout(loadDraft, 4000)
           else {
             setStalled(true)
             setMessage('The draft is still in progress. Check its status or retry generation.')
@@ -127,14 +125,21 @@ export function AssessmentFollowupEditor({ analysisId, hasFindings }: { analysis
   const waiting = draft?.status === 'pending' || draft?.status === 'generating'
   return <section className="card space-y-4">
     <div>
-      <h2 className="text-xl font-bold text-white">Coaching follow-up</h2>
+      <h2 className="text-xl font-bold text-white">{draft?.pipeline_stage ? 'Assessment and training plan' : 'Coaching follow-up'}</h2>
       <p className="mt-1 text-sm text-slate-400" role="status">
-        {loading ? 'Loading draft…' : draft ? followupLabels[draft.status] : loaded ? 'No draft yet' : ''}
+        {loading ? 'Loading draft…' : draft ? workflowStatusLabel(draft.status, draft.pipeline_stage) : loaded ? 'No draft yet' : ''}
       </p>
     </div>
+    {draft?.pipeline_stage && <ol aria-label="Specialist handoffs" className="grid gap-2 sm:grid-cols-3">
+      {assessmentStages.map(stage => <li key={stage.id}
+        className="rounded-lg border border-surface-border px-3 py-2 text-sm">
+        <strong className="block text-slate-100">{stage.name}</strong>
+        <span className="text-slate-300">{handoffStatus(stage.id, draft.pipeline_stage!, draft.status)}</span>
+      </li>)}
+    </ol>}
     {draft?.source && <FollowupReviewedSource source={draft.source} revision={draft.source_revision}/>}
     {draft?.status === 'ready' && <>
-      <label className="block"><span className="label">Athlete-facing draft</span>
+      <label className="block"><span className="label">{draft.pipeline_stage ? 'Athlete follow-up and tailored training plan' : 'Athlete-facing draft'}</span>
         <textarea className="input min-h-64" rows={11} value={body} disabled={busy || loading}
           onChange={event => { setBody(event.target.value); setMessage('') }} />
       </label>

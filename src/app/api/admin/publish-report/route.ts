@@ -8,7 +8,7 @@ import { isMechanicsOverview, overviewEvidence } from '@/lib/mechanics-overview'
 import { calculateDeliveryScore } from '@/lib/utils'
 
 export const runtime = 'nodejs'
-export const maxDuration = 120
+export const maxDuration = 300
 
 export async function POST(request: Request) {
   try {

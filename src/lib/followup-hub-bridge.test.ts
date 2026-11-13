@@ -45,6 +45,23 @@ test('propagates auth and conflict errors and trims list metadata to the contrac
     .toEqual({...base,type:'error',payload:{status:409,message:'Refresh latest'}})
 })
 
+test('shares workflow position and finished copy, without intermediate material', async () => {
+  const draft = {analysis_id:analysisId,source_revision:revision,updated_at:revision,pipeline_stage:'training',
+    status:'generating',body:'incomplete report',biomechanics:{observations:['internal']},followup:{notes:'internal'}}
+  const listItem = {analysisId,label:'Fictional pitcher',reviewedAt:revision,status:'generating',pipelineStage:'training'}
+  global.fetch = jest.fn()
+    .mockResolvedValueOnce({ok:true,json:async()=>({items:[{...listItem,followup:draft.followup}],page:1,hasNext:false})})
+    .mockResolvedValueOnce({ok:true,json:async()=>({draft})})
+    .mockResolvedValueOnce({ok:true,json:async()=>({draft:{...draft,status:'ready',body:'Final follow-up and training plan'}})})
+  const signal = new AbortController().signal
+  expect(await replyToHub(command({...base,type:'list',payload:{page:1}}),signal)).toEqual(
+    {...base,type:'list-result',payload:{items:[listItem],page:1,hasNext:false}})
+  const get = command({...base,type:'get',payload:{analysisId}})
+  const summary = {analysisId,sourceRevision:revision,revision,pipelineStage:'training'}
+  expect(await replyToHub(get,signal)).toEqual({...base,type:'get-result',payload:{...summary,status:'generating',body:null}})
+  expect(await replyToHub(get,signal)).toEqual({...base,type:'get-result',payload:{...summary,status:'ready',body:'Final follow-up and training plan'}})
+})
+
 test('syncs only specialist instructions, never draft text, role metadata or the rest of the team voice', async () => {
   const instructions = 'Use coaching language. '.repeat(112).trim()
   const mockFetch = jest.fn()

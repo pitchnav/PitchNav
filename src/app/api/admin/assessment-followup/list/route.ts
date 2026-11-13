@@ -2,7 +2,7 @@ import { scheduleAssessmentFollowupRecovery } from '@/lib/assessment-followup-jo
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
-export const maxDuration = 120
+export const maxDuration = 300
 
 const pageSize = 20
 const noStore = { 'Cache-Control': 'private, no-store' }
@@ -19,7 +19,7 @@ export async function GET(request: Request) {
   }
   const child = 'assessment_followup_drafts'
   const { data, error } = await db.from('motion_analyses')
-    .select('id,title,athlete_profiles(athlete_full_name),assessment_followup_drafts!inner(status,source_revision)')
+    .select('id,title,athlete_profiles(athlete_full_name),assessment_followup_drafts!inner(status,source_revision,pipeline_stage)')
     .not('reviewed_at','is',null).not('reviewed_by','is',null)
     .or('ai_draft_status.eq.staff_verified,and(status.eq.published,published_at.not.is.null)')
     .order('reviewed_at', {ascending:false}).order('id')
@@ -32,7 +32,7 @@ export async function GET(request: Request) {
     const draft = row.assessment_followup_drafts[0]
     const athlete = Array.isArray(row.athlete_profiles) ? row.athlete_profiles[0] : row.athlete_profiles
     return { analysisId: row.id, label: athlete?.athlete_full_name || row.title || 'Pitching assessment',
-      reviewedAt: draft.source_revision, status: draft.status }
+      reviewedAt: draft.source_revision, status: draft.status, pipelineStage: draft.pipeline_stage }
   })
   return NextResponse.json({ items, page, hasNext: rows.length > pageSize }, { headers: noStore })
 }

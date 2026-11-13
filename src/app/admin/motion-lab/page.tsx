@@ -9,7 +9,7 @@ import { createClient } from '@/lib/supabase/server'
 import { sendMotionAnalysisReadyEmail } from '@/lib/resend'
 import { DeleteAnalysisButton } from './DeleteAnalysisButton'
 
-export const maxDuration = 120
+export const maxDuration = 300
 
 async function saveReview(formData: FormData) {
   'use server'

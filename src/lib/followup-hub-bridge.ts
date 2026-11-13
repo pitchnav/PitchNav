@@ -17,9 +17,10 @@ const voiceResult = z.object({ instructions:instructions.nullable(), revision:ve
 const incoming = z.discriminatedUnion('type',[base.extend({type:z.literal('hello')}),list,get,save,voiceGet,voiceSave])
 type Incoming = z.infer<typeof incoming>
 const states = z.enum(['pending','generating','ready','failed','permission_required'])
-const item = z.object({analysisId:uuid,label:z.string(),reviewedAt:version,status:states})
+const stage = z.enum(['biomechanics','followup','training']).nullish()
+const item = z.object({analysisId:uuid,label:z.string(),reviewedAt:version,status:states,pipelineStage:stage})
 const queue = z.object({items:z.array(item).max(20),page:z.number(),hasNext:z.boolean()})
-const entry = z.object({analysis_id:uuid,source_revision:version,updated_at:version,body:z.string().nullable(),status:states})
+const entry = z.object({analysis_id:uuid,source_revision:version,updated_at:version,body:z.string().nullable(),status:states,pipeline_stage:stage})
 
 export function isBridgeNonce(input: unknown): input is string { return uuid.safeParse(input).success }
 
@@ -49,9 +50,10 @@ export async function replyToHub(command: Incoming, signal: AbortSignal) {
     if (!json.draft) return reply('error', { status:404, message:'This assessment has no saved follow-up.' })
     const draft = entry.parse(json.draft)
     if (draft.analysis_id !== payload.analysisId) throw new Error('Unexpected draft')
-    // Only the saved coaching copy and edit revisions are shared with the private hub.
+    // The hub needs progress and the editable final report. Stage artifacts stay in PitchNav.
     return reply(type + '-result', { analysisId:draft.analysis_id, sourceRevision:draft.source_revision,
-      revision:draft.updated_at, body:draft.body, status:draft.status })
+      revision:draft.updated_at, body:draft.status === 'ready' ? draft.body : null, status:draft.status,
+      ...(draft.pipeline_stage ? {pipelineStage:draft.pipeline_stage} : {}) })
   } catch {
     return reply('error', { status:503, message:'Could not reach the staff follow-up. Reconnect or try again.' })
   }

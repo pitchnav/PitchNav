@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { resumeAssessmentFollowups } from '@/lib/assessment-followup-jobs'
 
 export const runtime = 'nodejs'
-export const maxDuration = 120
+export const maxDuration = 300
 
 export async function GET(request: Request) {
   if (!process.env.CRON_SECRET || request.headers.get('authorization') !== 'Bearer ' + process.env.CRON_SECRET) {
