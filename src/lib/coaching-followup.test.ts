@@ -101,3 +101,13 @@ test('indexes additional phase opportunities and textual priorities without doub
   expect(enriched.findings[2]).toMatchObject({topic:'peak leg lift',coaching_action:'Let your belt move toward the plate.'})
   expect(reviewedSource({...source,findings:[],summary:'Your knee keeps giving way after plant.'}).findings[0].answer).toContain('after plant')
 })
+
+test('automatic frame captions locate a phase but cannot become a coaching point or hide a real coach cue', () => {
+  const enriched = reviewedSource({...source, phaseNotes:[
+    {position:'ball_release',reviewer_notes:'Key frame from your delivery at 2.63 seconds.'},
+    {position:'finish',reviewer_notes:'Key frame from your delivery.'},
+    {position:'lead_foot_contact',reviewer_notes:'Key frame from your delivery at 2.04 seconds.',coaching_cue:'Keep your glove near the chest.'},
+  ]})
+  expect(enriched.findings.slice(source.findings.length).map(f => f.answer)).toEqual(['Keep your glove near the chest.'])
+  expect(enriched.phaseNotes).toHaveLength(3)
+})
