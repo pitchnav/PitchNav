@@ -44,3 +44,17 @@ test('propagates auth and conflict errors and trims list metadata to the contrac
   expect(await replyToHub(command({...base,type:'save',payload:{analysisId,sourceRevision:revision,revision,body:'edited'}}),signal))
     .toEqual({...base,type:'error',payload:{status:409,message:'Refresh latest'}})
 })
+
+test('syncs only specialist instructions, never draft text, role metadata or the rest of the team voice', async () => {
+  const instructions = 'Use coaching language. '.repeat(112).trim()
+  const mockFetch = jest.fn()
+    .mockResolvedValueOnce({ok:true,json:async()=>({instructions:null,revision,note:'private team note',examples:['private']})})
+    .mockResolvedValueOnce({ok:true,json:async()=>({instructions,revision})})
+  global.fetch = mockFetch
+  const signal = new AbortController().signal
+  expect(await replyToHub(command({...base,type:'voice-get',payload:{}}),signal)).toEqual({...base,type:'voice-get-result',payload:{instructions:null,revision}})
+  expect(command({...base,type:'voice-save',payload:{instructions,revision,body:'athlete private'}})).toBeNull()
+  expect(await replyToHub(command({...base,type:'voice-save',payload:{instructions,revision}}),signal)).toEqual({...base,type:'voice-save-result',payload:{instructions,revision}})
+  expect(mockFetch.mock.calls[1][0]).toBe('/api/admin/assessment-followup/specialist')
+  expect(JSON.parse(mockFetch.mock.calls[1][1].body)).toEqual({instructions,revision})
+})

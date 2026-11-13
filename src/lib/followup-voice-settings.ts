@@ -21,7 +21,13 @@ export async function readFollowUpVoiceSettings(db: Awaited<ReturnType<typeof cr
 }
 
 // Generation calls this only on the server, after checking the source and athlete permission.
-export async function loadFollowUpVoice(): Promise<FollowUpVoice> {
-  const { voice } = await readFollowUpVoiceSettings(createAdminClient())
-  return voice
+export async function loadFollowUpVoice(): Promise<FollowUpVoice & { specialistInstructions?: string }> {
+  const db = createAdminClient()
+  const [settings, specialist] = await Promise.all([
+    readFollowUpVoiceSettings(db),
+    db.from('followup_voice_settings').select('specialist_instructions').eq('id',true).maybeSingle(),
+  ])
+  const instructions = specialist.data?.specialist_instructions
+  return typeof instructions === 'string' && instructions.trim()
+    ? { ...settings.voice, specialistInstructions: instructions } : settings.voice
 }

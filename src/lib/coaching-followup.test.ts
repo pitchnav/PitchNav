@@ -5,6 +5,7 @@ import type { MechanicsFinding } from './mechanics-findings'
 jest.mock('server-only', () => ({}), { virtual: true })
 jest.mock('./followup-voice-settings', () => ({ loadFollowUpVoice: async () => ({
   note: 'Name the moment the shoe lands.', examples: [{ source: 'Fictional radar example', response: 'Your fastball reached 95 mph.' }],
+  specialistInstructions: 'Address the athlete directly and use short baseball cues.',
 }) }))
 const sourceKey = process.env.OPENAI_API_KEY
 const originalFetch = global.fetch
@@ -42,6 +43,8 @@ test('renders the seven sections with the approved dose, separate landing judgme
   expect(request.input).not.toContain('private-attachment-key')
   expect(JSON.parse(request.input).assessment.findings).toHaveLength(2)
   expect(JSON.parse(request.input).teamVoice.note).toContain('shoe lands')
+  expect(JSON.parse(request.input).teamVoice.specialistInstructions).toContain('short baseball cues')
+  expect(request.instructions).toContain('never a source of athlete facts')
 })
 
 test('keeps the coach’s custom dose and prevents a voice example supplying an athlete’s velocity or a made-up elbow angle', async () => {

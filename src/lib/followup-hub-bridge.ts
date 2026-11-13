@@ -10,7 +10,11 @@ const request = base.extend({ id:z.string().min(1).max(128) })
 const list = request.extend({ type:z.literal('list'), payload:z.object({page:z.number().int().min(1).max(100000)}) })
 const get = request.extend({ type:z.literal('get'), payload:z.object({analysisId:uuid}) })
 const save = request.extend({ type:z.literal('save'), payload:z.object({analysisId:uuid,sourceRevision:version,revision:version,body:z.string().trim().min(1).max(60000)}) })
-const incoming = z.discriminatedUnion('type',[base.extend({type:z.literal('hello')}),list,get,save])
+const instructions = z.string().trim().min(1).max(12000)
+const voiceGet = request.extend({ type:z.literal('voice-get'), payload:z.object({}).strict() })
+const voiceSave = request.extend({ type:z.literal('voice-save'), payload:z.object({instructions,revision:version}).strict() })
+const voiceResult = z.object({ instructions:instructions.nullable(), revision:version })
+const incoming = z.discriminatedUnion('type',[base.extend({type:z.literal('hello')}),list,get,save,voiceGet,voiceSave])
 type Incoming = z.infer<typeof incoming>
 const states = z.enum(['pending','generating','ready','failed','permission_required'])
 const item = z.object({analysisId:uuid,label:z.string(),reviewedAt:version,status:states})
@@ -31,14 +35,16 @@ export async function replyToHub(command: Incoming, signal: AbortSignal) {
   const { type, id, payload } = command
   const reply = (resultType: string, payload: unknown) => ({ channel, nonce, type:resultType, id, payload })
   try {
-    const url = type === 'list' ? endpoint + '/list?page=' + payload.page :
+    const isVoice = type === 'voice-get' || type === 'voice-save'
+    const url = isVoice ? endpoint + '/specialist' : type === 'list' ? endpoint + '/list?page=' + payload.page :
       type === 'get' ? endpoint + '?analysisId=' + encodeURIComponent(payload.analysisId) : endpoint
     const response = await fetch(url, {
       credentials:'same-origin', cache:'no-store', signal,
-      ...(type === 'save' ? { method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) } : {}),
+      ...(type === 'save' || type === 'voice-save' ? { method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) } : {}),
     })
     const json = await response.json()
     if (!response.ok) return reply('error', { status:response.status, message:typeof json.error === 'string' ? json.error : 'Could not open the staff follow-up.' })
+    if (isVoice) return reply(type + '-result',voiceResult.parse(json))
     if (type === 'list') return reply('list-result', queue.parse(json))
     if (!json.draft) return reply('error', { status:404, message:'This assessment has no saved follow-up.' })
     const draft = entry.parse(json.draft)
