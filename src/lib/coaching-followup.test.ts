@@ -33,7 +33,7 @@ const followup = { opening: 'Work on the turn after the shoe comes down.', point
   { sourceIndex: 1, explanation: 'Published separately.', fix: null },
 ], recap: 'Keep the stride; separate the turn.' }
 const plan = { focus: 'Begin with a dry rehearsal in your normal warm-up.', steps: [
-  { sourceIndexes: [0], task: 'Start from your usual stride, lead the turn with the hip, and finish naturally.',
+  { primarySourceIndex: 0, linkedSourceIndexes: [] as number[], task: 'Start from your usual stride, lead the turn with the hip, and finish naturally.',
     drillName: drill.name, cue: 'Belt first, then shirt.', success: 'The belt starts turning before the chest on the next side clip.' },
 ], transfer: 'Carry the cue into the throws that are already on the schedule.', retest: 'Compare hip and shoulder timing from the same camera position.' }
 
@@ -79,18 +79,60 @@ test('incomplete, invented quantities and reversals of observed evidence fail at
 })
 
 test('training cannot attach a drill to a visibility limit, leave a fix unaddressed, or invent a catalog exercise', async () => {
-  for (const steps of [[], [{...plan.steps[0],sourceIndexes:[1]}], [{...plan.steps[0],drillName:'Invented throw'}]]) {
+  for (const steps of [[], [{...plan.steps[0],primarySourceIndex:1}], [...plan.steps,{...plan.steps[0],primarySourceIndex:null}],
+    [{...plan.steps[0],linkedSourceIndexes:[1]}], [{...plan.steps[0],linkedSourceIndexes:[0]}],
+    [{...plan.steps[0],primarySourceIndex:undefined}], [{...plan.steps[0],drillName:'Invented throw'}]]) {
     stub({...plan,steps})
     await expect(designTrainingPlan(source, mechanics, followup, [drill])).rejects.toThrow()
   }
 })
 
+test('the strict training request enumerates only reviewed fixes and allows one step to train linked targets', async () => {
+  const additional = {...source.findings[0], topic:'Front leg', answer:'The front knee keeps bending through the turn.'}
+  const expanded = {...source, findings:[...source.findings, additional]}
+  const handoff = {...mechanics, findings:[...mechanics.findings,
+    {sourceIndex:2,disposition:'develop',interpretation:additional.answer}]}
+  const additionalPoint = {sourceIndex:2,explanation:additional.answer,fix:'Stand into the front hip as you turn.'}
+  const coach = {...followup, points:[additionalPoint,...followup.points]}
+  stub({...plan,steps:[{...plan.steps[0],primarySourceIndex:0,linkedSourceIndexes:[2]}]})
+  const result = await designTrainingPlan(expanded,handoff,coach,[drill])
+  const request = JSON.parse(send.mock.calls[0][1].body)
+  expect(request.text.format.strict).toBe(true)
+  const stepSchema = request.text.format.schema.properties.steps.items
+  expect(stepSchema.required).toEqual(expect.arrayContaining(['primarySourceIndex','linkedSourceIndexes']))
+  expect(stepSchema.properties.primarySourceIndex).toEqual({type:'integer',enum:[0,2]})
+  expect(stepSchema.properties.linkedSourceIndexes).toEqual({
+    type:'array',items:{type:'integer',enum:[0,2]},
+  })
+  expect(JSON.parse(request.input).correctiveTargets).toEqual([
+    {sourceIndex:0,topic:source.findings[0].topic,problem:followup.points[0].explanation,fix:followup.points[0].fix},
+    {sourceIndex:2,topic:additional.topic,problem:additionalPoint.explanation,fix:additionalPoint.fix},
+  ])
+  expect(result.body).toContain('Working on · Torso rotation, Front leg')
+  expect(result.artifact.steps[0].sourceIndexes).toEqual([0,2])
+  expect(result.artifact.steps[0]).not.toHaveProperty('primarySourceIndex')
+})
+
 test('a maintenance-only assessment produces a plan without manufacturing a corrective drill', async () => {
   const baseline = {...source,findings:[],strengths:['Your sequence holds through release.']}
-  stub({focus:'Keep your normal warm-up and repeat your natural sequence.',steps:[],transfer:plan.transfer,retest:plan.retest})
+  stub({focus:'Keep your normal warm-up and repeat your natural sequence.',transfer:plan.transfer,retest:plan.retest})
   const result = await designTrainingPlan(baseline,{overview:'No change indicated.',findings:[]},{opening:'Keep the sequence.',points:[],recap:'Stay with your timing.'},[])
+  const request = JSON.parse(send.mock.calls[0][1].body)
+  expect(JSON.parse(request.input).correctiveTargets).toEqual([])
+  expect(request.text.format.schema.properties).not.toHaveProperty('steps')
+  expect(request.text.format.schema.additionalProperties).toBe(false)
+  expect(result.artifact.steps).toEqual([])
   expect(result.body).toContain('repeat your natural sequence')
   expect(result.body).not.toContain('Your adjustment')
+})
+
+test('a maintenance handoff with findings permits no corrective work and a contradictory fix is rejected before generation', async () => {
+  const kept = {...mechanics, findings:[{...mechanics.findings[0],disposition:'maintain'},mechanics.findings[1]]}
+  await expect(designTrainingPlan(source,kept,followup,[drill])).rejects.toThrow('specific fix')
+  expect(send).not.toHaveBeenCalled()
+  stub(plan)
+  const maintenance = {...followup,points:followup.points.map(point => ({...point,fix:null}))}
+  await expect(designTrainingPlan(source,kept,maintenance,[drill])).rejects.toThrow()
 })
 
 test('indexes additional phase opportunities and textual priorities without doubling identical evidence or inferring flaws from scores', () => {
