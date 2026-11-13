@@ -8,7 +8,7 @@ import { stepContactSchema, type StepContactData } from './intakeSchema'
 import { calculateAge } from '@/lib/utils'
 import type { IntakeFormData } from './intakeSchema'
 import Link from 'next/link'
-import { AI_DRAFT_PERMISSION_VERSION } from '@/lib/ai-draft-permission'
+import { AI_DRAFT_PERMISSION_VERSION, AI_DRAFT_PERMISSION_TEXT } from '@/lib/ai-draft-permission'
 
 interface Props {
   canSaveOptionalPermissions: boolean
@@ -213,7 +213,7 @@ export function StepContact({ canSaveOptionalPermissions, canSaveAiPermission, i
           <p className="text-xs text-slate-500 mt-1">You can leave every box unchecked and receive staff review. A guardian chooses for an athlete aged 13–17. You can change these choices here or <a href="/contact?topic=privacy" className="text-electric-blue-light underline">ask support to withdraw permission</a> for future use.</p>
         </div>
         {[
-          ...(canSaveAiPermission ? [{ name: 'consentAiDraft', label: 'Allow staff to send OpenAI still images from across this delivery, including six phase panels and a delivery overview, their times and measurements, and relevant age, body, pitching and movement-screen information. This includes the pitching goal and mechanics concern entered in this intake. After staff verifies my assessment, Pitch Nav may also send the reviewed findings, assigned drills and plan to OpenAI to draft my coaching follow-up automatically. Staff reviews both drafts.' }] : []),
+          ...(canSaveAiPermission ? [{ name: 'consentAiDraft', label: AI_DRAFT_PERMISSION_TEXT }] : []),
           ...(canSaveOptionalPermissions ? [{ name: 'consentAnonymousClips', label: 'Pitch Nav may share anonymized clips from my analysis in public educational material after removing or obscuring identifying details.' },
           { name: 'consentAthleteName', label: "Pitch Nav may use the athlete's name in public educational content." },
           { name: 'consentTestimonial', label: 'Pitch Nav may publish a testimonial provided by this athlete.' },
