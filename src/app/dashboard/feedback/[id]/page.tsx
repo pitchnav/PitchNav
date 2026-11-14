@@ -6,9 +6,11 @@ import { ProgressBar } from '@/components/ui/ProgressBar'
 import { SafetyDisclaimer } from '@/components/ui/SafetyDisclaimer'
 import { InteractiveFeedbackTools } from '@/components/reports/InteractiveFeedbackTools'
 import { calculateDeliveryScore } from '@/lib/utils'
+import { athleteCoachingText, athleteLandingWithGuide } from '@/lib/athlete-assessment-copy'
+import type { MechanicsFinding } from '@/lib/mechanics-findings'
 
 type Category = { category: string; score: number; confidence: string; strength: string; development: string; evidence: string }
-type Phase = { key: string; label: string; time: number; storage_path: string; confidence_note: string; strength?: string; opportunity?: string; coaching_cue?: string; signedUrl?: string }
+type Phase = { key: string; label: string; time: number; storage_path: string; answer?: string; strength?: string; opportunity?: string; coaching_cue?: string; signedUrl?: string }
 type PlanDay = { day: string; focus: string; work: string }
 type PlanWeek = { week: number; priority: string; coaching_cue?: string; prescription?: string; reassessment?: boolean; days?: PlanDay[] }
 type PerformanceCorrelation = { assessment_category: string; score: number; observed_deficiency: string; lift_emphasis: string; mobility_emphasis: string; rationale: string }
@@ -48,9 +50,9 @@ function parseCategories(value: unknown): Category[] {
       category: String(record.category ?? record.name ?? record.label ?? `Category ${index + 1}`),
       score: Math.max(0, Math.min(5, score)),
       confidence: String(record.confidence ?? record.video_quality ?? 'Moderate'),
-      strength: String(record.strength ?? record.positive ?? 'No note added.'),
-      development: String(record.development ?? record.opportunity ?? record.next_focus ?? 'No next focus added.'),
-      evidence: String(record.evidence ?? record.observation ?? 'Review the highlighted video position.'),
+      strength: athleteCoachingText(record.strength ?? record.positive),
+      development: athleteCoachingText(record.development ?? record.opportunity ?? record.next_focus),
+      evidence: athleteCoachingText(record.evidence ?? record.observation),
     }]
   })
 }
@@ -74,7 +76,13 @@ export default async function FeedbackReportPage({ params }: { params: Promise<{
 
   const categories = parseCategories(analysis.category_scores)
   const deliveryScore = calculateDeliveryScore(categories, analysis.delivery_score)
-  const phases = (analysis.phase_snapshots ?? []) as Phase[]
+  const findings: MechanicsFinding[] = Array.isArray(analysis.biggest_opportunity?.findings) ? analysis.biggest_opportunity.findings : []
+  const landing = findings.find(finding => finding.foot_strike)?.foot_strike
+  const phases: Phase[] = ((analysis.phase_snapshots ?? []) as Phase[]).map(phase => ({
+    key: phase.key, label: phase.label, time: phase.time, storage_path: phase.storage_path,
+    answer: phase.key === 'lead_foot_contact' && landing ? athleteLandingWithGuide(landing) : athleteCoachingText(phase.answer),
+    strength: athleteCoachingText(phase.strength), opportunity: athleteCoachingText(phase.opportunity), coaching_cue: athleteCoachingText(phase.coaching_cue),
+  }))
   for (const phase of phases) {
     const { data } = await supabase.storage.from('analysis-assets').createSignedUrl(phase.storage_path, 3600)
     phase.signedUrl = data?.signedUrl
@@ -82,8 +90,9 @@ export default async function FeedbackReportPage({ params }: { params: Promise<{
   const planRecord = Array.isArray(analysis.training_plans) ? analysis.training_plans[0] : analysis.training_plans
   const weeks = (planRecord?.weeks ?? []) as PlanWeek[]
   const strengthWeeks = (planRecord?.strength_mobility_weeks ?? []) as StrengthWeek[]
-  const strengths = (analysis.strengths ?? []) as string[]
-  const priorities = (analysis.development_priorities ?? []) as string[]
+  const summary = athleteCoachingText(analysis.coach_feedback)
+  const strengths = ((analysis.strengths ?? []) as string[]).map(athleteCoachingText).filter(Boolean).slice(0, 1)
+  const priorities = ((analysis.development_priorities ?? []) as string[]).map(athleteCoachingText).filter(Boolean)
   const todayParts = new Intl.DateTimeFormat('en-US', {
     timeZone: 'America/Detroit',
     year: 'numeric',
@@ -106,29 +115,29 @@ export default async function FeedbackReportPage({ params }: { params: Promise<{
         <div className="mt-6 flex items-start gap-3 rounded-xl border border-yellow-400/25 bg-yellow-400/10 p-4 text-sm text-yellow-100"><AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" /><p>This is a video-based coaching report, not medical advice. A Pitch Nav coach reviewed it before release.</p></div>
       </section>
 
-      {(analysis.coach_feedback || strengths.length > 0 || priorities.length > 0) && (
+      {(summary || strengths.length > 0 || priorities.length > 0) && (
         <section className="card">
           <p className="text-xs font-bold uppercase tracking-[0.2em] text-electric-blue-light">Your coach&apos;s read</p>
-          <h2 className="mt-1 text-2xl font-black text-white">What the video says—and what to do next</h2>
-          {analysis.coach_feedback && <p className="mt-4 max-w-4xl whitespace-pre-line text-base leading-7 text-slate-300">{analysis.coach_feedback}</p>}
+          <h2 className="mt-1 text-2xl font-black text-white">Your delivery</h2>
+          {summary && <p className="mt-4 max-w-4xl whitespace-pre-line text-base leading-7 text-slate-300">{summary}</p>}
           <div className="mt-6 grid gap-4 md:grid-cols-2">
-            <div className="rounded-xl border border-accent-green/20 bg-accent-green/5 p-5">
-              <h3 className="font-bold text-accent-green">What you already do well</h3>
-              <ul className="mt-3 space-y-3 text-sm leading-6 text-slate-300">
-                {strengths.map((strength) => <li key={strength}>• {strength}</li>)}
-              </ul>
-            </div>
-            <div className="rounded-xl border border-yellow-400/20 bg-yellow-400/5 p-5">
+            {priorities.length > 0 && <div className="rounded-xl border border-yellow-400/20 bg-yellow-400/5 p-5">
               <h3 className="font-bold text-yellow-300">What must improve next</h3>
               <ol className="mt-3 space-y-3 text-sm leading-6 text-slate-300">
                 {priorities.map((priority, index) => <li key={priority}><span className="font-bold text-yellow-200">{index + 1}.</span> {priority}</li>)}
               </ol>
-            </div>
+            </div>}
+            {strengths.length > 0 && <div className="rounded-xl border border-accent-green/20 bg-accent-green/5 p-5">
+              <h3 className="font-bold text-accent-green">What to keep</h3>
+              <ul className="mt-3 space-y-3 text-sm leading-6 text-slate-300">
+                {strengths.map((strength) => <li key={strength}>• {strength}</li>)}
+              </ul>
+            </div>}
           </div>
         </section>
       )}
 
-      <section className="card">
+      {categories.length > 0 && <section className="card">
         <h2 className="text-2xl font-black text-white">Mechanics scorecard</h2>
         <p className="mt-1 text-sm text-slate-400">See what is working, what to improve, and the cue to use next.</p>
         <div className="mt-6 grid gap-4 md:grid-cols-2">
@@ -137,14 +146,14 @@ export default async function FeedbackReportPage({ params }: { params: Promise<{
             <ProgressBar accessibleLabel={item.category} value={item.score} max={5} className="mt-3" />
             <p className="mt-3 text-xs font-semibold uppercase tracking-wider text-slate-500">Video quality: {item.confidence}</p>
             <div className="mt-4 space-y-4 text-sm leading-6">
-              <div><p className="font-semibold text-accent-green">What you did well</p><p className="mt-1 text-slate-300">{item.strength}</p></div>
-              <div><p className="font-semibold text-yellow-300">What needs to improve</p><p className="mt-1 text-slate-300">{item.development}</p></div>
-              <div className="border-t border-surface-border pt-3"><p className="font-semibold text-slate-400">How we know</p><p className="mt-1 text-slate-500">{item.evidence}</p></div>
+              {item.development && <div><p className="font-semibold text-yellow-300">What needs to improve</p><p className="mt-1 text-slate-300">{item.development}</p></div>}
+              {item.strength && <div><p className="font-semibold text-accent-green">What to keep</p><p className="mt-1 text-slate-300">{item.strength}</p></div>}
+              {item.evidence && <div className="border-t border-surface-border pt-3"><p className="font-semibold text-slate-400">During the throw</p><p className="mt-1 text-slate-500">{item.evidence}</p></div>}
             </div>
           </div>)}
         </div>
         <p className="mt-5 text-xs text-slate-500">Use this score to track your own progress over time. It is not a medical or injury-risk score.</p>
-      </section>
+      </section>}
 
       <InteractiveFeedbackTools
         analysisId={analysis.id}

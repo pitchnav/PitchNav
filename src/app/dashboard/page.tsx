@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import { OrderStatusBadge } from '@/components/ui/Badge'
 import { AnimatedStat } from '@/components/dashboard/AnimatedStat'
 import { calculateDeliveryScore, formatDateShort } from '@/lib/utils'
+import { athleteCoachingText, firstAthleteCoachingNote } from '@/lib/athlete-assessment-copy'
 import type { Order, AthleteProfile } from '@/types/database'
 
 export default async function DashboardPage() {
@@ -94,6 +95,10 @@ export default async function DashboardPage() {
           <div className="grid gap-4 sm:grid-cols-2">
             {motionAnalyses.map((analysis, i) => {
               const plan = Array.isArray(analysis.training_plans) ? analysis.training_plans[0] : analysis.training_plans
+              const summary = athleteCoachingText(analysis.coach_feedback)
+              const priority = firstAthleteCoachingNote(analysis.development_priorities)
+              const strength = firstAthleteCoachingNote(analysis.strengths)
+              const weekFocus = athleteCoachingText(plan?.weeks?.[0]?.priority)
               const submittedVideo = analysisVideos?.find((video) => (
                 video.angle === 'open_side'
                 && (video.order_id === analysis.order_id || video.storage_path === analysis.source_video_storage_path)
@@ -122,13 +127,13 @@ export default async function DashboardPage() {
                   <div className="mt-4 grid grid-cols-1 gap-3 text-sm">
                     <div className="rounded-lg bg-navy-950 p-3"><p className="text-xs text-slate-500">Training plan</p><p className="mt-1 font-bold text-white">{analysis.status === 'published' && plan?.duration_weeks ? `${plan.duration_weeks} weeks` : 'Pending coach'}</p></div>
                   </div>
-                  {analysis.status === 'published' && analysis.coach_feedback && <p className="mt-4 line-clamp-3 text-sm text-slate-300">{analysis.coach_feedback}</p>}
-                  {analysis.status === 'published' && !!analysis.strengths?.length && <p className="mt-4 text-sm text-slate-300"><span className="font-semibold text-accent-green">Starting strength:</span> {analysis.strengths[0]}</p>}
-                  {analysis.status === 'published' && !!analysis.development_priorities?.length && <p className="mt-2 text-sm text-slate-300"><span className="font-semibold text-electric-blue-light">First priority:</span> {analysis.development_priorities[0]}</p>}
-                  {analysis.status === 'published' && plan?.weeks?.length > 0 && (
+                  {analysis.status === 'published' && summary && <p className="mt-4 line-clamp-3 text-sm text-slate-300">{summary}</p>}
+                  {analysis.status === 'published' && priority && <p className="mt-2 text-sm text-slate-300"><span className="font-semibold text-electric-blue-light">First priority · </span>{priority}</p>}
+                  {analysis.status === 'published' && strength && <p className="mt-2 text-sm text-slate-300"><span className="font-semibold text-accent-green">Keep doing · </span>{strength}</p>}
+                  {analysis.status === 'published' && weekFocus && (
                     <div className="mt-4 rounded-lg border border-surface-border bg-navy-950 p-3">
                       <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Week 1</p>
-                      <p className="mt-1 text-sm text-white">{plan.weeks[0]?.priority}</p>
+                      <p className="mt-1 text-sm text-white">{weekFocus}</p>
                     </div>
                   )}
                   <div className="mt-4 flex flex-wrap items-center gap-4">

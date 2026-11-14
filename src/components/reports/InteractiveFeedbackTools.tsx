@@ -11,7 +11,6 @@ import {
   Dumbbell,
   MessageCircle,
   Plus,
-  Target,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
@@ -27,7 +26,7 @@ type Phase = {
   key: string
   label: string
   time: number
-  confidence_note: string
+  answer?: string
   strength?: string
   opportunity?: string
   coaching_cue?: string
@@ -309,22 +308,7 @@ export function InteractiveFeedbackTools({
 
   return (
     <div className="space-y-8">
-      {biggest && (
-        <section className="overflow-hidden rounded-2xl border border-electric-blue/30 bg-gradient-to-r from-electric-blue/10 to-navy-900 p-6">
-          <div className="flex items-start gap-4">
-            <Target className="mt-1 h-7 w-7 shrink-0 text-electric-blue-light" />
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-electric-blue-light">Biggest opportunity</p>
-              <h2 className="mt-1 text-2xl font-black text-white">Improve {biggest.category}</h2>
-              <p className="mt-3 text-sm text-slate-300"><b>Observed:</b> {biggest.evidence}</p>
-              <p className="mt-2 text-sm text-slate-300"><b>What to work on:</b> {biggest.development}</p>
-              <p className="mt-2 text-xs text-slate-500">{biggest.confidence} confidence · video-based estimate</p>
-            </div>
-          </div>
-        </section>
-      )}
-
-      <section className="card">
+      {phases.length > 0 && <section className="card">
         <h2 className="text-2xl font-black text-white">Your six key positions</h2>
         <div className="mt-5 flex gap-2 overflow-x-auto pb-2">
           {phases.map((item) => (
@@ -340,18 +324,18 @@ export function InteractiveFeedbackTools({
             </div>
             <div className="rounded-xl bg-navy-950 p-5">
               <h3 className="text-xl font-bold text-white">{phase.label}</h3>
-              <p className="mt-1 text-xs text-electric-blue-light">{phase.time.toFixed(2)} seconds</p>
-              <p className="mt-4 text-sm leading-6 text-slate-300"><b className="text-accent-green">What you did well:</b> {phase.strength ?? categories[Math.min(categories.length - 1, phases.indexOf(phase))]?.strength ?? 'The coach did not add a strength for this position.'}</p>
-              <p className="mt-3 text-sm leading-6 text-slate-300"><b className="text-yellow-300">What must improve:</b> {phase.opportunity ?? categories[Math.min(categories.length - 1, phases.indexOf(phase))]?.development ?? 'The coach did not add a correction for this position.'}</p>
+              {Number.isFinite(phase.time) && <p className="mt-1 text-xs text-electric-blue-light">{phase.time.toFixed(2)} seconds</p>}
+              {phase.answer && <p className="mt-4 text-sm leading-6 text-slate-300">{phase.answer}</p>}
+              {phase.opportunity && <p className="mt-3 text-sm leading-6 text-slate-300"><b className="text-yellow-300">What to change</b> · {phase.opportunity}</p>}
               {phase.coaching_cue && <p className="mt-3 rounded-lg bg-electric-blue/10 p-3 text-sm leading-6 text-electric-blue-light"><b>Use this cue:</b> {phase.coaching_cue}</p>}
-              <p className="mt-4 text-xs text-slate-500">{phase.confidence_note}</p>
+              {phase.strength && <p className="mt-3 text-sm leading-6 text-slate-300"><b className="text-accent-green">What to keep</b> · {phase.strength}</p>}
             </div>
           </div>
         )}
-      </section>
+      </section>}
 
-      <section className="card">
-        <h2 className="text-2xl font-black text-white">Three personalized drills</h2>
+      {drills.length > 0 && <section className="card">
+        <h2 className="text-2xl font-black text-white">Your drills</h2>
         <div className="mt-5 grid gap-4 md:grid-cols-3">
           {drills.map((drill) => {
             const key = `drill:${drill.category}`
@@ -370,7 +354,7 @@ export function InteractiveFeedbackTools({
             )
           })}
         </div>
-      </section>
+      </section>}
 
       <section className="card" id="training-calendar">
         <div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-start">

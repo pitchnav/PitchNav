@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { ProgressComparison } from '@/components/reports/ProgressComparison'
 import { calculateDeliveryScore } from '@/lib/utils'
+import { firstAthleteCoachingNote } from '@/lib/athlete-assessment-copy'
 
 export default async function ComparePage() {
   const supabase = await createClient()
@@ -31,6 +32,8 @@ export default async function ComparePage() {
   const latestCats = (latest.category_scores ?? []) as Array<{ category: string; score: number }>
   const firstScore = calculateDeliveryScore(firstCats, first.delivery_score)
   const latestScore = calculateDeliveryScore(latestCats, latest.delivery_score)
+  const priority = firstAthleteCoachingNote(latest.development_priorities)
+  const strength = firstAthleteCoachingNote(latest.strengths)
 
   return (
     <div className="mx-auto max-w-6xl space-y-6 sm:space-y-8">
@@ -65,16 +68,18 @@ export default async function ComparePage() {
           })}
         </div>
       </section>
-      <section className="grid gap-6 md:grid-cols-2">
-        <div className="card">
-          <h2 className="font-bold text-accent-green">What improved</h2>
-          <p className="mt-3 text-sm text-slate-300">{latest.strengths?.[0] ?? 'Coach summary pending.'}</p>
-        </div>
-        <div className="card">
-          <h2 className="font-bold text-yellow-300">What still needs work</h2>
-          <p className="mt-3 text-sm text-slate-300">{latest.development_priorities?.[0] ?? 'Coach summary pending.'}</p>
-        </div>
-      </section>
+      {(priority || strength) && (
+        <section className="grid gap-6 md:grid-cols-2">
+          {priority && <div className="card">
+            <h2 className="font-bold text-yellow-300">Current priority</h2>
+            <p className="mt-3 text-sm text-slate-300">{priority}</p>
+          </div>}
+          {strength && <div className="card">
+            <h2 className="font-bold text-accent-green">Keep doing</h2>
+            <p className="mt-3 text-sm text-slate-300">{strength}</p>
+          </div>}
+        </section>
+      )}
     </div>
   )
 }

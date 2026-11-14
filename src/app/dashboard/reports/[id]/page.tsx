@@ -5,6 +5,8 @@ import { createClient } from '@/lib/supabase/server'
 import { ProgressBar } from '@/components/ui/ProgressBar'
 import { AnnotatedVideoPlayer } from '@/components/reports/AnnotatedVideoPlayer'
 import { SafetyDisclaimer } from '@/components/ui/SafetyDisclaimer'
+import { athleteCoachingText, athleteLandingWithGuide } from '@/lib/athlete-assessment-copy'
+import type { MechanicsFinding } from '@/lib/mechanics-findings'
 import {
   PITCH_POSITION_LABELS,
   PLAYING_LEVEL_LABELS,
@@ -39,7 +41,7 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
 
   if (!order || order.status !== 'complete') notFound()
 
-  const report = order.analysis_reports as AnalysisReport
+  const report = order.analysis_reports as AnalysisReport & { mechanics_findings?: MechanicsFinding[] | null }
   const profile = order.athlete_profiles as AthleteProfile
 
   if (!report || !report.published_at) notFound()
@@ -51,9 +53,20 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
     supabase.from('assigned_drills').select('*, drill:drills(*)').eq('report_id', report.id).order('sort_order'),
   ])
 
-  const scorecard = scorecardRes.data as ScorecardCategory[] ?? []
+  const summary = athleteCoachingText(report.main_focus)
+  const priorities = (report.three_priorities ?? []).map(athleteCoachingText).filter(Boolean)
+  const strengths = (report.three_strengths ?? []).map(athleteCoachingText).filter(Boolean).slice(0, 1)
+  const secondary = (report.secondary_focuses ?? []).map(athleteCoachingText).filter(text => text && !priorities.includes(text))
+  const velocityNotes = report.reviewer_velocity_notes?.startsWith('Velocity is not estimated from video.')
+    ? '' : athleteCoachingText(report.reviewer_velocity_notes)
+  const landing = Array.isArray(report.mechanics_findings) ? report.mechanics_findings.find(finding => finding.foot_strike)?.foot_strike : null
+  const scorecard = ((scorecardRes.data ?? []) as ScorecardCategory[]).map(item => ({ ...item, notes: athleteCoachingText(item.notes) }))
   const deliveryScore = calculateDeliveryScore(scorecard, report.delivery_score)
-  const positions = positionsRes.data as PositionScreenshot[] ?? []
+  const positions = ((positionsRes.data ?? []) as PositionScreenshot[]).map(pos => ({
+    ...pos, reviewer_notes: pos.position === 'lead_foot_contact' && landing ? athleteLandingWithGuide(landing) : athleteCoachingText(pos.reviewer_notes),
+    strengths: athleteCoachingText(pos.strengths), development_opportunity: athleteCoachingText(pos.development_opportunity),
+    estimated_angle: athleteCoachingText(pos.estimated_angle), coaching_cue: athleteCoachingText(pos.coaching_cue),
+  }))
   const assignedDrills = assignedDrillsRes.data as (AssignedDrill & { drill: Drill })[] ?? []
 
   // Automatic processing (apply-ai-draft) writes storage_path, a private
@@ -228,9 +241,6 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
                   {pos.estimated_angle && (
                     <p className="text-xs text-slate-600">Video-based angle estimate: {pos.estimated_angle}</p>
                   )}
-                  {pos.quality_note && (
-                    <p className="text-xs text-yellow-400/70 italic">{pos.quality_note}</p>
-                  )}
                 </div>
               </div>
             ))}
@@ -239,29 +249,29 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
       )}
 
       {/* Strengths & Priorities */}
-      {(report.three_strengths?.length || report.three_priorities?.length) && (
+      {(priorities.length > 0 || strengths.length > 0) && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          {report.three_strengths && (
+          {priorities.length > 0 && (
             <div className="card">
-              <h2 className="text-lg font-bold text-white mb-4">Three Strengths</h2>
+              <h2 className="text-lg font-bold text-white mb-4">What to work on</h2>
               <ul className="space-y-3">
-                {report.three_strengths.map((s, i) => (
+                {priorities.map((p, i) => (
                   <li key={i} className="flex items-start gap-3">
-                    <Star className="h-4 w-4 text-accent-green flex-shrink-0 mt-0.5" />
-                    <span className="text-sm text-slate-300">{s}</span>
+                    <span className="text-electric-blue-light font-bold text-sm w-5 flex-shrink-0">{i + 1}.</span>
+                    <span className="text-sm text-slate-300">{p}</span>
                   </li>
                 ))}
               </ul>
             </div>
           )}
-          {report.three_priorities && (
+          {strengths.length > 0 && (
             <div className="card">
-              <h2 className="text-lg font-bold text-white mb-4">Three Next Priorities</h2>
+              <h2 className="text-lg font-bold text-white mb-4">What to keep</h2>
               <ul className="space-y-3">
-                {report.three_priorities.map((p, i) => (
+                {strengths.map((s, i) => (
                   <li key={i} className="flex items-start gap-3">
-                    <span className="text-electric-blue-light font-bold text-sm w-5 flex-shrink-0">{i + 1}.</span>
-                    <span className="text-sm text-slate-300">{p}</span>
+                    <Star className="h-4 w-4 text-accent-green flex-shrink-0 mt-0.5" />
+                    <span className="text-sm text-slate-300">{s}</span>
                   </li>
                 ))}
               </ul>
@@ -271,11 +281,11 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
       )}
 
       {/* Main focus */}
-      {report.main_focus && (
+      {(summary || secondary.length > 0) && (
         <div className="card border-electric-blue/30 mb-8">
           <h2 className="text-base font-semibold text-electric-blue-light mb-2">Main Focus</h2>
-          <p className="text-white">{report.main_focus}</p>
-          {report.secondary_focuses?.map((f, i) => (
+          {summary && <p className="text-white">{summary}</p>}
+          {secondary.map((f, i) => (
             <p key={i} className="text-slate-400 text-sm mt-2">{f}</p>
           ))}
         </div>
@@ -351,14 +361,10 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
       )}
 
       {/* Velocity notes */}
-      {report.reviewer_velocity_notes && (
+      {velocityNotes && (
         <div className="card mb-8">
           <h2 className="text-base font-semibold text-white mb-3">Velocity Notes</h2>
-          <p className="text-sm text-slate-400">{report.reviewer_velocity_notes}</p>
-          <p className="text-xs text-slate-600 mt-3">
-            Velocity in this report comes from what you reported, unless noted otherwise. Pitch Nav
-            can&apos;t calculate velocity from a standard phone video without calibration data.
-          </p>
+          <p className="text-sm text-slate-400">{velocityNotes}</p>
         </div>
       )}
 

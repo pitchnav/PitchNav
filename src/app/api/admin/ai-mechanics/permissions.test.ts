@@ -65,6 +65,9 @@ test('staff draft uses six authorized frames and measured screens without diagno
   expect(send).toHaveBeenCalledTimes(1)
   const body = JSON.parse(send.mock.calls[0][1].body)
   expect(body.store).toBe(false)
+  expect(body.instructions).toMatch(/distinct corrections/i)
+  expect(body.instructions).toMatch(/release direction/i)
+  expect(body.instructions).toMatch(/staff evidence/i)
   const prompt = body.input[0].content[0].text
   expect(prompt).toContain('ankle_dorsiflexion')
   expect(prompt).toContain('18°')

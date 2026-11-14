@@ -28,7 +28,11 @@ const mechanics = { overview: 'The hips and shoulders turn together after contac
   { sourceIndex: 0, disposition: 'develop', interpretation: 'Your shoulders follow the pelvis immediately after plant.' },
   { sourceIndex: 1, disposition: 'limited', interpretation: 'Published separately.' },
 ] }
-const followup = { opening: 'Work on the turn after the shoe comes down.', points: [
+const torsoPriority = { primarySourceIndex:0, linkedSourceIndexes:[] as number[], title:'Sequence the turn',
+  observation:'Your shoulders follow the hips as soon as you land.',
+  whyItMatters:'When the hips and shoulders move together, it can be harder to time the release.',
+  adjustment:'Let the front hip turn before the shirt follows.' }
+const followup = { athletePriorities:[torsoPriority], opening: 'Work on the turn after the shoe comes down.', points: [
   { sourceIndex: 0, explanation: 'Your shoulders follow the hips as soon as you land.', fix: 'Let the front hip turn before the shirt follows.' },
   { sourceIndex: 1, explanation: 'Published separately.', fix: null },
 ], recap: 'Keep the stride; separate the turn.' }
@@ -52,7 +56,10 @@ test('three independent specialists hand off a specific fix, drill and transfer 
   expect(JSON.parse(requests[1].input)).toMatchObject({ biomechanics:bio, teamVoice:{ specialistInstructions:expect.stringContaining('short baseball cues') } })
   expect(JSON.parse(requests[2].input)).toMatchObject({ followup:coach, activeCatalog:[{name:drill.name}] })
   for (const expected of [drill.name, plan.steps[0].task, plan.steps[0].cue, plan.steps[0].success, plan.transfer,
-    'has not reached the hand-up L', plant.foot_strike!.torso_observation, followup.points[0].fix]) expect(finished.body).toContain(expected)
+    torsoPriority.whyItMatters, source.strengths[0], followup.points[0].fix]) expect(finished.body).toContain(expected)
+  expect(coach.points[1].explanation).toContain(plant.foot_strike!.torso_observation)
+  expect(finished.body).not.toContain('has not reached the hand-up L')
+  expect(finished.body).not.toContain(plant.foot_strike!.torso_observation)
   expect(finished.body).toContain('Dry rehearsal · 3 sets × 6 dry reps within normal skill work.')
 })
 
@@ -93,7 +100,9 @@ test('the strict training request enumerates only reviewed fixes and allows one 
   const handoff = {...mechanics, findings:[...mechanics.findings,
     {sourceIndex:2,disposition:'develop',interpretation:additional.answer}]}
   const additionalPoint = {sourceIndex:2,explanation:additional.answer,fix:'Stand into the front hip as you turn.'}
-  const coach = {...followup, points:[additionalPoint,...followup.points]}
+  const linked = {...torsoPriority,linkedSourceIndexes:[2], title:'Receive your weight and turn',
+    observation:'Your knee keeps bending as your hips and shoulders turn together.'}
+  const coach = {...followup, athletePriorities:[linked], points:[additionalPoint,...followup.points]}
   stub({...plan,steps:[{...plan.steps[0],primarySourceIndex:0,linkedSourceIndexes:[2]}]})
   const result = await designTrainingPlan(expanded,handoff,coach,[drill])
   const request = JSON.parse(send.mock.calls[0][1].body)
@@ -108,9 +117,113 @@ test('the strict training request enumerates only reviewed fixes and allows one 
     {sourceIndex:0,topic:source.findings[0].topic,problem:followup.points[0].explanation,fix:followup.points[0].fix},
     {sourceIndex:2,topic:additional.topic,problem:additionalPoint.explanation,fix:additionalPoint.fix},
   ])
-  expect(result.body).toContain('Working on · Torso rotation, Front leg')
+  expect(result.body).toContain(linked.title)
+  expect(result.body.match(/Your adjustment ·/g)).toHaveLength(1)
   expect(result.artifact.steps[0].sourceIndexes).toEqual([0,2])
   expect(result.artifact.steps[0]).not.toHaveProperty('primarySourceIndex')
+})
+
+test('a resumed legacy handoff gets athlete wording in the existing training call without publishing old audit text', async () => {
+  const legacy = { opening:'Visibility limits prevented comparison.', points:followup.points,
+    recap:'No clear issue with this part of the delivery.' }
+  stub({...plan,athletePriorities:[torsoPriority]})
+  const result = await designTrainingPlan(source,mechanics,legacy,[drill])
+  expect(send).toHaveBeenCalledTimes(1)
+  expect(JSON.parse(send.mock.calls[0][1].body).text.format.schema.required).toContain('athletePriorities')
+  expect(result.body).toContain(torsoPriority.whyItMatters)
+  expect(result.body).not.toContain(legacy.opening)
+  expect(result.body).not.toContain(legacy.recap)
+  expect(result.body).not.toContain('Published separately.')
+})
+
+test('athlete priorities cannot omit a fix, duplicate a fix, repeat a visibility limit, or promise a velocity gain', async () => {
+  for (const bad of [[], [torsoPriority,torsoPriority], [{...torsoPriority,linkedSourceIndexes:[1]}],
+    [{...torsoPriority,whyItMatters:'This is unresolved from the side view.'}],
+    [{...torsoPriority,whyItMatters:'This will improve your velocity.'}]]) {
+    stub({...followup,athletePriorities:bad})
+    await expect(writeAthleteFollowup(source,mechanics)).rejects.toThrow()
+  }
+})
+
+test('a reviewed elbow bend and a late forearm rise stay separate in a single actionable arm priority', async () => {
+  const landing = footStrikeFinding({...plant.foot_strike!,arm_timing:'issue_visible',
+    arm_observation:'Your elbow is bent roughly 90 degrees, but your hand is still below it when your front foot lands.'},
+    'The throwing hand rises above the elbow after the front shoe settles.',null)
+  const single = {...source,findings:[landing]}
+  const bio = {overview:'Hand rises after plant.',findings:[{sourceIndex:0,disposition:'develop',interpretation:landing.answer}]}
+  const priority = {...torsoPriority,title:'Bring the hand up with the stride',observation:landing.foot_strike!.arm_observation,
+    whyItMatters:'If the forearm rises after the chest starts turning, the arm has less time to accelerate and release can be harder to repeat.',
+    adjustment:'Let the hand rise as your stride foot travels forward.'}
+  const answer = {opening:'Time the rise with landing.',points:[{sourceIndex:0,explanation:landing.answer,fix:priority.adjustment}],
+    athletePriorities:[priority],recap:'Let the hand rise with the stride.'}
+  stub(answer); stub(plan)
+  const stored = await writeAthleteFollowup(single,bio)
+  expect(stored.points[0].explanation).toContain('unresolved')
+  const {body} = await designTrainingPlan(single,bio,stored,[drill])
+  for (const part of [priority.observation,priority.whyItMatters,priority.adjustment]) expect(body).toContain(part)
+  expect(body).not.toContain('unresolved')
+})
+
+test('a confirmed upright landing survives an unrelated visibility limit without claiming the pitcher measured 90 degrees', async () => {
+  const landing = footStrikeFinding({...plant.foot_strike!,hand_up_l:'visible',
+    arm_observation:'Your hand was up as your front foot landed, but the torso is obscured.'},'The wrist is above the elbow.',null)
+  const single = {...source,findings:[landing],strengths:['Your stride held its line.','Your foot stayed planted.']}
+  const bio = {overview:'Landing.',findings:[{sourceIndex:0,disposition:'limited',interpretation:landing.answer}]}
+  const coach = {opening:'Landing.',points:[{sourceIndex:0,explanation:landing.answer,fix:null}],recap:'Stay on time.'}
+  stub({focus:'Use your usual warm-up.',transfer:plan.transfer,retest:plan.retest})
+  const {body} = await designTrainingPlan(single,bio,coach,[])
+  expect(body).toContain('Your throwing hand was above your elbow')
+  expect(body).toContain('90°')
+  expect(body).toContain('velocity')
+  expect(body).toContain('command')
+  expect(body).not.toMatch(/obscured|unresolved|Your foot stayed planted|Your adjustment/)
+  const mixed = footStrikeFinding({...landing.foot_strike!,torso_opening:'no_clear_issue',
+    torso_observation:'The chest is still turned back.'},'The throwing hand is up.',null)
+  stub({focus:'Use your usual warm-up.',transfer:plan.transfer,retest:plan.retest})
+  expect((await designTrainingPlan({...single,findings:[mixed]},bio,coach,[])).body).toContain('The chest is still turned back.')
+  stub({...followup,athletePriorities:[{...torsoPriority,observation:'Your elbow has a 90-degree bend.'}]})
+  await expect(writeAthleteFollowup(source,mechanics)).rejects.toThrow('unverified angle')
+  for (const summary of ['Your front knee measured 90°.','A typical reference for elbow bend is about 90°.']) {
+    stub({...followup,athletePriorities:[{...torsoPriority,observation:'Your elbow measured 90°.'}]})
+    await expect(writeAthleteFollowup({...source,summary},mechanics)).rejects.toThrow('unverified angle')
+  }
+})
+
+test('an all-limited handoff cannot turn invented maintenance copy into a finding', async () => {
+  const limited = {...plant,foot_strike:undefined,topic:'Stride direction',verdict:'unable_to_assess' as const}
+  const single = {...source,findings:[limited],strengths:[]}
+  const bio = {overview:'Staff record.',findings:[{sourceIndex:0,disposition:'limited',interpretation:'Unresolved.'}]}
+  const coach = {opening:'Unresolved.',points:[{sourceIndex:0,explanation:'Unresolved.',fix:null}],recap:'Unresolved.'}
+  stub({focus:'Keep your stable front knee.',transfer:'Keep your stable front knee.',retest:'Keep your stable front knee.'})
+  const {body} = await designTrainingPlan(single,bio,coach,[])
+  expect(body).toContain('Continue your current throwing plan.')
+  expect(body).not.toMatch(/90°|Unresolved|front knee|Keep doing/i)
+})
+
+test('a positively reviewed landing correction survives a model preference to maintain and accepts documented hyphenated quantities',async () => {
+  const landing = footStrikeFinding({...plant.foot_strike!,arm_timing:'issue_visible',
+    arm_observation:'You have a 90-degree elbow bend, and your hand rises after landing.'},'The wrist comes up after plant.',
+    'Let the hand rise during the stride.')
+  const single = {...source,findings:[{...landing,answer:'The hand rises after plant.'}]}
+  stub({overview:'Your elbow has a 90 degrees bend.',findings:[{sourceIndex:0,disposition:'maintain',interpretation:landing.answer}]})
+  expect((await readBiomechanics(single)).findings[0].disposition).toBe('develop')
+  stub({...mechanics,overview:'Your elbow measured 94‑degrees.'})
+  await expect(readBiomechanics(source)).rejects.toThrow('unverified angle')
+})
+
+test('staff can record the numeric L reference as education while the writer cannot quote it as an athlete measurement',async () => {
+  const note = 'Near 90° is a reference; exact elbow angle not measured.'
+  const landing = footStrikeFinding({...plant.foot_strike!,arm_observation:note},'The wrist stays below the elbow after plant.',null)
+  const single = {...source,findings:[landing]}
+  const handoff = {overview:'The hand is below the elbow at landing.',findings:[{sourceIndex:0,disposition:'limited',interpretation:'Reviewed separately.'}]}
+  const coach = {opening:'Keep the stride.',points:[{sourceIndex:0,explanation:'Reviewed separately.',fix:null}],athletePriorities:[],recap:'Stay with the same rhythm.'}
+  stub(handoff); stub(coach)
+  const bio = await readBiomechanics(single)
+  expect(bio.findings[0].interpretation).toContain(note)
+  expect((await writeAthleteFollowup(single,bio)).points[0].explanation).toContain(note)
+  expect(JSON.parse(send.mock.calls[1][1].body).instructions).toContain('renderer provides the generic numeric L benchmark')
+  stub({...coach,recap:'Your elbow measured 90°.'})
+  await expect(writeAthleteFollowup(single,bio)).rejects.toThrow('unverified angle')
 })
 
 test('a maintenance-only assessment produces a plan without manufacturing a corrective drill', async () => {
