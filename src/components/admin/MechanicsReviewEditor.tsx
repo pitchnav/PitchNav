@@ -23,11 +23,12 @@ type Props = {
   recap: string
   initialFindings: MechanicsFinding[]
   frames: EvidenceFrame[]
+  drills?: { name: string; description: string }[]
   onSaved: () => Promise<void>
   onDirty: (dirty: boolean) => void
 }
 
-export function MechanicsReviewEditor({ analysisId, orderId, revision, recap, initialFindings, frames, onSaved, onDirty }: Props) {
+export function MechanicsReviewEditor({ analysisId, orderId, revision, recap, initialFindings, frames, drills = [], onSaved, onDirty }: Props) {
   const landing = frames.find(frame => frame.key === 'lead_foot_contact')
   const checkpoint = initialFindings.find(finding => finding.foot_strike)
   const [footStrike, setFootStrike] = useState({ ...emptyFootStrike, ...checkpoint?.foot_strike })
@@ -90,8 +91,8 @@ export function MechanicsReviewEditor({ analysisId, orderId, revision, recap, in
     <section className="card space-y-4">
       <h2 className="text-xl font-bold text-white">Mechanics review</h2>
       <label className="block"><span className="label">Assessment for the athlete</span><textarea className="input" rows={3} value={summary} onChange={e => { setSummary(e.target.value); onDirty(true) }} /></label>
-      {!landing && <div className="rounded-xl border border-surface-border p-4"><b>Hand-up L at foot strike · View limited</b><p>No landing image is available. The athlete report will record that the arm and torso could not be assessed at contact.</p></div>}
-      {landing && <FootStrikeReviewEditor frame={landing} review={footStrike} evidence={strikeEvidence} action={armCue}
+      {!landing && <div className="rounded-xl border border-surface-border p-4"><b>Hand-up L at foot strike · View limited</b><p>No landing image is available for this staff review.</p></div>}
+      {landing && <FootStrikeReviewEditor frame={landing} review={footStrike} evidence={strikeEvidence} action={armCue} drills={drills}
         onChange={value => { setFootStrike(value); onDirty(true) }} onEvidence={value => { setStrikeEvidence(value); onDirty(true) }}
         onAction={value => { setArmCue(value); onDirty(true) }} />}
       {findings.map((finding, index) => <fieldset key={index} className="space-y-3 rounded-xl border border-surface-border p-4">
@@ -115,7 +116,7 @@ export function MechanicsReviewEditor({ analysisId, orderId, revision, recap, in
           evidence: [finding.evidence, text].filter(Boolean).join('\n'),
           evidence_keys: Array.from(new Set([...finding.evidence_keys, key])),
         })} />
-        {finding.verdict === 'observed' && <label className="block"><span className="label">Coaching cue (optional)</span><input className="input" value={finding.coaching_action ?? ''} onChange={e => update(index,{coaching_action:e.target.value || null})} /></label>}
+        {finding.verdict === 'observed' && <label className="block"><span className="label">Drill or practice task (optional)</span><input className="input" value={finding.coaching_action ?? ''} onChange={e => update(index,{coaching_action:e.target.value || null})} /></label>}
         <button className="text-sm text-red-300" type="button" onClick={() => { setFindings(findings.filter((_, i) => i !== index)); onDirty(true) }}>Remove finding</button>
       </fieldset>)}
       <div className="grid gap-3 md:grid-cols-2">

@@ -1,5 +1,6 @@
 import { scheduleAssessmentFollowup } from '@/lib/assessment-followup-jobs'
 import { StandaloneFootStrike } from '@/components/admin/StandaloneFootStrike'
+import { figure8Drill } from '@/lib/reviewed-drill-matches'
 import { landingSampleTimes, sourcePhaseImages, validateMechanicsFindings, type MechanicsFinding } from '@/lib/mechanics-findings'
 import { MechanicsFindings, type EvidenceFrame } from '@/components/reports/MechanicsFindings'
 import { AssessmentReviewGuide } from '@/components/admin/AssessmentReviewGuide'
@@ -70,9 +71,10 @@ async function deleteAnalysis(formData: FormData) {
 
 export default async function AdminMotionLabPage() {
   const supabase = await createClient()
-  const [{ data: analyses, error: analysesError }, { data: submissions, error: submissionsError }] = await Promise.all([
+  const [{ data: analyses, error: analysesError }, { data: submissions, error: submissionsError }, { data: landingDrills }] = await Promise.all([
     supabase.from('motion_analyses').select('*,profiles!motion_analyses_user_id_fkey(email,full_name),training_plans(*)').order('created_at', { ascending: false }),
     supabase.from('orders').select('id,status,created_at,payment_confirmed_at,amount_paid_cents,stripe_checkout_session_id,athlete_profiles(athlete_full_name,athlete_email),video_submissions(id,angle,file_name)').order('created_at', { ascending: false }),
+    supabase.from('drills').select('name,description').eq('is_active', true).in('name', [figure8Drill, 'Hand-Break Timing Dry Reps']),
   ])
   if (analysesError) console.error('Motion Lab review queue failed to load', analysesError)
   if (submissionsError) console.error('Order submission queue failed to load', submissionsError)
@@ -95,7 +97,7 @@ export default async function AdminMotionLabPage() {
       {(analysis.clip_summary as { deliveryShapeValid?: boolean } | null)?.deliveryShapeValid === false && <div className="rounded-xl border border-yellow-500/30 bg-yellow-500/10 p-3 text-sm text-yellow-200">Automatic processing could not confirm this clip shows one complete pitch. Watch the source video before approving — do not release this report on scores alone.</div>}
       <MechanicsFindings findings={analysis.biggest_opportunity?.findings ?? (analysis.biggest_opportunity?.standalone_foot_strike ? [analysis.biggest_opportunity.standalone_foot_strike] : [])} frames={analysis.phase_snapshots ?? []} />
             <AssessmentReviewGuide />
-      {!analysis.order_id && !analysis.published_at && analysis.status !== 'published' && <StandaloneFootStrike frame={landingFrames.get(analysis.id)}
+      {!analysis.order_id && !analysis.published_at && analysis.status !== 'published' && <StandaloneFootStrike frame={landingFrames.get(analysis.id)} drills={landingDrills ?? []}
         initial={analysis.biggest_opportunity?.findings?.find((item: MechanicsFinding) => item.foot_strike) ?? analysis.biggest_opportunity?.standalone_foot_strike} />}
       {!analysis.order_id && !analysis.published_at && analysis.status !== 'published' && <div className="grid gap-4 md:grid-cols-3"><label><span className="label">Delivery score (0–30)</span><input className="input" name="delivery_score" type="number" min="0" max="30" defaultValue={analysis.delivery_score ?? ''}/></label><label className="md:col-span-2"><span className="label">Athlete-facing coach feedback</span><textarea className="input min-h-24" name="coach_feedback" defaultValue={analysis.coach_feedback ?? ''}/></label><label><span className="label">Strengths (one per line)</span><textarea className="input min-h-28" name="strengths" defaultValue={(analysis.strengths ?? []).join('\n')}/></label><label><span className="label">Priorities (one per line)</span><textarea className="input min-h-28" name="priorities" defaultValue={(analysis.development_priorities ?? []).join('\n')}/></label><div className="rounded-xl bg-navy-950 p-4 text-sm text-slate-300"><p>FPS: {analysis.capture_fps ?? '—'}</p><p>Velocity: {analysis.velocity_estimate_low ? `${analysis.velocity_estimate_low}–${analysis.velocity_estimate_high} mph` : 'Not calculated'}</p><p>Confidence: {analysis.velocity_confidence ?? '—'}</p></div></div>}
       <div className="flex flex-wrap gap-3">{analysis.order_id ?

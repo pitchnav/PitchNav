@@ -1,5 +1,6 @@
 import type { EvidenceFrame } from '@/components/reports/MechanicsFindings'
-import { emptyFootStrike, footStrikeTitle, handBreakDrill, type FootStrikeReview } from '@/lib/foot-strike-review'
+import { emptyFootStrike, footStrikeTitle, type FootStrikeReview } from '@/lib/foot-strike-review'
+import { preferredReviewedDrill } from '@/lib/reviewed-drill-matches'
 import { ManualAngleEvidence } from './ManualAngleEvidence'
 
 type Props = {
@@ -7,14 +8,19 @@ type Props = {
   review: FootStrikeReview
   evidence: string
   action: string
+  drills: { name: string; description: string }[]
   onChange: (value: FootStrikeReview) => void
   onEvidence: (value: string) => void
   onAction: (value: string) => void
 }
 
-export function FootStrikeReviewEditor({ frame, review, evidence, action, onChange, onEvidence, onAction }: Props) {
+export function FootStrikeReviewEditor({ frame, review, evidence, action, drills, onChange, onEvidence, onAction }: Props) {
   const times = frame.url ? frame.sampleTimes ?? [] : []
   const bracketed = review.contact_status === 'bracketed'
+  const preferred = preferredReviewedDrill({ flag_id:null, topic:footStrikeTitle, verdict:'observed', answer:review.arm_observation,
+    evidence_keys:[frame.key], evidence, coaching_action:null, foot_strike:review })
+  const armPathDrill = drills.find(drill => drill.name === preferred)
+  const handBreakDrill = drills.find(drill => drill.name === 'Hand-Break Timing Dry Reps')
   function selectPanel(label: string, field: 'last_airborne_time' | 'first_planted_time') {
     return <label><span className="label">{label}</span>
       <select className="input" value={review[field] ?? ''} onChange={e => onChange({
@@ -92,10 +98,11 @@ export function FootStrikeReviewEditor({ frame, review, evidence, action, onChan
     </label>
     <ManualAngleEvidence frames={[frame]} initialJoint="Throwing elbow" onAttach={(_, text) => onEvidence([evidence, text].filter(Boolean).join('\n'))} />
     {bracketed && review.arm_timing === 'issue_visible' && <div className="space-y-2">
-      <label className="block"><span className="label">Arm-path drill and cue</span>
+      <label className="block"><span className="label">Arm-path drill or rehearsal</span>
         <textarea className="input" value={action} onChange={e => onAction(e.target.value)} />
       </label>
-      <button type="button" className="btn-secondary text-sm" onClick={() => onAction(handBreakDrill)}>Use dry reps for a confirmed late hand break</button>
+      {armPathDrill && <button type="button" className="btn-secondary text-sm" onClick={() => onAction(armPathDrill.name + '. ' + armPathDrill.description)}>Use {armPathDrill.name} for a late arm swing</button>}
+      {handBreakDrill && <button type="button" className="btn-secondary text-sm" onClick={() => onAction(handBreakDrill.name + '. ' + handBreakDrill.description)}>Use dry reps for a confirmed late hand break</button>}
     </div>}
   </fieldset>
 }

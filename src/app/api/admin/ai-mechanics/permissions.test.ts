@@ -66,6 +66,8 @@ test('staff draft uses six authorized frames and measured screens without diagno
   const body = JSON.parse(send.mock.calls[0][1].body)
   expect(body.store).toBe(false)
   expect(body.instructions).toMatch(/distinct corrections/i)
+  expect(body.instructions).toMatch(/specific practice task/i)
+  expect(body.text.format.schema.properties.findings.items.properties.drill_name).toBeDefined()
   expect(body.instructions).toMatch(/release direction/i)
   expect(body.instructions).toMatch(/staff evidence/i)
   const prompt = body.input[0].content[0].text
@@ -76,7 +78,7 @@ test('staff draft uses six authorized frames and measured screens without diagno
   expect(body.input[0].content.filter((item: { type: string }) => item.type === 'input_image')).toHaveLength(6)
 })
 
-test('a library review with only a visibility limit is persisted without fabricated strengths, priorities, or a total score', async () => {
+test.each(['visibility', 'exact drill', 'unknown drill'])('staff persistence follows the reviewed library evidence: %s', async mode => {
   const keys = ['peak_leg_lift', 'hand_separation', 'lead_foot_contact', 'maximum_external_rotation', 'ball_release', 'finish']
   const snapshots = keys.map(key => ({ key, storage_path: uid + '/motion-lab/' + aid + '/phases/' + key + '.png', sample_times: [1.1, 1.2, 1.3] }))
   const analysis = { id: aid, user_id: uid, updated_at: '2026-11-12T12:00:00Z', athlete_profiles: { ...adult, id: 'profile-id', user_id: uid, consent_ai_draft: true, ai_draft_permission_version: 2 }, phase_snapshots: snapshots, clip_summary: { elbowRange: [1, 172], legacy_angle_marker: 'unsupported_angle', delivery_overview: { storage_path: uid + '/motion-lab/' + aid + '/phases/delivery_overview.png', sample_times: [0, 1, 2] } } }
@@ -88,20 +90,32 @@ test('a library review with only a visibility limit is persisted without fabrica
   const save = jest.fn(() => cas)
   const analysisTable = { ...single(analysis), update: save }
   ;(createAdminClient as jest.Mock).mockReturnValue({
-    from: (table: string) => table === 'motion_analyses' ? analysisTable : { select: () => screens },
+    from: (table: string) => table === 'motion_analyses' ? analysisTable : table === 'drills'
+      ? { select: () => ({ eq: async () => ({data:[{name:'Figure 8 Rhythm Rocker',description:'Use a loose figure eight into a rocker throw.'}]}) }) }
+      : { select: () => screens },
     storage: { from: () => ({ createSignedUrl: sign }) },
   })
   const limit = { flag_id: 154, topic: 'Glove-side lean', verdict: 'unable_to_assess', answer: 'This side view combines forward and sideways movement.', evidence_keys: ['ball_release', 'delivery_overview'], evidence: 'Your head is ahead of your belt on the side-view release panels.', coaching_action: null }
-  const footStrike = { hand_up_l: 'unresolved', contact_status: 'unresolved', last_airborne_time: null, first_planted_time: null,
+  const footStrike = mode === 'visibility' ? { hand_up_l: 'unresolved', contact_status: 'unresolved', last_airborne_time: null, first_planted_time: null,
     arm_timing: 'unresolved', arm_observation: 'Your wrist is below the elbow in the first panel.',
     torso_opening: 'unresolved', torso_observation: 'The far shoulder is hidden at landing.',
-    evidence: 'The shoe overlaps the mound in the three landing panels.', coaching_action: null }
+    evidence: 'The shoe overlaps the mound in the three landing panels.', coaching_action: null } : {
+    hand_up_l:'absent', contact_status:'bracketed', last_airborne_time:1.1, first_planted_time:1.2,
+    arm_timing:'issue_visible', arm_observation:'The ball hand rises after the front foot lands.', torso_opening:'no_clear_issue',
+    torso_observation:'The chest stays sideways into landing.', evidence:'The front shoe is airborne in the first panel and planted in the second.',
+    coaching_action:'Compare the hand’s arrival as the stride foot lands.', drill_name:mode === 'unknown drill' ? 'Fictional exercise' : null,
+  }
   send.mockResolvedValue({ ok: true, json: async () => ({ output_text: JSON.stringify({
     foot_strike: footStrike,
     overall_assessment: limit.answer, strengths: [], findings: [limit],
     phase_notes: keys.map(key => ({ key, answer: 'A visible phase observation.' })), program_categories: [],
   }) }) })
   const result = await POST(new Request('http://localhost/api/admin/ai-mechanics', { method: 'POST', body: JSON.stringify({ analysisId: aid }) }))
+  if (mode === 'unknown drill') {
+    expect(result.status).toBe(502)
+    expect(save).not.toHaveBeenCalled()
+    return
+  }
   expect(result.status).toBe(200)
   const body = JSON.parse(send.mock.calls[0][1].body)
   expect(body.input[0].content[0].text).toContain('270 |')
@@ -109,7 +123,15 @@ test('a library review with only a visibility limit is persisted without fabrica
   expect(body.input[0].content[1].text).toContain('1.1, 1.2, 1.3')
   expect(body.input[0].content.filter((item: { type: string }) => item.type === 'input_image')).toHaveLength(7)
   expect(body.input[0].content.at(-2).text).toContain('Whole delivery')
+  expect(body.text.format.schema.properties.findings.items.properties.drill_name.enum).toEqual(['Figure 8 Rhythm Rocker', null])
   expect(cas.eq).toHaveBeenCalledWith('updated_at', analysis.updated_at)
+  if (mode === 'exact drill') {
+    expect(save).toHaveBeenCalledWith(expect.objectContaining({ biggest_opportunity: { findings: [limit, expect.objectContaining({
+      coaching_action:'Figure 8 Rhythm Rocker. Use a loose figure eight into a rocker throw. ' + footStrike.coaching_action,
+      verdict:'observed',
+    })] }, ai_draft_status:'ready_for_staff_review' }))
+    return
+  }
   expect(save).toHaveBeenCalledWith(expect.objectContaining({ biggest_opportunity: { findings: [limit, expect.objectContaining({
     topic: 'Arm and torso at foot strike', evidence_keys: ['lead_foot_contact'], verdict: 'unable_to_assess',
     answer: footStrike.arm_observation + ' ' + footStrike.torso_observation, coaching_action: null,

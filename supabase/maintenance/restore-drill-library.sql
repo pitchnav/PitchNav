@@ -3,6 +3,7 @@
 -- Re-seeds the drills table from the original seed migrations.
 -- The main library block skips any drill whose name already exists, and
 -- the demo block uses fixed ids, so this is safe to run more than once.
+-- For the two reviewed throwing drills, also run migrations/051_reviewed_throwing_drills.sql.
 
 -- === Main drill library (from migration 014) ===
 with seed(name, category, description, trains, athlete_type, sets, reps, cues, mistakes, safety) as (

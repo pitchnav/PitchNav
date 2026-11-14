@@ -6,7 +6,8 @@ import { ProgressBar } from '@/components/ui/ProgressBar'
 import { SafetyDisclaimer } from '@/components/ui/SafetyDisclaimer'
 import { InteractiveFeedbackTools } from '@/components/reports/InteractiveFeedbackTools'
 import { calculateDeliveryScore } from '@/lib/utils'
-import { athleteCoachingText, athleteLandingWithGuide } from '@/lib/athlete-assessment-copy'
+import { athleteCoachingText, athleteLandingWithGuide, athletePracticeTask } from '@/lib/athlete-assessment-copy'
+import { ReviewedPractice } from '@/components/reports/ReviewedPractice'
 import type { MechanicsFinding } from '@/lib/mechanics-findings'
 
 type Category = { category: string; score: number; confidence: string; strength: string; development: string; evidence: string }
@@ -81,7 +82,7 @@ export default async function FeedbackReportPage({ params }: { params: Promise<{
   const phases: Phase[] = ((analysis.phase_snapshots ?? []) as Phase[]).map(phase => ({
     key: phase.key, label: phase.label, time: phase.time, storage_path: phase.storage_path,
     answer: phase.key === 'lead_foot_contact' && landing ? athleteLandingWithGuide(landing) : athleteCoachingText(phase.answer),
-    strength: athleteCoachingText(phase.strength), opportunity: athleteCoachingText(phase.opportunity), coaching_cue: athleteCoachingText(phase.coaching_cue),
+    strength: athleteCoachingText(phase.strength), opportunity: athleteCoachingText(phase.opportunity), coaching_cue: athletePracticeTask(phase.coaching_cue),
   }))
   for (const phase of phases) {
     const { data } = await supabase.storage.from('analysis-assets').createSignedUrl(phase.storage_path, 3600)
@@ -139,7 +140,6 @@ export default async function FeedbackReportPage({ params }: { params: Promise<{
 
       {categories.length > 0 && <section className="card">
         <h2 className="text-2xl font-black text-white">Mechanics scorecard</h2>
-        <p className="mt-1 text-sm text-slate-400">See what is working, what to improve, and the cue to use next.</p>
         <div className="mt-6 grid gap-4 md:grid-cols-2">
           {categories.map((item) => <div key={item.category} className="min-w-0 rounded-xl border border-surface-border bg-navy-950 p-5 transition-colors duration-200 hover:border-electric-blue/35">
             <div className="flex items-center justify-between"><h3 className="font-bold text-white">{item.category}</h3><span className="text-xl font-black text-electric-blue-light">{item.score}/5</span></div>
@@ -155,6 +155,8 @@ export default async function FeedbackReportPage({ params }: { params: Promise<{
         <p className="mt-5 text-xs text-slate-500">Use this score to track your own progress over time. It is not a medical or injury-risk score.</p>
       </section>}
 
+      <ReviewedPractice findings={findings} />
+      {analysis.order_id && <Link href={'/dashboard/reports/' + analysis.order_id + '#assigned-drills'} className="inline-block text-sm text-electric-blue-light underline">View the order report and coach-assigned drills</Link>}
       <InteractiveFeedbackTools
         analysisId={analysis.id}
         planId={planRecord?.id}

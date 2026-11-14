@@ -37,7 +37,7 @@ test('can retain a visible early torso opening alongside a roughly right-angle a
     fireEvent.change(screen.getByLabelText('Torso opening'),{target:{value:'early_visible'}})
     fireEvent.change(screen.getByLabelText('Torso position and rotation'),{target:{value:'Your chest has started turning while your shoe is airborne.'}})
     fireEvent.change(screen.getByLabelText('Evidence across frames'),{target:{value:'The lead shoulder turns away from the plate between the last airborne and first planted panels.'}})
-    expect(screen.queryByLabelText('Arm-path drill and cue')).toBeNull()
+    expect(screen.queryByLabelText('Arm-path drill or rehearsal')).toBeNull()
     fireEvent.click(screen.getByText('Save review draft'))
     await waitFor(()=>expect(save).toHaveBeenCalledTimes(1))
     const row=JSON.parse(save.mock.calls[0][1].body).findings[0]

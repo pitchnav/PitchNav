@@ -10,9 +10,9 @@ import {
   Download,
   Dumbbell,
   MessageCircle,
-  Plus,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { athletePracticeTask } from '@/lib/athlete-assessment-copy'
 
 type Category = {
   category: string
@@ -80,15 +80,6 @@ type CalendarEntry = {
 
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 
-const drillMap: Record<string, { name: string; improves: string; sets: string; cues: string[]; mistake: string }> = {
-  'Front-Side Stability': { name: 'Lead-Leg Stability Holds', improves: 'Front-leg control after foot strike', sets: '3 sets × 5 reps', cues: ['Land under control', 'Finish over a stable base'], mistake: 'Forcing the knee completely locked' },
-  Posture: { name: 'Wall Posture Drill', improves: 'Head and trunk control', sets: '3 sets × 6 reps', cues: ['Move around a stable center', 'Keep the finish balanced'], mistake: 'Leaning early to create artificial tilt' },
-  'Lower-Half Sequencing': { name: 'Rocker Delivery Drill', improves: 'Lower-half rhythm and sequence', sets: '3 sets × 5 throws', cues: ['Hips initiate smoothly', 'Let the arm follow the lower half'], mistake: 'Rushing toward maximum intent' },
-  Direction: { name: 'Stride-Line Drill', improves: 'Repeatable stride direction', sets: '3 sets × 5 reps', cues: ['Choose a clear target line', 'Land naturally on the line'], mistake: 'Forcing the foot into an uncomfortable angle' },
-  'Upper-Half Timing': { name: 'Connection Throws', improves: 'Arm timing with trunk rotation', sets: '3 sets × 5 throws', cues: ['Stay smooth into foot contact', 'Rotate without pulling the glove'], mistake: 'Trying to manufacture a specific arm slot' },
-  'Release Consistency': { name: 'Target Window Throws', improves: 'Repeatable intent and release window', sets: '3 sets × 6 throws', cues: ['Use one visual target', 'Repeat the same tempo'], mistake: 'Changing mechanics solely to chase the target' },
-}
-
 function parseLocalDate(value?: string | null) {
   if (!value) return null
   const [year, month, day] = value.slice(0, 10).split('-').map(Number)
@@ -125,7 +116,7 @@ function throwingMistake(focus?: string) {
   if (value.includes('recovery') || value.includes('rest')) return 'Adding missed high-intent work to a recovery day.'
   if (value.includes('bullpen') || value.includes('intent')) return 'Increasing intensity when movement quality, soreness, or command is declining.'
   if (value.includes('mobility')) return 'Forcing range or stretching through pain.'
-  return 'Rushing repetitions instead of resetting and repeating the assigned cue.'
+  return 'Rushing into the next repetition before finishing the last one.'
 }
 
 function RoutineCard({
@@ -203,7 +194,6 @@ export function InteractiveFeedbackTools({
   const phase = phases.find((item) => item.key === activePhase) ?? phases[0]
   const priorityCategories = [...categories].sort((a, b) => a.score - b.score)
   const biggest = priorityCategories[0]
-  const drills = priorityCategories.slice(0, 3).map((category) => ({ category: category.category, ...drillMap[category.category] }))
   const tier: MembershipTier = membershipTier ?? (strengthWeeks.length > 0 ? 'performance' : 'throwing')
 
   const calendar = useMemo<CalendarEntry[]>(() => {
@@ -234,6 +224,7 @@ export function InteractiveFeedbackTools({
   }, [planStartDate, strengthWeeks, tier, todayDate, weeks])
 
   const selectedDay = calendar[Math.min(selectedOffset, calendar.length - 1)] ?? calendar[0]
+  const weekTask = athletePracticeTask(selectedDay?.throwingWeek?.coaching_cue)
   const visibleDays = calendarMode === 'today' ? calendar.slice(0, 1) : calendar
 
   async function toggleTask(key: string) {
@@ -327,33 +318,11 @@ export function InteractiveFeedbackTools({
               {Number.isFinite(phase.time) && <p className="mt-1 text-xs text-electric-blue-light">{phase.time.toFixed(2)} seconds</p>}
               {phase.answer && <p className="mt-4 text-sm leading-6 text-slate-300">{phase.answer}</p>}
               {phase.opportunity && <p className="mt-3 text-sm leading-6 text-slate-300"><b className="text-yellow-300">What to change</b> · {phase.opportunity}</p>}
-              {phase.coaching_cue && <p className="mt-3 rounded-lg bg-electric-blue/10 p-3 text-sm leading-6 text-electric-blue-light"><b>Use this cue:</b> {phase.coaching_cue}</p>}
+              {phase.coaching_cue && <p className="mt-3 rounded-lg bg-electric-blue/10 p-3 text-sm leading-6 text-electric-blue-light">{phase.coaching_cue}</p>}
               {phase.strength && <p className="mt-3 text-sm leading-6 text-slate-300"><b className="text-accent-green">What to keep</b> · {phase.strength}</p>}
             </div>
           </div>
         )}
-      </section>}
-
-      {drills.length > 0 && <section className="card">
-        <h2 className="text-2xl font-black text-white">Your drills</h2>
-        <div className="mt-5 grid gap-4 md:grid-cols-3">
-          {drills.map((drill) => {
-            const key = `drill:${drill.category}`
-            return (
-              <article key={drill.category} className="rounded-xl border border-surface-border bg-navy-950 p-5">
-                <p className="text-xs font-bold uppercase text-electric-blue-light">{drill.category}</p>
-                <h3 className="mt-1 text-lg font-bold text-white">{drill.name}</h3>
-                <p className="mt-3 text-sm text-slate-400">{drill.improves}</p>
-                <p className="mt-3 text-sm font-semibold text-white">{drill.sets}</p>
-                <ul className="mt-3 space-y-1 text-xs text-slate-400">{drill.cues.map((cue) => <li key={cue}>• {cue}</li>)}</ul>
-                <p className="mt-3 text-xs text-yellow-300">Common mistake: {drill.mistake}</p>
-                <button onClick={() => toggleTask(key)} className={`mt-4 w-full rounded-lg px-3 py-2 text-sm font-bold ${progress[key] ? 'bg-accent-green/15 text-accent-green' : 'bg-electric-blue text-white'}`}>
-                  {progress[key] ? <><Check className="mr-1 inline h-4 w-4" /> Completed</> : <><Plus className="mr-1 inline h-4 w-4" /> Add/mark complete</>}
-                </button>
-              </article>
-            )
-          })}
-        </div>
       </section>}
 
       <section className="card" id="training-calendar">
@@ -428,10 +397,9 @@ export function InteractiveFeedbackTools({
                 <div><p className="text-xs font-bold uppercase tracking-wider text-slate-500">Full routine & instructions</p><p className="mt-2 text-sm leading-relaxed text-slate-300">{selectedDay.throwing?.work ?? 'Follow the staff-approved throwing workload and record how the session felt.'}</p></div>
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div className="rounded-lg bg-navy-900 p-3"><p className="text-[11px] uppercase tracking-wider text-slate-500">Sets & repetitions</p><p className="mt-1 text-sm font-semibold text-white">{selectedDay.throwingWeek?.prescription ?? 'Complete the assigned routine with controlled, repeatable reps.'}</p></div>
-                  <div className="rounded-lg bg-navy-900 p-3"><p className="text-[11px] uppercase tracking-wider text-slate-500">Primary coaching cue</p><p className="mt-1 text-sm font-semibold text-white">{selectedDay.throwingWeek?.coaching_cue ?? 'Reset between repetitions and prioritize movement quality.'}</p></div>
+                  {weekTask && weekTask !== selectedDay.throwing?.work && <p className="rounded-lg bg-navy-900 p-3 text-sm text-slate-300">{weekTask}</p>}
                 </div>
                 <p className="rounded-lg bg-yellow-400/10 p-3 text-xs leading-relaxed text-yellow-200"><b>Common mistake:</b> {throwingMistake(selectedDay.throwing?.focus)}</p>
-                {biggest && <p className="rounded-lg bg-electric-blue/10 p-3 text-xs leading-relaxed text-electric-blue-light"><b>Why this drill:</b> it builds on the {biggest.category.toLowerCase()} priority from your report.</p>}
               </RoutineCard>
 
               {tier === 'performance' && selectedDay.performance ? (

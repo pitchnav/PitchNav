@@ -55,8 +55,12 @@ test('three independent specialists hand off a specific fix, drill and transfer 
   expect(requests.every(req => req.store === false && !req.input.includes('private-attachment-key'))).toBe(true)
   expect(JSON.parse(requests[1].input)).toMatchObject({ biomechanics:bio, teamVoice:{ specialistInstructions:expect.stringContaining('short baseball cues') } })
   expect(JSON.parse(requests[2].input)).toMatchObject({ followup:coach, activeCatalog:[{name:drill.name}] })
-  for (const expected of [drill.name, plan.steps[0].task, plan.steps[0].cue, plan.steps[0].success, plan.transfer,
-    torsoPriority.whyItMatters, source.strengths[0], followup.points[0].fix]) expect(finished.body).toContain(expected)
+  for (const expected of [drill.name, plan.steps[0].task, plan.steps[0].success, plan.transfer,
+    torsoPriority.whyItMatters, source.strengths[0]]) expect(finished.body).toContain(expected)
+  expect(finished.body).toMatch(/^Your development plan\n1\. Hip-Lead Separation Dry Reps/)
+  expect(finished.body).not.toContain(followup.points[0].fix)
+  expect(finished.body).not.toContain(drill.coaching_cues[0])
+  expect(finished.body).not.toContain(plan.steps[0].cue)
   expect(coach.points[1].explanation).toContain(plant.foot_strike!.torso_observation)
   expect(finished.body).not.toContain('has not reached the hand-up L')
   expect(finished.body).not.toContain(plant.foot_strike!.torso_observation)
@@ -117,8 +121,9 @@ test('the strict training request enumerates only reviewed fixes and allows one 
     {sourceIndex:0,topic:source.findings[0].topic,problem:followup.points[0].explanation,fix:followup.points[0].fix},
     {sourceIndex:2,topic:additional.topic,problem:additionalPoint.explanation,fix:additionalPoint.fix},
   ])
-  expect(result.body).toContain(linked.title)
-  expect(result.body.match(/Your adjustment ·/g)).toHaveLength(1)
+  expect(result.body).toContain(linked.observation)
+  expect(result.body.match(/Why it matters ·/g)).toHaveLength(1)
+  expect(result.body).not.toContain('Your adjustment ·')
   expect(result.artifact.steps[0].sourceIndexes).toEqual([0,2])
   expect(result.artifact.steps[0]).not.toHaveProperty('primarySourceIndex')
 })
@@ -134,6 +139,80 @@ test('a resumed legacy handoff gets athlete wording in the existing training cal
   expect(result.body).not.toContain(legacy.opening)
   expect(result.body).not.toContain(legacy.recap)
   expect(result.body).not.toContain('Published separately.')
+})
+
+test('a linked low arm path gets one available Figure 8 in the drill-first plan without changing an on-time break',async () => {
+  const figure8 = {...drill,name:'Figure 8 Rhythm Rocker',description:'Trace a relaxed figure eight before rocking into the delivery.'}
+  const janitor = {...drill,name:'Janitor Throws'}
+  const landing = footStrikeFinding({...plant.foot_strike!,arm_timing:'issue_visible',hand_up_l:'absent',
+    arm_observation:'Your hand is still below your elbow after the front foot lands, and rises after plant.'},
+    'The throwing hand rises above the elbow after the front foot is flat.',null)
+  const path = {...source.findings[0],topic:'Hand path from separation to landing',evidence_keys:['hand_separation','lead_foot_contact'],
+    answer:'Your hands separate during the stride on time, and the throwing hand stays low near your back hip before it rises after landing.'}
+  const single = {...source,findings:[landing,path],session:'Stay within the 10 throws already planned. Foot-strike freeze at landing.',
+    bullpenTransfer:'Use your existing 10 throws with the cue ball up with the stride.',retest:'Ball up with the stride.'}
+  const bio = {overview:'The hand rises after landing.',findings:[landing,path].map((row,sourceIndex) =>
+    ({sourceIndex,disposition:'develop',interpretation:row.answer}))}
+  const linked = {...torsoPriority,title:'Arm rhythm through landing',primarySourceIndex:0,linkedSourceIndexes:[1],
+    observation:'Your hand stays close to the back hip through landing.',whyItMatters:'A late rise can make the release harder to repeat.'}
+  const coach = {...followup,athletePriorities:[linked],points:[landing,path].map((row,sourceIndex) =>
+    ({sourceIndex,explanation:row.answer,fix:'Bring the ball hand up sooner.'}))}
+  const step = {...plan.steps[0],primarySourceIndex:0,linkedSourceIndexes:[1],drillName:figure8.name,
+    task:'Trace a loose figure eight, rock into the throw and play catch at your usual pace.',cue:'Send the ball through the mitt.',
+    success:'On the next regular delivery, the arm comes through in time with landing without a pause.'}
+  stub({...plan,steps:[step]})
+  const handBreak = {...drill,name:'Hand-Break Timing Dry Reps'}
+  const result = await designTrainingPlan(single,bio,coach,[figure8,janitor,handBreak])
+  const req = JSON.parse(send.mock.calls[0][1].body)
+  const input = JSON.parse(req.input)
+  expect(input.drillMatches).toEqual([{sourceIndex:0,drillName:figure8.name},{sourceIndex:1,drillName:figure8.name}])
+  expect(input.activeCatalog.map((row:{name:string}) => row.name)).toEqual([figure8.name])
+  expect(req.text.format.schema.properties.steps.items.properties.drillName).toEqual({type:'string',enum:[figure8.name]})
+  expect(result.body).toMatch(/^Your development plan\n1\. Figure 8 Rhythm Rocker/)
+  expect(result.body.match(/\d+\. Figure 8 Rhythm Rocker/g)).toHaveLength(1)
+  expect(result.body).toContain(step.success)
+  expect(result.body).not.toContain(coach.points[0].fix)
+  expect(result.body).not.toMatch(/ball up with the stride|foot-strike freeze|task cue/i)
+  expect(result.body).toContain('10 throws')
+  stub({...plan,steps:[{...step,drillName:null,task:'Rock through a smooth practice delivery toward the target.',
+    cue:'Keep your throwing elbow up.'}]})
+  const fallback = await designTrainingPlan({...single,session:'Skip Figure 8 Rhythm Rocker during this session.'},bio,coach,[figure8,janitor])
+  const fallbackRequest = JSON.parse(send.mock.calls[1][1].body)
+  expect(JSON.parse(fallbackRequest.input).drillMatches).toEqual([])
+  expect(JSON.parse(fallbackRequest.input).activeCatalog).toEqual([])
+  expect(fallback.body).toMatch(/^Your development plan\n1\. Movement rehearsal/)
+  expect(fallback.body).not.toContain('Keep your throwing elbow up.')
+  stub({...plan,steps:[{...step,drillName:null,task:'Rehearse the pattern in your dry warm-up.'}]})
+  const dry = await designTrainingPlan({...single,session:'Dry reps only. No throwing.'},bio,coach,[figure8,janitor])
+  expect(JSON.parse(JSON.parse(send.mock.calls[2][1].body).input).drillMatches).toEqual([])
+  expect(dry.body).toContain('Dry reps only. No throwing.')
+  stub({...plan,steps:[{...step,drillName:handBreak.name}]})
+  await expect(designTrainingPlan(single,bio,coach,[figure8,handBreak])).rejects.toThrow()
+  stub({...plan,steps:[{...step,drillName:drill.name}]})
+  await expect(designTrainingPlan(single,bio,coach,[figure8,drill])).rejects.toThrow('supported correction')
+  const approved = {...drill,custom_note:'Use only the throws already in your plan.'}
+  stub({...plan,steps:[{...step,drillName:approved.name}]})
+  const assigned = await designTrainingPlan({...single,approvedDrills:[approved]},bio,coach,[figure8,drill])
+  expect(assigned.body).toContain(approved.custom_note)
+})
+
+test('Janitor can train a reviewed rear-hip hinge correction but not a drift target, even when it was assigned separately',async () => {
+  const janitor = {...drill,name:'Janitor Throws',custom_note:'Use only the existing scheduled rehearsal.'}
+  const hinge = {...source.findings[0],topic:'Rear-hip hinge',answer:'Your back hip loses its hinge as you move down the mound.',
+    coaching_action:'Work on the rear-hip hinge during the stride.'}
+  const drift = {...source.findings[0],topic:'Forward drift',answer:'Your center of mass drifts forward during leg lift.'}
+  const single = {...source,findings:[hinge,drift],approvedDrills:[janitor]}
+  const bio = {overview:'Lower half.', findings:[hinge,drift].map((row,sourceIndex) => ({sourceIndex,disposition:'develop',interpretation:row.answer}))}
+  const coach = {...followup,athletePriorities:[torsoPriority,{...torsoPriority,primarySourceIndex:1}],
+    points:[hinge,drift].map((row,sourceIndex) => ({sourceIndex,explanation:row.answer,fix:row.answer}))}
+  const hingeStep = {...plan.steps[0],drillName:janitor.name}
+  const driftStep = {...plan.steps[0],primarySourceIndex:1,drillName:null}
+  stub({...plan,steps:[hingeStep,driftStep]})
+  const result = await designTrainingPlan(single,bio,coach,[janitor])
+  expect(JSON.parse(JSON.parse(send.mock.calls[0][1].body).input).drillMatches).toEqual([{sourceIndex:0,drillName:janitor.name}])
+  expect(result.body).toContain(janitor.custom_note)
+  stub({...plan,steps:[hingeStep,{...driftStep,drillName:janitor.name}]})
+  await expect(designTrainingPlan(single,bio,coach,[janitor])).rejects.toThrow('supported correction')
 })
 
 test('athlete priorities cannot omit a fix, duplicate a fix, repeat a visibility limit, or promise a velocity gain', async () => {
@@ -160,7 +239,8 @@ test('a reviewed elbow bend and a late forearm rise stay separate in a single ac
   const stored = await writeAthleteFollowup(single,bio)
   expect(stored.points[0].explanation).toContain('unresolved')
   const {body} = await designTrainingPlan(single,bio,stored,[drill])
-  for (const part of [priority.observation,priority.whyItMatters,priority.adjustment]) expect(body).toContain(part)
+  for (const part of [priority.observation,priority.whyItMatters,plan.steps[0].task]) expect(body).toContain(part)
+  expect(body).not.toContain(priority.adjustment)
   expect(body).not.toContain('unresolved')
 })
 

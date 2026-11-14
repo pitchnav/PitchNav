@@ -1,7 +1,15 @@
-import { athleteCoachingText, athleteFootStrikeGuide, athleteLandingText, firstAthleteCoachingNote, isAthleteReviewCommentary } from './athlete-assessment-copy'
+import { athleteCoachingText, athleteFootStrikeGuide, athleteLandingText, firstAthleteCoachingNote, isAthleteReviewCommentary, athletePracticeTask } from './athlete-assessment-copy'
 import { emptyFootStrike } from './foot-strike-review'
 
+test('a named throwing assignment keeps the task and its dose when a legacy cue includes an isolated position reminder', () => {
+  expect(athletePracticeTask('Figure 8 Rhythm Rocker. Trace a figure eight before throwing. Get your arm up. Use 2 sets of 4 reps.'))
+    .toBe('Figure 8 Rhythm Rocker. Trace a figure eight before throwing. Use 2 sets of 4 reps.')
+  expect(athletePracticeTask('Keep your chest closed during the drill.')).toBe('')
+  expect(athletePracticeTask('Hold your arm against the wall for 5 seconds.')).toBe('Hold your arm against the wall for 5 seconds.')
+})
+
 test.each([
+  'Near 90° is a reference; exact elbow angle not measured.',
   'We cannot tell whether the chest opens from this view.',
   'This side view does not give enough information to judge glove-side lean.',
   'The camera angle hides that relationship, so no call is made on it.',

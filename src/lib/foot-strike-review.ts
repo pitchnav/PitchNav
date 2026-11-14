@@ -17,7 +17,6 @@ export const footStrikeSchema = z.object({
 
 export type FootStrikeReview = z.infer<typeof footStrikeSchema>
 export const footStrikeTitle = 'Arm and torso at foot strike'
-export const handBreakDrill = 'Hand-Break Timing Dry Reps. Rehearse a smooth hand break as you stride so the arm can rise without rushing at landing.'
 export const emptyFootStrike: FootStrikeReview = {
   contact_status: 'unresolved', last_airborne_time: null, first_planted_time: null,
   hand_up_l: 'unresolved',

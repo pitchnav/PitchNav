@@ -5,6 +5,8 @@ import { NextResponse } from 'next/server'
 import { createAdminClient, createClient } from '@/lib/supabase/server'
 import { landingSampleTimes, validateMechanicsFindings } from '@/lib/mechanics-findings'
 import { calculateDeliveryScore } from '@/lib/utils'
+import type { MechanicsFinding } from '@/lib/mechanics-findings'
+import { figure8Drill, janitorDrill, preferredReviewedDrill } from '@/lib/reviewed-drill-matches'
 
 export const runtime = 'nodejs'
 export const maxDuration = 300
@@ -28,7 +30,7 @@ async function reviewedPlanUpdate(
   analysisId: string,
   orderId: string,
   categories: CategoryAssessment[],
-  priorities: string[]
+  findings: MechanicsFinding[]
 ) {
   const { data: plan, error: planLoadError } = await admin.from('training_plans')
     .select('id,starts_on,strength_mobility_weeks')
@@ -49,7 +51,8 @@ async function reviewedPlanUpdate(
   }
   // A cue without a routed category remains in the report. It is insufficient
   // to select a drill, diagnose a strength limitation, or prescribe a program.
-  if (!priorities.length || !categories.length) return planUpdate
+  const corrections = findings.filter(finding => finding.verdict === 'observed' && finding.coaching_action)
+  if (!corrections.length || !categories.length) return planUpdate
 
   const { data: drillCatalog, error: drillsError } = await admin.from('drills')
     .select('name,category,description,coaching_cues,sets,reps')
@@ -59,7 +62,16 @@ async function reviewedPlanUpdate(
   if (orderError || !order) throw new Error('Could not verify the purchased plan.')
   const includesStrength = (order.amount_paid_cents ?? 0) >= 4000 ||
     (Array.isArray(plan.strength_mobility_weeks) && plan.strength_mobility_weeks.length > 0)
-  planUpdate.weeks = buildEightWeekThrowingPlan(categories, priorities, drillCatalog ?? [])
+  const catalog = (drillCatalog ?? []) as Array<{ name: string; category: string; description: string }>
+  const priorities = corrections.map(finding => finding.coaching_action!)
+  const tasks = corrections.map(finding => {
+    const action = finding.coaching_action!
+    const preferred = preferredReviewedDrill(finding)
+    const drill = catalog.find(drill => action.startsWith(drill.name + '.') &&
+      (![figure8Drill, janitorDrill].includes(drill.name) || drill.name === preferred))
+    return { task:action, drillName:drill?.name ?? null }
+  })
+  planUpdate.weeks = buildEightWeekThrowingPlan(categories, priorities, catalog, undefined, tasks)
   if (includesStrength) planUpdate.strength_mobility_weeks = buildBaseballPerformancePlan(categories, priorities)
   return planUpdate
 }
@@ -178,8 +190,7 @@ export async function POST(request: Request) {
       })
     }
 
-    const actions = findings?.flatMap(finding => finding.coaching_action ? [finding.coaching_action] : []) ?? []
-    const plan = findings ? await reviewedPlanUpdate(admin, analysisId, orderId, categories as CategoryAssessment[], actions) : null
+    const plan = findings ? await reviewedPlanUpdate(admin, analysisId, orderId, categories as CategoryAssessment[], findings) : null
     const { data: reportId, error } = await admin.rpc('apply_reviewed_mechanics', {
       analysis_id: analysisId, order_id_arg: orderId, staff_id: user.id, expected_revision: analysis.updated_at,
       report_data: report, score_rows: scores, phase_rows: pictures, plan_data: plan,

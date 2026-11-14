@@ -1,3 +1,4 @@
+import { figure8Drill, janitorDrill } from './reviewed-drill-matches'
 import { drillFitsEquipment, type TrainingEquipment } from './training-equipment'
 
 export type ThrowingAssessment = {
@@ -42,8 +43,10 @@ const CAUSE_LABELS: Record<string, string> = {
 
 function pickDrill(category: string, drills: DrillOption[], exclude: string[] = []): DrillOption | undefined {
   const drillCategories = SCORECARD_TO_DRILL_CATEGORY[category] ?? []
-  return drills.find((d) => drillCategories.includes(d.category) && !exclude.includes(d.name))
+  return drills.find((d) => drillCategories.includes(d.category) && ![figure8Drill, janitorDrill, ...exclude].includes(d.name))
 }
+
+export type ReviewedPracticeTask = { task: string; drillName: string | null }
 
 export type ThrowingPlanDay = {
   day: string
@@ -115,7 +118,8 @@ export function buildEightWeekThrowingPlan(
   categories: ThrowingAssessment[],
   priorities: string[] = [],
   drills: DrillOption[] = [],
-  equipment?: TrainingEquipment
+  equipment?: TrainingEquipment,
+  reviewedTasks?: ReviewedPracticeTask[]
 ): ThrowingPlanWeek[] {
   const ranked = [...categories]
     .filter((item) => Number.isFinite(item.score))
@@ -126,6 +130,9 @@ export function buildEightWeekThrowingPlan(
   const primaryFix = primary?.development || priorities[0] || 'Repeat the same delivery from leg lift through finish.'
   const causeLabel = primary?.likely_cause ? CAUSE_LABELS[primary.likely_cause] : undefined
   const available = equipment ? drills.filter(drill => drillFitsEquipment(drill.name + ' ' + drill.description, equipment)) : drills
+  const orderedTasks = reviewedTasks?.filter(task => !task.drillName || available.some(drill => drill.name === task.drillName))
+  const firstReview = orderedTasks?.find(task => task.task === primary?.development) ?? orderedTasks?.[0]
+  const nextReview = orderedTasks?.find(task => task !== firstReview) ?? firstReview
   const primaryDrill = pickDrill(primaryCategory, available)
   const repeatabilityDrill = pickDrill(primaryCategory, available, primaryDrill ? [primaryDrill.name] : [])
   const dryOptions: Record<string, [string,string]> = {
@@ -150,22 +157,22 @@ export function buildEightWeekThrowingPlan(
     return {
       week,
       priority: block.priority,
-      coaching_cue: block.cue,
-      prescription: block.prescription,
+      coaching_cue: firstReview ? 'Compare the result of the practice task with your usual delivery.' : block.cue,
+      prescription: firstReview ? 'Use the task during your scheduled practice, within the workload your coach assigned.' : block.prescription,
       reassessment,
       days: [
         {
           day: 'Monday',
           focus: `${primaryCategory} drill work`,
-          work: primaryDrill
+          work: firstReview?.task ?? (primaryDrill
             ? `Warm up, then perform ${primaryDrill.name}: ${primaryDrill.sets ?? 3} sets of ${primaryDrill.reps ?? '5 reps'}. ${primaryDrill.description} Your main correction is: ${primaryFixWithCause}${alternate(0)}`
             : equipment ? `Choose one: ${dry[0]} or ${dry[1]}. Use controlled dry reps within your assigned drill volume.`
-            : `Warm up, then complete 3 sets of 5 controlled reps. Your main correction is: ${primaryFixWithCause}`,
+            : `Warm up, then complete 3 sets of 5 controlled reps. Your main correction is: ${primaryFixWithCause}`),
         },
         {
           day: 'Tuesday',
           focus: 'Throwing development',
-          work: 'Follow your normal coach-approved throwing program. Use the week’s cue for a small group of focused pitches instead of thinking about it on every throw.',
+          work: 'Follow your normal coach-approved throwing program. Pick a target and throw with your usual delivery.',
         },
         {
           day: 'Wednesday',
@@ -175,15 +182,15 @@ export function buildEightWeekThrowingPlan(
         {
           day: 'Thursday',
           focus: 'Repeatability session',
-          work: repeatabilityDrill
+          work: nextReview?.task ?? (repeatabilityDrill
             ? `Perform ${repeatabilityDrill.name}: ${repeatabilityDrill.sets ?? 3} sets of ${repeatabilityDrill.reps ?? '5 reps'}. ${repeatabilityDrill.description} Reset between reps and stop the set when the movement changes.${alternate(1)}`
             : equipment ? `Choose one: ${dry[1]} or ${dry[0]}. Reset between dry reps.`
-            : `Complete 3 sets of 5 reps for ${primaryCategory.toLowerCase()}. Reset between reps and stop the set when the movement changes.${alternate(1)}`
+            : `Complete 3 sets of 5 reps for ${primaryCategory.toLowerCase()}. Reset between reps and stop the set when the movement changes.${alternate(1)}`),
         },
         {
           day: 'Friday',
           focus: week <= 2 ? 'Controlled bullpen' : 'Intent or bullpen progression',
-          work: week <= 2
+          work: firstReview ? 'During your next scheduled throwing session, use your usual delivery and check whether the change carries over.' : week <= 2
             ? 'Use moderate intent and finish each rep under control. Do not add speed when the movement falls apart.'
             : 'Build intent only when you are pain-free and the movement stays repeatable. Keep this inside your normal throwing workload.',
         },

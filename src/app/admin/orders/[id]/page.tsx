@@ -852,7 +852,7 @@ export default function AdminOrderDetailPage() {
             <MechanicsReviewEditor key={automatedAnalysis.id + automatedAnalysis.updated_at}
               analysisId={automatedAnalysis.id} orderId={id} revision={automatedAnalysis.updated_at}
               recap={automatedAnalysis.coach_feedback ?? ''} initialFindings={automatedAnalysis.biggest_opportunity?.findings ?? []}
-              frames={findingFrames}
+              frames={findingFrames} drills={drills}
               onSaved={async () => { await loadData(); setDraftMessage('Review saved. Apply the reviewed findings to the report.') }} onDirty={setReviewDirty} />
           )}
           {!automatedAnalysis && order.payment_confirmed_at && !order.refunded_at && !['complete','cancelled','refunded'].includes(order.status) && <PracticeEvidenceImport orderId={id} onSaved={loadData} />}

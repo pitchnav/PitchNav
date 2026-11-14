@@ -1,11 +1,12 @@
 import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
-import { Download, Play, Star, CheckCircle } from 'lucide-react'
+import { Download, Play, Star } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { ProgressBar } from '@/components/ui/ProgressBar'
 import { AnnotatedVideoPlayer } from '@/components/reports/AnnotatedVideoPlayer'
 import { SafetyDisclaimer } from '@/components/ui/SafetyDisclaimer'
-import { athleteCoachingText, athleteLandingWithGuide } from '@/lib/athlete-assessment-copy'
+import { athleteCoachingText, athleteLandingWithGuide, athletePracticeTask } from '@/lib/athlete-assessment-copy'
+import { ReviewedPractice } from '@/components/reports/ReviewedPractice'
 import type { MechanicsFinding } from '@/lib/mechanics-findings'
 import {
   PITCH_POSITION_LABELS,
@@ -65,7 +66,7 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
   const positions = ((positionsRes.data ?? []) as PositionScreenshot[]).map(pos => ({
     ...pos, reviewer_notes: pos.position === 'lead_foot_contact' && landing ? athleteLandingWithGuide(landing) : athleteCoachingText(pos.reviewer_notes),
     strengths: athleteCoachingText(pos.strengths), development_opportunity: athleteCoachingText(pos.development_opportunity),
-    estimated_angle: athleteCoachingText(pos.estimated_angle), coaching_cue: athleteCoachingText(pos.coaching_cue),
+    estimated_angle: athleteCoachingText(pos.estimated_angle), coaching_cue: athletePracticeTask(pos.coaching_cue),
   }))
   const assignedDrills = assignedDrillsRes.data as (AssignedDrill & { drill: Drill })[] ?? []
 
@@ -234,8 +235,7 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
                   )}
                   {pos.coaching_cue && (
                     <div className="rounded-lg bg-surface-hover p-3">
-                      <p className="text-xs font-semibold text-slate-400 mb-1">Coaching Cue</p>
-                      <p className="text-xs text-white italic">&quot;{pos.coaching_cue}&quot;</p>
+                      <p className="text-xs text-white">{pos.coaching_cue}</p>
                     </div>
                   )}
                   {pos.estimated_angle && (
@@ -292,8 +292,9 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
       )}
 
       {/* Assigned drills */}
+      <ReviewedPractice findings={report.mechanics_findings} />
       {assignedDrills.length > 0 && (
-        <div className="mb-8">
+        <div className="mb-8" id="assigned-drills">
           <h2 className="text-xl font-bold text-white mb-6">Assigned Drills</h2>
           <div className="space-y-5">
             {assignedDrills.map(({ id, drill, custom_note }) => (
@@ -305,22 +306,12 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
                       {drill.category.replace(/_/g, ' ')}
                     </span>
                   </div>
-                  <p className="text-sm text-slate-400">{drill.sets} sets × {drill.reps}</p>
+                  {(drill.sets || drill.reps) && <p className="text-sm text-slate-400">{[drill.sets && drill.sets + ' sets', drill.reps].filter(Boolean).join(' × ')}</p>}
                 </div>
                 <p className="text-sm text-slate-400 mb-4">{drill.description}</p>
-                {drill.coaching_cues && (
-                  <div className="mb-3">
-                    <p className="text-xs font-semibold text-slate-500 mb-1">Coaching Cues</p>
-                    <ul className="space-y-1">
-                      {drill.coaching_cues.map((cue, i) => (
-                        <li key={i} className="text-xs text-slate-300 flex items-start gap-2">
-                          <CheckCircle className="h-3.5 w-3.5 text-electric-blue-light flex-shrink-0 mt-0.5" />
-                          {cue}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
+                {drill.coaching_cues?.map(athletePracticeTask).filter(Boolean).map((instruction, i) => (
+                  <p key={i} className="mb-2 text-sm text-slate-300">{instruction}</p>
+                ))}
                 {drill.common_mistakes && (
                   <div className="mb-3">
                     <p className="text-xs font-semibold text-slate-500 mb-1">Common Mistakes</p>
