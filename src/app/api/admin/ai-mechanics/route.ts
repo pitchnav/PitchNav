@@ -226,17 +226,11 @@ Chronological observations in side-view image coordinates, with event candidates
       findings = validateMechanicsFindings([...rows, checkpoint], evidenceKeys, landingSampleTimes(snapshots)).map((finding, index) => {
         const selection = selections[index]
         if (selection && (!finding.coaching_action || !catalog.has(selection))) throw new Error('The selected drill needs a supported correction and an active library entry.')
-        if (!finding.coaching_action) return finding
-        const preferred = preferredReviewedDrill(finding)
-        if (selection && reserved.has(selection) && selection !== preferred) {
+        if (!selection) return finding
+        if (reserved.has(selection) && selection !== preferredReviewedDrill(finding)) {
           throw new Error('The drill does not match the reviewed timing problem.')
         }
-        const name = preferred && catalog.has(preferred) ? preferred : selection
-        if (!name) return finding
-        if (selection && selection !== name && finding.coaching_action.toLowerCase().includes(selection.toLowerCase())) {
-          throw new Error('The transfer instruction describes a different drill from the reviewed correction.')
-        }
-        return { ...finding, coaching_action: [name + '.', catalog.get(name), finding.coaching_action].filter(Boolean).join(' ') }
+        return { ...finding, coaching_action: [selection + '.', catalog.get(selection), finding.coaching_action].filter(Boolean).join(' ') }
       })
     } catch (error) {
       return NextResponse.json({ error: `The draft did not pass the evidence check. ${error instanceof Error ? error.message : ''}` }, { status: 502 })

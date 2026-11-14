@@ -78,7 +78,7 @@ test('staff draft uses six authorized frames and measured screens without diagno
   expect(body.input[0].content.filter((item: { type: string }) => item.type === 'input_image')).toHaveLength(6)
 })
 
-test.each(['visibility', 'exact drill', 'unknown drill'])('staff persistence follows the reviewed library evidence: %s', async mode => {
+test.each(['visibility', 'exact drill', 'another drill', 'no drill', 'unknown drill'])('staff persistence follows the reviewed library evidence: %s', async mode => {
   const keys = ['peak_leg_lift', 'hand_separation', 'lead_foot_contact', 'maximum_external_rotation', 'ball_release', 'finish']
   const snapshots = keys.map(key => ({ key, storage_path: uid + '/motion-lab/' + aid + '/phases/' + key + '.png', sample_times: [1.1, 1.2, 1.3] }))
   const analysis = { id: aid, user_id: uid, updated_at: '2026-11-12T12:00:00Z', athlete_profiles: { ...adult, id: 'profile-id', user_id: uid, consent_ai_draft: true, ai_draft_permission_version: 2 }, phase_snapshots: snapshots, clip_summary: { elbowRange: [1, 172], legacy_angle_marker: 'unsupported_angle', delivery_overview: { storage_path: uid + '/motion-lab/' + aid + '/phases/delivery_overview.png', sample_times: [0, 1, 2] } } }
@@ -91,7 +91,10 @@ test.each(['visibility', 'exact drill', 'unknown drill'])('staff persistence fol
   const analysisTable = { ...single(analysis), update: save }
   ;(createAdminClient as jest.Mock).mockReturnValue({
     from: (table: string) => table === 'motion_analyses' ? analysisTable : table === 'drills'
-      ? { select: () => ({ eq: async () => ({data:[{name:'Figure 8 Rhythm Rocker',description:'Use a loose figure eight into a rocker throw.'}]}) }) }
+      ? { select: () => ({ eq: async () => ({data:[
+        {name:'Figure 8 Rhythm Rocker',description:'Use a loose figure eight into a rocker throw.'},
+        {name:'Pivot Throw',description:'Throw from a narrow pivot stance.'},
+      ]}) }) }
       : { select: () => screens },
     storage: { from: () => ({ createSignedUrl: sign }) },
   })
@@ -103,7 +106,8 @@ test.each(['visibility', 'exact drill', 'unknown drill'])('staff persistence fol
     hand_up_l:'absent', contact_status:'bracketed', last_airborne_time:1.1, first_planted_time:1.2,
     arm_timing:'issue_visible', arm_observation:'The ball hand rises after the front foot lands.', torso_opening:'no_clear_issue',
     torso_observation:'The chest stays sideways into landing.', evidence:'The front shoe is airborne in the first panel and planted in the second.',
-    coaching_action:'Compare the hand’s arrival as the stride foot lands.', drill_name:mode === 'unknown drill' ? 'Fictional exercise' : null,
+    coaching_action:'Compare the hand’s arrival as the stride foot lands.',
+    drill_name: ({'unknown drill':'Fictional exercise','exact drill':'Figure 8 Rhythm Rocker','another drill':'Pivot Throw'} as Record<string,string>)[mode] ?? null,
   }
   send.mockResolvedValue({ ok: true, json: async () => ({ output_text: JSON.stringify({
     foot_strike: footStrike,
@@ -123,11 +127,15 @@ test.each(['visibility', 'exact drill', 'unknown drill'])('staff persistence fol
   expect(body.input[0].content[1].text).toContain('1.1, 1.2, 1.3')
   expect(body.input[0].content.filter((item: { type: string }) => item.type === 'input_image')).toHaveLength(7)
   expect(body.input[0].content.at(-2).text).toContain('Whole delivery')
-  expect(body.text.format.schema.properties.findings.items.properties.drill_name.enum).toEqual(['Figure 8 Rhythm Rocker', null])
+  expect(body.text.format.schema.properties.findings.items.properties.drill_name.enum).toEqual(['Figure 8 Rhythm Rocker', 'Pivot Throw', null])
   expect(cas.eq).toHaveBeenCalledWith('updated_at', analysis.updated_at)
-  if (mode === 'exact drill') {
+  if (mode !== 'visibility') {
+    const drillText: Record<string,string> = {
+      'exact drill':'Figure 8 Rhythm Rocker. Use a loose figure eight into a rocker throw. ',
+      'another drill':'Pivot Throw. Throw from a narrow pivot stance. ',
+    }
     expect(save).toHaveBeenCalledWith(expect.objectContaining({ biggest_opportunity: { findings: [limit, expect.objectContaining({
-      coaching_action:'Figure 8 Rhythm Rocker. Use a loose figure eight into a rocker throw. ' + footStrike.coaching_action,
+      coaching_action:(drillText[mode] ?? '') + footStrike.coaching_action,
       verdict:'observed',
     })] }, ai_draft_status:'ready_for_staff_review' }))
     return

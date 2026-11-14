@@ -141,59 +141,112 @@ test('a resumed legacy handoff gets athlete wording in the existing training cal
   expect(result.body).not.toContain('Published separately.')
 })
 
-test('a linked low arm path gets one available Figure 8 in the drill-first plan without changing an on-time break',async () => {
-  const figure8 = {...drill,name:'Figure 8 Rhythm Rocker',description:'Trace a relaxed figure eight before rocking into the delivery.'}
-  const janitor = {...drill,name:'Janitor Throws'}
+const figure8: CoachingDrill = {name:'Figure 8 Rhythm Rocker', description:'Trace a loose figure eight and rock into the throw.',
+  what_it_trains:'Continuous arm path from separation into landing.', sets:null, reps:null, coaching_cues:[]}
+const connectionBall: CoachingDrill = {name:'Connection Ball Drill', description:'Rehearse a dry delivery with a small towel near the upper arm.',
+  what_it_trains:'Arm and trunk connection', contraindications:'Dry drill only. Keep the elbow free.', sets:3, reps:'6 dry reps', coaching_cues:[]}
+const pivotThrow: CoachingDrill = {name:'Pivot Throw', description:'Rotate from a narrow pivot stance into a controlled throw.',
+  what_it_trains:'Arm timing with trunk rotation', sets:3, reps:'6 throws', coaching_cues:[]}
+const handBreak = {...drill,name:'Hand-Break Timing Dry Reps'}
+const janitor = {...figure8,name:'Janitor Throws'}
+
+function lateHandReview() {
   const landing = footStrikeFinding({...plant.foot_strike!,arm_timing:'issue_visible',hand_up_l:'absent',
     arm_observation:'Your hand is still below your elbow after the front foot lands, and rises after plant.'},
     'The throwing hand rises above the elbow after the front foot is flat.',null)
   const path = {...source.findings[0],topic:'Hand path from separation to landing',evidence_keys:['hand_separation','lead_foot_contact'],
     answer:'Your hands separate during the stride on time, and the throwing hand stays low near your back hip before it rises after landing.'}
-  const single = {...source,findings:[landing,path],session:'Stay within the 10 throws already planned. Foot-strike freeze at landing.',
+  const findings = [landing,path]
+  const assessment = {...source,findings,session:'Stay within the 10 throws already planned. Foot-strike freeze at landing.',
     bullpenTransfer:'Use your existing 10 throws with the cue ball up with the stride.',retest:'Ball up with the stride.'}
-  const bio = {overview:'The hand rises after landing.',findings:[landing,path].map((row,sourceIndex) =>
+  const bio = {overview:'The hand rises after landing.',findings:findings.map((row,sourceIndex) =>
     ({sourceIndex,disposition:'develop',interpretation:row.answer}))}
   const linked = {...torsoPriority,title:'Arm rhythm through landing',primarySourceIndex:0,linkedSourceIndexes:[1],
     observation:'Your hand stays close to the back hip through landing.',whyItMatters:'A late rise can make the release harder to repeat.'}
-  const coach = {...followup,athletePriorities:[linked],points:[landing,path].map((row,sourceIndex) =>
+  const coach = {...followup,athletePriorities:[linked],points:findings.map((row,sourceIndex) =>
     ({sourceIndex,explanation:row.answer,fix:'Bring the ball hand up sooner.'}))}
-  const step = {...plan.steps[0],primarySourceIndex:0,linkedSourceIndexes:[1],drillName:figure8.name,
-    task:'Trace a loose figure eight, rock into the throw and play catch at your usual pace.',cue:'Send the ball through the mitt.',
-    success:'On the next regular delivery, the arm comes through in time with landing without a pause.'}
-  stub({...plan,steps:[step]})
-  const handBreak = {...drill,name:'Hand-Break Timing Dry Reps'}
-  const result = await designTrainingPlan(single,bio,coach,[figure8,janitor,handBreak])
-  const req = JSON.parse(send.mock.calls[0][1].body)
-  const input = JSON.parse(req.input)
-  expect(input.drillMatches).toEqual([{sourceIndex:0,drillName:figure8.name},{sourceIndex:1,drillName:figure8.name}])
-  expect(input.activeCatalog.map((row:{name:string}) => row.name)).toEqual([figure8.name])
-  expect(req.text.format.schema.properties.steps.items.properties.drillName).toEqual({type:'string',enum:[figure8.name]})
-  expect(result.body).toMatch(/^Your development plan\n1\. Figure 8 Rhythm Rocker/)
-  expect(result.body.match(/\d+\. Figure 8 Rhythm Rocker/g)).toHaveLength(1)
-  expect(result.body).toContain(step.success)
+  return {assessment,bio,coach}
+}
+
+const armStep = {...plan.steps[0],primarySourceIndex:0,linkedSourceIndexes:[1],drillName:connectionBall.name,
+  task:'With the towel resting loosely at the upper arm, take your usual stride in a dry delivery.',
+  cue:'Send the ball through the mitt.',success:'The hand keeps moving as the stride foot comes down.'}
+const pivotStep = {...armStep,drillName:pivotThrow.name,
+  task:'Use your normal catch partner. Turn from a narrow pivot stance into an easy throw.',
+  success:'The hand moves with the turn when you return to a full delivery.'}
+
+test('the agent may select two distinct library drills for linked arm findings while Figure 8 is available',async () => {
+  const {assessment,bio,coach} = lateHandReview()
+  stub({...plan,steps:[armStep,pivotStep],fewerDrillsReason:null})
+  const result = await designTrainingPlan(assessment,bio,coach,[figure8,janitor,connectionBall,handBreak,pivotThrow])
+  const request = JSON.parse(send.mock.calls[0][1].body)
+  const offered = JSON.parse(request.input).activeCatalog.map((row:{name:string}) => row.name)
+  expect(new Set(offered)).toEqual(new Set([figure8.name,connectionBall.name,pivotThrow.name]))
+  // A model-side forced enum would exclude these alternatives even if the local parser accepted them.
+  const drillChoices = JSON.stringify(request.text.format.schema.properties.steps.items.properties.drillName)
+  for (const candidate of [figure8.name,connectionBall.name,pivotThrow.name]) expect(drillChoices).toContain(candidate)
+  expect(result.artifact.steps.map(({drillName,sourceIndexes}) => ({drillName,sourceIndexes}))).toEqual([
+    {drillName:connectionBall.name,sourceIndexes:[0,1]}, {drillName:pivotThrow.name,sourceIndexes:[0,1]},
+  ])
+  expect(result.body.match(/^\d+\. .+$/gm)).toEqual(['1. Connection Ball Drill','2. Pivot Throw'])
+  expect(result.body).toContain(armStep.success)
+  expect(result.body).toContain(pivotStep.success)
   expect(result.body).not.toContain(coach.points[0].fix)
   expect(result.body).not.toMatch(/ball up with the stride|foot-strike freeze|task cue/i)
   expect(result.body).toContain('10 throws')
-  stub({...plan,steps:[{...step,drillName:null,task:'Rock through a smooth practice delivery toward the target.',
-    cue:'Keep your throwing elbow up.'}]})
-  const fallback = await designTrainingPlan({...single,session:'Skip Figure 8 Rhythm Rocker during this session.'},bio,coach,[figure8,janitor])
-  const fallbackRequest = JSON.parse(send.mock.calls[1][1].body)
-  expect(JSON.parse(fallbackRequest.input).drillMatches).toEqual([])
-  expect(JSON.parse(fallbackRequest.input).activeCatalog).toEqual([])
+})
+
+test('an agent response repeating a drill for two linked corrections cannot become a finished report',async () => {
+  const {assessment,bio,coach} = lateHandReview()
+  const first = {...armStep,drillName:figure8.name,linkedSourceIndexes:[]}
+  const second = {...first,primarySourceIndex:1,task:'Rock from a different starting stance into the throw.'}
+  stub({...plan,steps:[first,second],fewerDrillsReason:null})
+  await expect(designTrainingPlan(assessment,bio,coach,[figure8,connectionBall,pivotThrow])).rejects.toThrow('same drill more than once')
+})
+
+test('the agent must account for a short plan when the library offers several drills', async () => {
+  const {assessment,bio,coach} = lateHandReview()
+  const mobility: CoachingDrill = {...drill,name:'Ankle Rocker Mobility',what_it_trains:'Ankle mobility for landing control'}
+  const catalog = [connectionBall,mobility]
+  stub({...plan,steps:[armStep],fewerDrillsReason:null})
+  await expect(designTrainingPlan(assessment,bio,coach,catalog)).rejects.toThrow('distinct drills')
+
+  const reason = 'Ankle Rocker Mobility targets ankle range. The reviewed correction concerns arm timing, and the review contains no ankle restriction.'
+  stub({...plan,steps:[armStep],fewerDrillsReason:reason})
+  const result = await designTrainingPlan(assessment,bio,coach,catalog)
+  expect(result.artifact.steps.map(step=>step.drillName)).toEqual([connectionBall.name])
+  expect(result.body).not.toContain(reason)
+})
+
+test('the arm-path plan honors review exclusions, dry-only work and established hand-break timing',async () => {
+  const {assessment,bio,coach} = lateHandReview()
+  const rehearsal = {...armStep,drillName:null,task:'Rock through a smooth practice delivery toward the target.',cue:'Keep your throwing elbow up.'}
+  stub({...plan,steps:[rehearsal]})
+  const fallback = await designTrainingPlan({...assessment,session:'Skip Figure 8 Rhythm Rocker during this session.'},bio,coach,[figure8,janitor])
+  expect(JSON.parse(JSON.parse(send.mock.calls[0][1].body).input).activeCatalog).toEqual([])
   expect(fallback.body).toMatch(/^Your development plan\n1\. Movement rehearsal/)
-  expect(fallback.body).not.toContain('Keep your throwing elbow up.')
-  stub({...plan,steps:[{...step,drillName:null,task:'Rehearse the pattern in your dry warm-up.'}]})
-  const dry = await designTrainingPlan({...single,session:'Dry reps only. No throwing.'},bio,coach,[figure8,janitor])
-  expect(JSON.parse(JSON.parse(send.mock.calls[2][1].body).input).drillMatches).toEqual([])
+  expect(fallback.body).not.toContain(rehearsal.cue)
+
+  stub({...plan,steps:[armStep]})
+  const dry = await designTrainingPlan({...assessment,session:'Dry reps only. No throwing.'},bio,coach,
+    [figure8,janitor,handBreak,pivotThrow,connectionBall])
+  const dryCatalog = JSON.parse(JSON.parse(send.mock.calls[1][1].body).input).activeCatalog
+  expect(dryCatalog.map((entry:{name:string}) => entry.name)).toEqual([connectionBall.name])
   expect(dry.body).toContain('Dry reps only. No throwing.')
-  stub({...plan,steps:[{...step,drillName:handBreak.name}]})
-  await expect(designTrainingPlan(single,bio,coach,[figure8,handBreak])).rejects.toThrow()
-  stub({...plan,steps:[{...step,drillName:drill.name}]})
-  await expect(designTrainingPlan(single,bio,coach,[figure8,drill])).rejects.toThrow('supported correction')
-  const approved = {...drill,custom_note:'Use only the throws already in your plan.'}
-  stub({...plan,steps:[{...step,drillName:approved.name}]})
-  const assigned = await designTrainingPlan({...single,approvedDrills:[approved]},bio,coach,[figure8,drill])
-  expect(assigned.body).toContain(approved.custom_note)
+  expect(dry.body).toContain(connectionBall.name)
+
+  stub({...plan,steps:[{...armStep,drillName:handBreak.name}]})
+  await expect(designTrainingPlan(assessment,bio,coach,[figure8,handBreak])).rejects.toThrow()
+})
+
+test('a signed drill assignment keeps its individual prescription when the agent adds a second exercise',async () => {
+  const {assessment,bio,coach} = lateHandReview()
+  const assigned = {...connectionBall,custom_note:'Use the team’s existing pre-catch rehearsal.'}
+  stub({...plan,steps:[armStep,pivotStep],fewerDrillsReason:null})
+  const result = await designTrainingPlan({...assessment,approvedDrills:[assigned]},bio,coach,[figure8,connectionBall,pivotThrow])
+  expect(result.body).toContain(assigned.custom_note)
+  expect(result.body).not.toContain('3 sets × 6 dry reps')
+  expect(result.body.match(/^\d+\. .+$/gm)).toEqual(['1. Connection Ball Drill','2. Pivot Throw'])
 })
 
 test('Janitor can train a reviewed rear-hip hinge correction but not a drift target, even when it was assigned separately',async () => {
@@ -209,9 +262,8 @@ test('Janitor can train a reviewed rear-hip hinge correction but not a drift tar
   const driftStep = {...plan.steps[0],primarySourceIndex:1,drillName:null}
   stub({...plan,steps:[hingeStep,driftStep]})
   const result = await designTrainingPlan(single,bio,coach,[janitor])
-  expect(JSON.parse(JSON.parse(send.mock.calls[0][1].body).input).drillMatches).toEqual([{sourceIndex:0,drillName:janitor.name}])
   expect(result.body).toContain(janitor.custom_note)
-  stub({...plan,steps:[hingeStep,{...driftStep,drillName:janitor.name}]})
+  stub({...plan,steps:[{...hingeStep,drillName:null},{...driftStep,drillName:janitor.name}]})
   await expect(designTrainingPlan(single,bio,coach,[janitor])).rejects.toThrow('supported correction')
 })
 
